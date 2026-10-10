@@ -1,9 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GithubSkills } from '../lib/github-skills';
 import type { GithubActivity, ContributionDay } from '../lib/github-activity';
-import type { Content } from '../lib/schema';
+import { featuredGithubRepos } from '../lib/github-display';
+import type { Content, GithubSettings } from '../lib/schema';
 import { useLanguage } from './language';
 import { TechnologyChips, TechLogo } from './tech-logo';
 
@@ -11,15 +12,25 @@ type Tab = 'overview' | 'repositories' | 'activity';
 export function GithubProfile({
   initial,
   owner,
+  settings: initialSettings,
+  configure,
 }: {
   initial: GithubSkills;
   owner: Content['profile'];
+  settings: GithubSettings;
+  configure?: ReactNode;
 }) {
   const { t, language } = useLanguage();
+  const [settings, setSettings] = useState(initialSettings);
   const [stats, setStats] = useState(initial),
     [activity, setActivity] = useState<GithubActivity | null>(null);
-  const [tab, setTab] = useState<Tab>('overview'),
+  const [tabValue, setTab] = useState<Tab>('overview'),
     [year, setYear] = useState(new Date().getUTCFullYear());
+  const tab =
+    (tabValue === 'repositories' && !settings.showRepositories) ||
+    (tabValue === 'activity' && !settings.showCommits && !settings.showEvents)
+      ? 'overview'
+      : tabValue;
   const [query, setQuery] = useState(''),
     [sort, setSort] = useState('updated'),
     [repoFilter, setRepoFilter] = useState('');
@@ -27,7 +38,7 @@ export function GithubProfile({
     [error, setError] = useState(false),
     [selectedDay, setSelectedDay] = useState<ContributionDay | null>(null);
   const request = useRef<AbortController | null>(null);
-  const pollSeconds = useRef(60);
+  const pollSeconds = useRef(settings.refreshMinutes * 60);
   const url = 'https://github.com/' + encodeURIComponent(stats.username);
   const refresh = useCallback(async () => {
     if (request.current) return;
@@ -41,11 +52,16 @@ export function GithubProfile({
         cache: 'no-store',
       });
       if (!response.ok) throw Error('Unavailable');
-      const next = (await response.json()) as { stats: GithubSkills; activity: GithubActivity };
+      const next = (await response.json()) as {
+        stats: GithubSkills;
+        activity: GithubActivity;
+        settings: GithubSettings;
+      };
       if (controller.signal.aborted) return;
       setStats(next.stats);
+      setSettings(next.settings);
       setActivity(next.activity);
-      pollSeconds.current = Math.max(60, next.activity.pollSeconds);
+      pollSeconds.current = Math.max(next.settings.refreshMinutes * 60, next.activity.pollSeconds);
       setError(false);
     } catch {
       if (request.current === controller) setError(true);
@@ -103,10 +119,7 @@ export function GithubProfile({
   );
   if (sort === 'stars') repos.sort((a, b) => b.stars - a.stars);
   if (sort === 'name') repos.sort((a, b) => a.name.localeCompare(b.name));
-  const popular = [...stats.repos]
-    .filter((repo) => !repo.fork)
-    .sort((a, b) => b.stars - a.stars || b.updatedAt.localeCompare(a.updatedAt))
-    .slice(0, 6);
+  const popular = featuredGithubRepos(stats, settings);
   const calendar = activity?.calendar?.year === year ? activity.calendar : null;
   const profile = stats.profile;
   const repoCards = (items: GithubSkills['repos']) => (
@@ -173,7 +186,11 @@ export function GithubProfile({
     <div className="gh-profile-layout">
       <aside className="gh-identity card pad">
         <div className="avatar gh-profile-avatar">
-          {owner.avatar ? <img src={owner.avatar} alt="" /> : owner.name.slice(0, 1)}
+          {profile?.avatarUrl || owner.avatar ? (
+            <img src={profile?.avatarUrl || owner.avatar} alt="" />
+          ) : (
+            owner.name.slice(0, 1)
+          )}
         </div>
         <h1>{profile?.name || owner.name}</h1>
         <a className="gh-username" href={url} target="_blank" rel="noopener noreferrer">
@@ -213,16 +230,18 @@ export function GithubProfile({
             </>
           )}
         </dl>
-        <div className="gh-stack">
-          <h2>{t('Công nghệ sử dụng', 'Technology stack')}</h2>
-          <TechnologyChips names={stats.languages.map((item) => item.name)} />
-          <p className="github-skills-note">
-            {t(
-              'Ngôn ngữ phát hiện trong mã nguồn công khai, không tính fork.',
-              'Languages detected in public source code, excluding forks.',
-            )}
-          </p>
-        </div>
+        {settings.showTechnologies && (
+          <div className="gh-stack">
+            <h2>{t('Công nghệ sử dụng', 'Technology stack')}</h2>
+            <TechnologyChips names={stats.languages.map((item) => item.name)} />
+            <p className="github-skills-note">
+              {t(
+                'Ngôn ngữ phát hiện trong mã nguồn công khai, không tính fork.',
+                'Languages detected in public source code, excluding forks.',
+              )}
+            </p>
+          </div>
+        )}
         <Link href="/" className="side-link">
           {t('← Về hồ sơ cá nhân', '← Back to profile')}
         </Link>
@@ -230,16 +249,17 @@ export function GithubProfile({
       <div className="gh-main">
         <section className="card pad gh-page-heading">
           <div>
-            <span className="gh-eyebrow">GITHUB PROFILE</span>
-            <h2>{t('Mã nguồn & hành trình xây dựng', 'Code & building journey')}</h2>
-            <p className="muted">
-              {t(
-                'Kho mã, đóng góp và những cập nhật mới nhất.',
-                'Repositories, contributions and recent updates.',
-              )}
-            </p>
+            <span className="gh-eyebrow">@{stats.username} / GitHub</span>
+            <h2>{settings.title}</h2>
+            <p className="muted">{settings.description}</p>
+            <span className="gh-sync-cadence">
+              {t('Tự cập nhật mỗi ', 'Auto refresh every ')}
+              {settings.refreshMinutes}
+              {t(' phút khi đang mở trang', ' minutes while this page is visible')}
+            </span>
           </div>
           <div className="gh-refresh">
+            {configure}
             <button className="btn neutral" disabled={checking} onClick={() => void refresh()}>
               {checking ? t('Đang kiểm tra…', 'Checking…') : t('Làm mới', 'Refresh')}
             </button>
@@ -256,7 +276,13 @@ export function GithubProfile({
           </div>
         </section>
         <nav className="gh-tabs" aria-label={t('Nội dung GitHub', 'GitHub content')}>
-          {(['overview', 'repositories', 'activity'] as Tab[]).map((value) => (
+          {(
+            [
+              'overview',
+              ...(settings.showRepositories ? ['repositories'] : []),
+              ...(settings.showCommits || settings.showEvents ? ['activity'] : []),
+            ] as Tab[]
+          ).map((value) => (
             <button
               key={value}
               className={tab === value ? 'active' : ''}
@@ -281,107 +307,120 @@ export function GithubProfile({
         )}
         {tab === 'overview' && (
           <>
-            <div className="gh-stats">
-              <div className="card pad">
-                <strong>{number(stats.repos.length)}</strong>
-                <span>{t('Kho mã công khai', 'Public repositories')}</span>
+            {settings.showStatistics && (
+              <div className="gh-stats">
+                <div className="card pad">
+                  <strong>{number(stats.repos.length)}</strong>
+                  <span>{t('Kho mã hiển thị', 'Displayed repositories')}</span>
+                </div>
+                <div className="card pad">
+                  <strong>{number(stats.repos.reduce((sum, repo) => sum + repo.stars, 0))}</strong>
+                  <span>{t('Stars của kho mã hiển thị', 'Displayed repository stars')}</span>
+                </div>
+                <div className="card pad">
+                  <strong>{stats.languages.length}</strong>
+                  <span>{t('Ngôn ngữ mã nguồn', 'Code languages')}</span>
+                </div>
               </div>
-              <div className="card pad">
-                <strong>{number(stats.repos.reduce((sum, repo) => sum + repo.stars, 0))}</strong>
-                <span>{t('Stars đã nhận', 'Repository stars')}</span>
-              </div>
-              <div className="card pad">
-                <strong>{stats.languages.length}</strong>
-                <span>{t('Ngôn ngữ mã nguồn', 'Code languages')}</span>
-              </div>
-            </div>
-            <section className="card pad gh-calendar-card">
-              <div className="gh-section-heading">
-                <h2>{t('Lịch đóng góp', 'Contribution calendar')}</h2>
-                <label>
-                  {t('Năm', 'Year')}{' '}
-                  <select
-                    value={year}
-                    onChange={(event) => {
-                      setSelectedDay(null);
-                      setYear(Number(event.target.value));
-                    }}
-                  >
-                    {Array.from(
-                      { length: Math.min(6, new Date().getUTCFullYear() - 2022) },
-                      (_, index) => new Date().getUTCFullYear() - index,
-                    ).map((value) => (
-                      <option key={value}>{value}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              {calendar ? (
-                <>
-                  <p className="gh-calendar-total">
-                    <strong>{number(calendar.total)}</strong>{' '}
-                    {t('đóng góp trong năm ', 'contributions in ')}
-                    {year}
-                  </p>
-                  <ContributionCalendar
-                    days={calendar.days}
-                    year={year}
-                    language={language}
-                    onSelect={setSelectedDay}
-                  />
-                  <div className="gh-calendar-footer">
-                    <span role="status">
-                      {selectedDay
-                        ? selectedDay.date +
-                          ' · ' +
-                          number(selectedDay.count) +
-                          ' ' +
-                          t('đóng góp', 'contributions')
-                        : t(
-                            'Chọn một ngày để xem số đóng góp.',
-                            'Select a day to see contributions.',
-                          )}
-                    </span>
-                    <span className="gh-legend">
-                      {t('Ít', 'Less')}
-                      {[0, 1, 2, 3, 4].map((level) => (
-                        <i className={'gh-day level-' + level} key={level} />
+            )}
+            {settings.showCalendar && (
+              <section className="card pad gh-calendar-card">
+                <div className="gh-section-heading">
+                  <h2>{t('Lịch đóng góp', 'Contribution calendar')}</h2>
+                  <label>
+                    {t('Năm', 'Year')}{' '}
+                    <select
+                      value={year}
+                      onChange={(event) => {
+                        setSelectedDay(null);
+                        setYear(Number(event.target.value));
+                      }}
+                    >
+                      {Array.from(
+                        { length: Math.min(6, new Date().getUTCFullYear() - 2022) },
+                        (_, index) => new Date().getUTCFullYear() - index,
+                      ).map((value) => (
+                        <option key={value}>{value}</option>
                       ))}
-                      {t('Nhiều', 'More')}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <p className="muted">
-                  {checking
-                    ? t('Đang tải lịch đóng góp…', 'Loading contribution calendar…')
-                    : t(
-                        'Chưa lấy được lịch đóng góp từ GitHub.',
-                        'Could not load the contribution calendar from GitHub.',
-                      )}
+                    </select>
+                  </label>
+                </div>
+                {calendar ? (
+                  <>
+                    <p className="gh-calendar-total">
+                      <strong>{number(calendar.total)}</strong>{' '}
+                      {t('đóng góp trong năm ', 'contributions in ')}
+                      {year}
+                    </p>
+                    <ContributionCalendar
+                      days={calendar.days}
+                      year={year}
+                      language={language}
+                      onSelect={setSelectedDay}
+                    />
+                    <div className="gh-calendar-footer">
+                      <span role="status">
+                        {selectedDay
+                          ? selectedDay.date +
+                            ' · ' +
+                            number(selectedDay.count) +
+                            ' ' +
+                            t('đóng góp', 'contributions')
+                          : t(
+                              'Chọn một ngày để xem số đóng góp.',
+                              'Select a day to see contributions.',
+                            )}
+                      </span>
+                      <span className="gh-legend">
+                        {t('Ít', 'Less')}
+                        {[0, 1, 2, 3, 4].map((level) => (
+                          <i className={'gh-day level-' + level} key={level} />
+                        ))}
+                        {t('Nhiều', 'More')}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="muted">
+                    {checking
+                      ? t('Đang tải lịch đóng góp…', 'Loading contribution calendar…')
+                      : t(
+                          'Chưa lấy được lịch đóng góp từ GitHub.',
+                          'Could not load the contribution calendar from GitHub.',
+                        )}
+                  </p>
+                )}
+                <p className="github-skills-note">
+                  {t(
+                    'Nguồn: lịch công khai GitHub. Đóng góp bao gồm nhiều loại hoạt động, không chỉ commit.',
+                    'Source: GitHub public calendar. Contributions include multiple activities, not just commits.',
+                  )}{' '}
+                  {activity?.calendarStatus === 'stale' &&
+                    t('Đang hiển thị bản lưu cũ.', 'Showing a stale snapshot.')}
                 </p>
-              )}
-              <p className="github-skills-note">
-                {t(
-                  'Nguồn: lịch công khai GitHub. Đóng góp bao gồm nhiều loại hoạt động, không chỉ commit.',
-                  'Source: GitHub public calendar. Contributions include multiple activities, not just commits.',
-                )}{' '}
-                {activity?.calendarStatus === 'stale' &&
-                  t('Đang hiển thị bản lưu cũ.', 'Showing a stale snapshot.')}
-              </p>
-            </section>
-            <section className="card pad">
-              <div className="gh-section-heading">
-                <h2>{t('Kho mã nổi bật', 'Featured repositories')}</h2>
-                <button className="text-action" onClick={() => setTab('repositories')}>
-                  {t('Xem tất cả →', 'View all →')}
-                </button>
-              </div>
-              {repoCards(popular)}
-            </section>
+              </section>
+            )}
+            {settings.showFeatured && (
+              <section className="card pad">
+                <div className="gh-section-heading">
+                  <h2>{t('Kho mã nổi bật', 'Featured repositories')}</h2>
+                  {settings.showRepositories && (
+                    <button className="text-action" onClick={() => setTab('repositories')}>
+                      {t('Xem tất cả →', 'View all →')}
+                    </button>
+                  )}
+                </div>
+                {repoCards(popular)}
+                {!popular.length && (
+                  <p className="muted">
+                    {t('Chưa có kho mã nổi bật.', 'No featured repositories yet.')}
+                  </p>
+                )}
+              </section>
+            )}
           </>
         )}
-        {tab === 'repositories' && (
+        {settings.showRepositories && tab === 'repositories' && (
           <section className="card pad">
             <div className="gh-repo-filters">
               <label>
@@ -413,7 +452,7 @@ export function GithubProfile({
             )}
           </section>
         )}
-        {(tab === 'overview' || tab === 'activity') && (
+        {settings.showCommits && (tab === 'overview' || tab === 'activity') && (
           <section className="card pad gh-history">
             <div className="gh-section-heading">
               <h2>{t('Commit gần đây', 'Recent commits')}</h2>
@@ -487,7 +526,7 @@ export function GithubProfile({
             )}
           </section>
         )}
-        {tab === 'activity' && (
+        {settings.showEvents && tab === 'activity' && (
           <section className="card pad">
             <h2>{t('Hoạt động công khai', 'Public activity')}</h2>
             <p className="github-skills-note">

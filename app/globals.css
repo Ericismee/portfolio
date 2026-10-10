@@ -1212,3 +1212,195 @@ button.gh-day:hover {
     font-size: 17px;
   }
 }
+
+/* GitHub identity and owner-only curation controls. */
+.github-account {
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--card, #fff);
+}
+.github-account-symbol {
+  width: 52px;
+  height: 52px;
+  flex-basis: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.github-account-symbol img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.github-account strong {
+  font-size: 17px;
+  line-height: 1.35;
+}
+.github-account small {
+  font-size: 13px;
+}
+.github-account-bio {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.gh-page-heading > div:first-child {
+  min-width: 0;
+}
+.gh-page-heading h2 {
+  overflow-wrap: anywhere;
+}
+.gh-sync-cadence {
+  display: block;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.github-settings-form {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+}
+.github-settings-form fieldset {
+  margin: 0;
+  padding: 16px;
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  display: grid;
+  gap: 14px;
+}
+.github-settings-form legend {
+  font-size: 15px;
+  font-weight: 750;
+  padding: 0 6px;
+}
+.github-settings-form label:not(.github-check) {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.github-settings-form :is(input:not([type='checkbox']), select, textarea) {
+  width: 100%;
+  min-width: 0;
+}
+.github-settings-form p {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+}
+.github-setting-toggles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+.github-settings-form .github-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.github-settings-form input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  accent-color: var(--accent);
+  margin: 0;
+}
+.github-config-repos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 370px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.github-config-repos > li {
+  padding: 10px 0;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.github-config-repos > li > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.github-config-repos strong {
+  font-size: 14px;
+}
+.github-config-repos small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.github-repo-options {
+  display: flex;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.github-pinned-order ol {
+  padding: 0;
+  list-style: none;
+  margin: 8px 0 0;
+}
+.github-pinned-order li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+.github-pinned-order li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.github-pinned-order li > div {
+  display: flex;
+  flex-shrink: 0;
+}
+.github-pinned-order h3 {
+  font-size: 13px;
+  margin: 0;
+}
+.github-settings-form .form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+@media (max-width: 560px) {
+  .github-setting-toggles {
+    grid-template-columns: 1fr;
+  }
+  .github-config-repos > li {
+    align-items: start;
+    flex-direction: column;
+    gap: 0;
+  }
+  .github-settings-form fieldset {
+    padding: 12px;
+  }
+  .github-settings-form .form-actions > button {
+    width: 100%;
+  }
+}
+
+.github-settings-form .github-check {
+  flex-direction: row;
+  justify-content: flex-start;
+  text-align: left;
+}
+.gh-refresh .inline-edit-text {
+  white-space: nowrap;
+  font-size: 12px;
+}

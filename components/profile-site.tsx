@@ -489,7 +489,9 @@ function Site({
       </>,
       <>
         {card(t('Liên kết', 'Links'), links())}
-        <GithubSkillsCard stats={githubSkills} />
+        {data.github.showSidebar && (
+          <GithubSkillsCard stats={githubSkills} settings={data.github} avatar={profile.avatar} />
+        )}
         {card(
           t('Trong hồ sơ này', 'On this profile'),
           sections.map((s, i) => (
@@ -734,7 +736,21 @@ function Site({
     ) : page === 'search' ? (
       searchPage()
     ) : page === 'github' ? (
-      <GithubProfile initial={githubSkills} owner={profile} />
+      <GithubProfile
+        key={
+          JSON.stringify(data.github) +
+          githubSkills.username +
+          githubSkills.repos.map((repo) => repo.name).join(',')
+        }
+        initial={githubSkills}
+        owner={profile}
+        settings={data.github}
+        configure={editing.button(
+          t('Cấu hình GitHub', 'GitHub settings'),
+          editing.githubSettings,
+          true,
+        )}
+      />
     ) : (
       shell(
         card(

@@ -15,6 +15,7 @@ const repoSchema = z.object({
   topics: z.array(z.string()),
 });
 const profileSchema = z.object({
+  avatarUrl: z.string().default(''),
   name: z.string().nullable(),
   bio: z.string().nullable(),
   location: z.string().nullable(),
@@ -168,6 +169,11 @@ async function loadSkills(username: string): Promise<GithubSkills> {
         following: user.following,
         publicRepos: user.public_repos,
         createdAt: user.created_at,
+        avatarUrl:
+          typeof user.avatar_url === 'string' &&
+          /^https:\/\/avatars\.githubusercontent\.com\//.test(user.avatar_url)
+            ? user.avatar_url
+            : '',
       });
     } catch {
       result.partial = true;

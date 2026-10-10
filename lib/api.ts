@@ -1,3 +1,4 @@
+import { getGithubSkills } from './github-skills.ts';
 import { z, ZodError } from 'zod';
 import { getDatabase, HttpError, type Database } from './database.ts';
 import { authService, passwordHash, verifyPassword } from './auth.ts';
@@ -108,6 +109,17 @@ export function createApi(database: Database, production = false, origin?: strin
         if (pathname === '/api/admin/logout' && method === 'POST') {
           db.prepare('DELETE FROM sessions WHERE token_hash=?').run(session.token_hash);
           return send({ ok: true }, 200, { 'Set-Cookie': auth.cookie('', 0) });
+        }
+        if (pathname === '/api/admin/github' && method === 'GET') {
+          const username = z
+            .string()
+            .max(39)
+            .regex(/^[a-zA-Z0-9-]*$/)
+            .parse(
+              new URL(request.url).searchParams.get('username') ??
+                database.read().data.githubUsername,
+            );
+          return send(await getGithubSkills(username));
         }
         if (pathname === '/api/admin/content' && method === 'GET') return send(database.read());
         if (pathname === '/api/admin/content' && method === 'PUT') {

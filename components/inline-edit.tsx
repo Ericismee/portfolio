@@ -1,4 +1,5 @@
 'use client';
+import { GithubSettingsForm } from './github-settings';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -436,6 +437,26 @@ export function useInlineEdit(publicData: Content) {
         }),
     });
   }
+  function githubSettings() {
+    if (!state) return;
+    open({
+      title: t('Cấu hình GitHub', 'GitHub settings'),
+      renderBody: (onDirty) => (
+        <GithubSettingsForm
+          initial={state.data.github}
+          initialUsername={state.data.githubUsername}
+          onDirty={onDirty}
+          save={async (settings, username) => {
+            await save((d) => {
+              d.github = settings;
+              d.githubUsername = username;
+            });
+            setEditor(null);
+          }}
+        />
+      ),
+    });
+  }
   const button = (label: string, action: () => void, showLabel = false) =>
     state && (
       <button
@@ -471,11 +492,13 @@ export function useInlineEdit(publicData: Content) {
     section,
     sectionSettings,
     addSection,
+    githubSettings,
     item: editItem,
     settings: state && (
       <>
         <div className="settings-divider" />
         <button onClick={addSection}>{t('Các mục hồ sơ', 'Profile sections')}</button>
+        <button onClick={githubSettings}>{t('Cấu hình GitHub', 'GitHub settings')}</button>
         <button onClick={appearance}>{t('Giao diện hồ sơ', 'Profile appearance')}</button>
         <Link href="/admin">{t('Quản trị nâng cao', 'Advanced administration')}</Link>
         <button

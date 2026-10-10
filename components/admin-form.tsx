@@ -27,6 +27,7 @@ export type Editor = {
   fields?: Field[];
   values?: Values;
   body?: ReactNode;
+  renderBody?: (onDirty: (dirty: boolean) => void) => ReactNode;
   submit?: (values: Values) => Promise<void>;
   submitLabel?: string;
 };
@@ -331,6 +332,7 @@ export function EditorDialog({
           </div>
         )}
         {editor.body}
+        {editor.renderBody?.(setDirty)}
         {editor.submit && (
           <FieldsForm
             fields={editor.fields || []}

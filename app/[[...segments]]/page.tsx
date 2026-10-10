@@ -1,3 +1,4 @@
+import { visibleGithubStats } from '../../lib/github-display';
 import { notFound } from 'next/navigation';
 import { getDatabase } from '../../lib/database';
 import { publicContent } from '../../lib/schema';
@@ -38,7 +39,8 @@ export default async function PublicPage({
   )
     notFound();
   const query = await searchParams;
-  const content = publicContent(getDatabase().read().data);
+  const source = getDatabase().read().data;
+  const content = publicContent(source);
   if (
     segments[1] &&
     !(segments[0] === 'projects' ? content.projects : content.posts).some(
@@ -49,7 +51,10 @@ export default async function PublicPage({
   return (
     <ProfileSite
       content={content}
-      githubSkills={await getGithubSkills(content.githubUsername)}
+      githubSkills={visibleGithubStats(
+        await getGithubSkills(content.githubUsername),
+        source.github,
+      )}
       page={segments[0] || 'profile'}
       id={segments[1]}
       query={Object.fromEntries(

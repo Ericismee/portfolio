@@ -80,3 +80,17 @@ The older `QA.md` describes the historical mock. This document records the Next.
 
 - Final targeted checks at 390 and 1063 px also verified tab alignment and repository filtering across the commit/event histories. Calendar and timeline screenshots were captured at their actual content positions and visually reviewed.
 - Invalid and future calendar years returned HTTP 400; local Python/Jinja logo requests returned HTTP 200.
+
+
+## Administrator GitHub curation — 10 October 2026
+
+- Verified the actual administration form and inline dialog in an isolated database on port 3002; the owner's content on port 3001 was not modified.
+- Selected manual featured repositories (NotebookE and LingoraAI), moved LingoraAI first, hid horune, saved and reloaded. Confirmed that the stored selections and the public featured order persisted.
+- The public GitHub API returned 32 curated repositories, with no horune repository record or its owner-account commit/event records. Hidden selection names are omitted from the public settings projection. Existing portfolio projects are configured independently from GitHub repositories.
+- Checked section toggles for calendar, technologies, commits and events, changed the interval to 15 minutes and restored 60 minutes. The related sections/tab disappeared and returned correctly.
+- Checked the default one-hour interval in the form, rendered cadence and public configuration. **Did not wait an hour to verify an elapsed hourly poll in this pass.** The earlier 62-second poll test describes the previous default; it is not an hourly timing test.
+- Checked public-account lookup, preventing a save before loading a changed account, clearing previous selections for a new account, Reset, repository search, and loaded empty-account state. Checked the unsaved-close warning and Continue editing/Reset behavior.
+- Checked menu placement, administrator-only editing controls and their disappearance after logout. Guest access to the private lookup and unauthorized/CSRF-invalid configuration writes are covered by automated tests.
+- Browser viewport checks on the GitHub page, inline configuration dialog and home profile at 360, 390, 768, 1024, 1063 and 1440 px found no document or dialog horizontal overflow. Visually inspected desktop/mobile screenshots and fixed vertically stacked checkboxes. Local logos and GitHub avatars loaded without broken images in the final page checks; checked keyboard focus in the dialog. No console errors were reported on the inspected preview tab.
+- Fourteen automated tests passed, along with lint, strict types, formatting and the production build. New tests cover persistent settings, source filtering, case-insensitive names, fork exclusion, manual order/empty selection, disabled history and validated account lookup.
+- These are desktop browser viewport checks. No physical-device, screen-reader, private GitHub/OAuth, background-worker or production deployment verification is claimed. GitHub source data can be delayed or stale; the app retains the existing source-status labels.

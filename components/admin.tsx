@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { GithubSettingsForm } from './github-settings';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   projectSchema,
@@ -19,7 +20,15 @@ import { LanguageProvider, useLanguage } from './language';
 import { EditorDialog, FieldsForm, type Editor, type Field, type Values } from './admin-form';
 
 type Tab =
-  'profile' | 'projects' | 'posts' | 'sections' | 'skills' | 'settings' | 'inbox' | 'trash';
+  | 'profile'
+  | 'projects'
+  | 'posts'
+  | 'sections'
+  | 'skills'
+  | 'github'
+  | 'settings'
+  | 'inbox'
+  | 'trash';
 type Revision = { id: number; created_at: string };
 export function Admin() {
   return (
@@ -97,6 +106,7 @@ function AdminDashboard() {
     posts: t('Bài viết', 'Posts'),
     sections: t('Các mục hồ sơ', 'Profile sections'),
     skills: t('Kỹ năng', 'Skills'),
+    github: 'GitHub',
     settings: t('Giao diện & dữ liệu', 'Appearance & data'),
     inbox: t('Hộp thư', 'Inbox'),
     trash: t('Thùng rác', 'Trash'),
@@ -526,6 +536,21 @@ function AdminDashboard() {
   let body: ReactNode = null;
   if (state) {
     const d = state.data;
+    if (tab === 'github')
+      body = (
+        <GithubSettingsForm
+          key={'github:' + state.version}
+          initial={d.github}
+          initialUsername={d.githubUsername}
+          onDirty={setDirty}
+          save={(settings, username) =>
+            mutate((next) => {
+              next.github = settings;
+              next.githubUsername = username;
+            })
+          }
+        />
+      );
     if (tab === 'profile') {
       const fields: Field[] = [
         field('name', t('Tên hiển thị', 'Display name'), 'text', true),

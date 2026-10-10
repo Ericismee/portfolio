@@ -274,3 +274,41 @@ test('Uploads validate signatures and imports preserve embedded assets', async (
     await f.cleanup();
   }
 });
+
+test('GitHub configuration requires admin authorization and survives saving and database reload', async () => {
+  const f = await fixture();
+  try {
+    assert.equal((await f.call('/api/admin/github')).response.status, 401);
+    await f.login();
+    assert.equal((await f.call('/api/admin/github?username=../invalid')).response.status, 400);
+    const emptyAccount = await f.call('/api/admin/github?username=');
+    assert.equal(emptyAccount.response.status, 200);
+    assert.equal(emptyAccount.data.status, 'empty');
+    const state = (await f.call('/api/admin/content')).data as ContentState;
+    assert.equal(state.data.github.refreshMinutes, 60);
+    state.data.github.hiddenRepos = ['horune'];
+    state.data.github.featuredMode = 'selected';
+    state.data.github.featuredRepos = ['LingoraAI', 'horune'];
+    state.data.github.showCalendar = false;
+    state.data.github.title = 'Dự án đang xây dựng';
+    assert.equal(
+      (await f.call('/api/admin/content', 'PUT', state, { 'x-csrf-token': 'wrong' })).response
+        .status,
+      403,
+    );
+    assert.equal((await f.call('/api/admin/content', 'PUT', state)).response.status, 200);
+    const next = openDatabase(f.directory);
+    try {
+      assert.deepEqual(next.read().data.github, state.data.github);
+    } finally {
+      next.db.close();
+    }
+    const publicState = (await f.call('/api/content')).data.data;
+    assert.deepEqual(publicState.github.hiddenRepos, []);
+    assert.deepEqual(publicState.github.featuredRepos, ['LingoraAI']);
+    assert.equal(publicState.github.showCalendar, false);
+    assert.equal(publicState.github.title, 'Dự án đang xây dựng');
+  } finally {
+    await f.cleanup();
+  }
+});

@@ -89,6 +89,33 @@ export const trashSchema = z.discriminatedUnion('kind', [
     value: itemSchema,
   }),
 ]);
+const repoNames = z.array(z.string().regex(/^[a-zA-Z0-9_.-]{1,100}$/)).max(1000);
+export const githubSettingsSchema = z.object({
+  title: z.string().trim().min(1).max(120).default('Không gian mã nguồn'),
+  description: text(300).default('Những dự án đang xây dựng và đóng góp trên GitHub.'),
+  refreshMinutes: z.union([z.literal(5), z.literal(15), z.literal(30), z.literal(60)]).default(60),
+  showSidebar: z.boolean().default(true),
+  showStatistics: z.boolean().default(true),
+  showTechnologies: z.boolean().default(true),
+  showCalendar: z.boolean().default(true),
+  showFeatured: z.boolean().default(true),
+  showRepositories: z.boolean().default(true),
+  showCommits: z.boolean().default(true),
+  showEvents: z.boolean().default(true),
+  includeForks: z.boolean().default(true),
+  hiddenRepos: repoNames.default([]),
+  featuredMode: z.enum(['auto', 'selected']).default('auto'),
+  featuredRepos: repoNames.max(12).default([]),
+});
+export type GithubSettings = z.infer<typeof githubSettingsSchema>;
+export function publicGithubSettings(settings: GithubSettings): GithubSettings {
+  const hidden = new Set(settings.hiddenRepos.map((name) => name.toLowerCase()));
+  return {
+    ...settings,
+    hiddenRepos: [],
+    featuredRepos: settings.featuredRepos.filter((name) => !hidden.has(name.toLowerCase())),
+  };
+}
 export const contentSchema = z
   .object({
     profile: z.object({
@@ -126,6 +153,7 @@ export const contentSchema = z
         }
       })
       .default({}),
+    github: githubSettingsSchema.prefault({}),
     githubUsername: z
       .string()
       .max(39)
@@ -163,6 +191,7 @@ export type InboxMessage = {
 export function publicContent(content: Content, now = Date.now()): Content {
   const d = structuredClone(content);
   d.trash = [];
+  d.github = publicGithubSettings(d.github);
   const published = (e: {
     visible: boolean;
     visibility: string;
