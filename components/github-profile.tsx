@@ -559,12 +559,6 @@ export function GithubProfile({
             )}
           </section>
         )}
-        <p className="github-skills-note gh-update-note">
-          {t(
-            'Tự cập nhật định kỳ khi trang đang mở. Sự kiện tuân theo nhịp cập nhật của GitHub; commit lưu đệm 5 phút, lịch đóng góp 15 phút. GitHub có thể trả dữ liệu trễ.',
-            'Updates periodically while visible. Events follow GitHub’s polling interval; commits cache for 5 minutes and contributions for 15 minutes. GitHub data may be delayed.',
-          )}
-        </p>
       </div>
     </div>
   );

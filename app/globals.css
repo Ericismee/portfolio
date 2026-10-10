@@ -1171,10 +1171,6 @@ button.gh-day:hover {
   background: var(--bg);
   border-radius: 50%;
 }
-.gh-update-note {
-  padding: 0 4px;
-  margin: 0;
-}
 @media (max-width: 1000px) {
   .gh-profile-layout {
     grid-template-columns: 220px minmax(0, 1fr);
