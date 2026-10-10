@@ -209,8 +209,14 @@ export function EditorDialog({
   const { t } = useLanguage(),
     ref = useRef<HTMLDialogElement>(null),
     [dirty, setDirty] = useState(false),
+    [discarding, setDiscarding] = useState(false),
     lastFocus = useRef<HTMLElement | null>(null);
   useEffect(() => {
+    const dialog = ref.current;
+    // Cancel the native close synchronously. A React state update alone cannot
+    // prevent every browser from closing its dialog after an Escape key release.
+    const preventNativeClose = (event: Event) => event.preventDefault();
+    dialog?.addEventListener('cancel', preventNativeClose);
     lastFocus.current = document.activeElement as HTMLElement;
     ref.current?.showModal();
     const firstField = ref.current?.querySelector<HTMLElement>(
@@ -218,17 +224,28 @@ export function EditorDialog({
     );
     (firstField || ref.current?.querySelector<HTMLElement>('button'))?.focus();
     return () => {
+      dialog?.removeEventListener('cancel', preventNativeClose);
       lastFocus.current?.focus();
     };
   }, []);
+  useEffect(() => {
+    if (discarding) ref.current?.querySelector<HTMLButtonElement>('[role=alert] button')?.focus();
+  }, [discarding]);
   const requestClose = () => {
-    if (!dirty || confirm(t('Bỏ các thay đổi chưa lưu?', 'Discard unsaved changes?'))) close();
+    if (dirty) setDiscarding(true);
+    else close();
   };
   return (
     <dialog
       ref={ref}
       aria-labelledby="editor-title"
       onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          requestClose();
+          return;
+        }
         if (event.key !== 'Tab') return;
         // Keep keyboard focus within the editor, including browsers that move
         // focus to their address bar at the end of a native dialog's tab order.
@@ -264,6 +281,34 @@ export function EditorDialog({
         </button>
       </div>
       <div className="editor-fields">
+        {discarding && (
+          <div className="admin-intro" role="alert">
+            <strong>{t('Bạn có thay đổi chưa lưu.', 'You have unsaved changes.')}</strong>
+            <p>
+              {t(
+                'Tiếp tục chỉnh sửa hoặc bỏ thay đổi để đóng biểu mẫu.',
+                'Continue editing, or discard your changes to close the form.',
+              )}
+            </p>
+            <div className="actions">
+              <button
+                className="btn neutral"
+                type="button"
+                onClick={() => {
+                  setDiscarding(false);
+                  ref.current
+                    ?.querySelector<HTMLElement>('input:not([type=file]),textarea,select')
+                    ?.focus();
+                }}
+              >
+                {t('Tiếp tục chỉnh sửa', 'Continue editing')}
+              </button>
+              <button className="btn danger" type="button" onClick={close}>
+                {t('Bỏ thay đổi', 'Discard changes')}
+              </button>
+            </div>
+          </div>
+        )}
         {editor.body}
         {editor.submit && (
           <FieldsForm
