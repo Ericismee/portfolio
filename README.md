@@ -20,7 +20,7 @@ A personal profile and publishing website built with **Next.js, React, strict Ty
 - Vietnamese and English interface, light/dark themes, readable accent colors, density and standard/wide layout settings.
 - Explicit import of the previous browser mock or a JSON export, including embedded image/PDF migration.
 
-GitHub links open the actual GitHub account and repositories. The site does not pretend to synchronize contributions or commits. Owner-authored descriptions and custom titles remain in their original language when switching the interface language.
+GitHub links open the actual GitHub account and repositories. The profile sidebar also displays up to five languages from the public GitHub API. The site does not pretend to synchronize contributions or commits. Owner-authored descriptions and custom titles remain in their original language when switching the interface language.
 
 ## Screenshots
 
@@ -55,7 +55,7 @@ The administrator command asks for a password of 12–256 characters. Terminal i
 
 Open [the website](http://localhost:3001) and [administration](http://localhost:3001/admin). The database is initialized automatically on first use; existing content is never replaced by startup seeds. The supplied sample posts start as drafts.
 
-After signing in, return to the profile to edit in place. Small pencil buttons edit the adjacent section; camera buttons edit the avatar and cover. The profile's **… → Profile sections** menu lets the administrator fill empty sections, edit hidden sections or add custom sections, without displaying placeholder cards to visitors. Section settings change the title, visibility and order. Changes save to the same database as the dashboard. Visitors see only published content and no editing controls or administration links. Sign out from the **…** menu to return to visitor mode.
+After signing in, return to the profile to edit in place. Small pencil buttons edit the adjacent section; camera buttons edit the avatar and cover. The navbar's **… → Settings → Profile sections** menu lets the administrator fill empty sections, edit hidden sections or add custom sections, without displaying placeholder cards to visitors. Section settings change the title, visibility and order. Changes save to the same database as the dashboard. Visitors see only published content and no editing controls or administration links. Appearance settings and sign out are also in the navbar **…** menu. Sign out there to return to visitor mode.
 
 Image uploads include a framing preview: drag with a mouse or touch, use arrow keys to reposition (Shift for larger steps), and use the zoom slider. Avatar previews include a circular guide; covers use a 4:1 frame. Choose **Use this framing**, then **Save** to publish. Until framing is applied or cancelled, saving the form is disabled. Cancel keeps the saved image. Applied crops are exported as JPEG (800×800 avatars; 1600×400 covers); GIF uploads become still images. Reframing an existing image uses the saved crop, so choose the original file again to recover areas outside that crop.
 
@@ -145,3 +145,11 @@ src/          Retained design assets, fonts and legacy mock reference modules
 The active application code is in `app`, `components` and `lib`. The earlier buildless prototype and Node server remain for reference; `npm` application scripts run Next.js. See [ARCHITECTURE.md](ARCHITECTURE.md) for responsibilities, formatting rules, comments and migration requirements.
 
 Public project summaries are based on the owner-provided GitHub repositories. [CONTENT-SOURCES.md](CONTENT-SOURCES.md) records sources and limits; personal roles or measured outcomes have not been invented.
+
+## GitHub technology sidebar
+
+The sidebar ranks languages by summed source-code bytes returned by GitHub’s [repository languages endpoint](https://docs.github.com/en/rest/repos/repos#list-repository-languages). Percentages use all detected languages as the denominator, so the five displayed values may not total 100%. This is code distribution, not a proficiency score or a framework detector.
+
+The server considers up to 30 recently updated, non-empty public repositories owned by the configured account, excluding forks, from the first 100 results. It makes at most four concurrent requests under an eight-second deadline. Truncated or incomplete results are labelled. Unavailable and empty states show an explanation instead of invented skills.
+
+Successful responses are cached in memory and under `DATA_DIR/github-cache`; disk entries expire after one hour, and unavailable results after five minutes. No GitHub token is required. Interface language, administrator section management, appearance settings and sign out are grouped in the navbar’s three-dot Settings menu. Administrator actions require an authenticated session.

@@ -5,7 +5,7 @@
 - Prettier check passed for the active Next.js/TypeScript application.
 - ESLint passed with the TypeScript recommended rules and React Hooks rules.
 - Strict TypeScript `tsc --noEmit` passed.
-- Five Node tests passed: authentication/CSRF/logout; publishing/scheduling/reorder/conflicts/revisions/persistence; custom sections/input validation/contact inbox; uploads and embedded-asset import; crop geometry with source bounds and aspect-ratio checks.
+- Seven Node tests passed: authentication/CSRF/logout; publishing/scheduling/reorder/conflicts/revisions/persistence; custom sections/input validation/contact inbox; uploads and embedded-asset import; crop geometry with source bounds and aspect-ratio checks; GitHub language aggregation/ranking; unavailable GitHub responses with cache reuse.
 - `next build` completed with the public pages, private admin entry, API Route Handlers and protected upload handler.
 - `npm audit` reported no known dependency vulnerabilities after removing an affected optional lint dependency chain.
 
@@ -46,7 +46,15 @@ Issues found and fixed during browser verification: the mobile admin navigation'
 - These are desktop Chrome viewport checks, not tests on physical phones or with a screen reader.
 - No external production URL exists yet; hosting, domain/HTTPS and a persistent production disk have not been configured.
 - Docker configuration is supplied. Docker execution was unavailable because the Docker Desktop Linux engine was not running.
-- No email delivery, GitHub synchronization, OAuth, multi-region database or background notification service is claimed.
+- No email delivery, contribution/commit synchronization, OAuth, multi-region database or background notification service is claimed.
 - Current language switching translates interface labels, not owner-authored content.
 
 The older `QA.md` describes the historical mock. This document records the Next.js application's validation.
+
+## Browser comment fixes verified
+
+- Moved profile section management and appearance into the navbar Settings menu, replacing the clipped menu inside the profile card. Language switching is also in Settings.
+- Checked administrator Settings bounds, square avatar bounds and centered image placement at 360, 390, 768, 1024 and 1440 px. Saved appearance through the new menu.
+- Rechecked the owner’s original portrait avatar and the public Settings menu at 1063×704 and 390×704; captured and visually reviewed screenshots. The portrait is centered with cover fitting; both the main and navigation avatars retain their frames.
+- Confirmed the sidebar shows GitHub technologies instead of language configuration. The main preview returned HTTP 200 and a complete cached response from 20 non-empty public repositories: Python, TypeScript, Java, C# and HTML. No private repository access or manually fabricated proficiency values are used.
+- Re-ran the browser workflow including inline edits, image framing, public pages at five widths, language switching, keyboard dialogs and logout authorization checks; all passed with no uncaught exceptions.
