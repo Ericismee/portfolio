@@ -5,7 +5,9 @@ import { useLanguage } from './language';
 import { Icon } from './icon';
 
 type Source = { image: HTMLImageElement; url: string; owned: boolean };
-const centered: CropPosition = { x: 0.5, y: 0.5, zoom: 1 };
+// Already cropped uploads can exactly fit the frame. A small initial zoom gives
+// repositioning room on both axes without permitting blank edges.
+const centered: CropPosition = { x: 0.5, y: 0.5, zoom: 1.1 };
 
 export function ImageFramePicker({
   name,
@@ -206,8 +208,8 @@ export function ImageFramePicker({
         <div className="frame-workspace">
           <p id={'frame-help-' + name} className="admin-help">
             {t(
-              'Kéo ảnh để chọn vị trí. Dùng thanh trượt để phóng to; phím mũi tên để dịch chuyển.',
-              'Drag to position. Use the slider to zoom; arrow keys to move.',
+              'Kéo ảnh trong lưới để căn vị trí. Phóng to để có thêm khoảng kéo; dùng phím mũi tên để chỉnh chính xác.',
+              'Drag within the grid to position. Zoom in for more room; use arrow keys for precise adjustments.',
             )}
           </p>
           <div
@@ -230,6 +232,9 @@ export function ImageFramePicker({
               drag.current = null;
             }}
             onPointerCancel={() => {
+              drag.current = null;
+            }}
+            onLostPointerCapture={() => {
               drag.current = null;
             }}
             onKeyDown={(event) => {
@@ -263,6 +268,7 @@ export function ImageFramePicker({
                 top: -rectangle.y * scale,
               }}
             />
+            <div className="crop-grid-guide" aria-hidden="true" />
             {avatar && <div className="crop-circle-guide" aria-hidden="true" />}
           </div>
           <label className="crop-zoom">

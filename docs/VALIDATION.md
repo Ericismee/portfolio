@@ -124,3 +124,11 @@ Production build passed. In the running preview on port 3001, checked 360, 390, 
 - Configured the ignored local .env with PUBLIC_ORIGIN=http://localhost:3001. The startup script now stops with an actionable configuration message if the trusted origin is absent; origin checks, CSRF and secure production cookies remain intact.
 - Submitted the existing filled login form in the actual port-3001 browser: login succeeded and the administration editor opened. Reloaded the GitHub page and verified its updated heading and description.
 - Lint, TypeScript, all 15 tests and the production build passed. Added regression coverage for missing origin, rejection of a different origin and successful configured-origin production login with a Secure session cookie.
+
+## Image framing grid and taller cover — 10 October 2026
+
+- Added a non-interactive 3×3 framing grid. Initial/reset zoom is 1.1× so an already cropped image has repositioning room along both axes; no blank edges are allowed. Added lost-pointer-capture cleanup and clearer zoom guidance.
+- Increased the photo cover to 216 px on desktop/tablet and 152 px on mobile, retaining its fade and avatar overlap.
+- In the actual port-3001 editor, dragged the existing cover by 20 px horizontally and 5 px vertically. Preview offsets changed from (-26, -6.5) to (-6, -1.5), confirming pointer movement. ArrowRight changed the offset again; Reset restored initial offsets. Visually reviewed the grid. Canceled without applying/uploading or saving the test crop.
+- Checked the open framing editor at 360, 390, 768, 1024 and 1440 px: no document horizontal overflow; frame stayed within the viewport and cover heights were as expected. Physical touch-device behavior and crop export were not retested in this pass.
+- Lint, TypeScript, all 15 existing tests and production build passed.

@@ -207,6 +207,35 @@
   border: 2px solid #fff;
   pointer-events: none;
 }
+.crop-grid-guide {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 1px solid rgb(255 255 255 / 85%);
+  background-image:
+    linear-gradient(
+      to right,
+      transparent calc(100% / 3 - 0.5px),
+      #fff9 calc(100% / 3 - 0.5px),
+      #fff9 calc(100% / 3 + 0.5px),
+      transparent calc(100% / 3 + 0.5px),
+      transparent calc(200% / 3 - 0.5px),
+      #fff9 calc(200% / 3 - 0.5px),
+      #fff9 calc(200% / 3 + 0.5px),
+      transparent calc(200% / 3 + 0.5px)
+    ),
+    linear-gradient(
+      to bottom,
+      transparent calc(100% / 3 - 0.5px),
+      #fff9 calc(100% / 3 - 0.5px),
+      #fff9 calc(100% / 3 + 0.5px),
+      transparent calc(100% / 3 + 0.5px),
+      transparent calc(200% / 3 - 0.5px),
+      #fff9 calc(200% / 3 - 0.5px),
+      #fff9 calc(200% / 3 + 0.5px),
+      transparent calc(200% / 3 + 0.5px)
+    );
+}
 .content-editor .crop-zoom {
   display: flex;
   flex-direction: row;
@@ -1407,7 +1436,7 @@ button.gh-day:hover {
 
 /* Blend only the cover into the card; keep the avatar and edit controls crisp. */
 .profile-intro .cover:has(> img) {
-  height: 184px;
+  height: 216px;
   background: var(--card);
   border-bottom: 0;
 }
@@ -1505,6 +1534,6 @@ button.gh-day:hover {
 
 @media (max-width: 600px) {
   .profile-intro .cover:has(> img) {
-    height: 128px;
+    height: 152px;
   }
 }
