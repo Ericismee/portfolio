@@ -1520,7 +1520,7 @@ button.gh-day:hover {
 
 /* Blend only the cover into the card; keep the avatar and edit controls crisp. */
 .profile-intro .cover:has(> img) {
-  height: 264px;
+  height: 304px;
   background: var(--card);
   border-bottom: 0;
 }
@@ -1532,18 +1532,18 @@ button.gh-day:hover {
   object-position: center top;
   -webkit-mask-image: linear-gradient(
     to bottom,
-    #000 28%,
-    rgb(0 0 0 / 92%) 40%,
-    rgb(0 0 0 / 55%) 62%,
-    rgb(0 0 0 / 12%) 84%,
+    #000 38%,
+    rgb(0 0 0 / 92%) 50%,
+    rgb(0 0 0 / 55%) 72%,
+    rgb(0 0 0 / 12%) 90%,
     transparent 100%
   );
   mask-image: linear-gradient(
     to bottom,
-    #000 28%,
-    rgb(0 0 0 / 92%) 40%,
-    rgb(0 0 0 / 55%) 62%,
-    rgb(0 0 0 / 12%) 84%,
+    #000 38%,
+    rgb(0 0 0 / 92%) 50%,
+    rgb(0 0 0 / 55%) 72%,
+    rgb(0 0 0 / 12%) 90%,
     transparent 100%
   );
 }
