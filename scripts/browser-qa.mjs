@@ -292,7 +292,8 @@ try {
   });
   await go('/');
   await snapshot('profile-desktop.png');
-  await clickText('.sidebar button', 'English');
+  await evaluate(`document.querySelector('[aria-controls="site-menu"]').click()`);
+  await clickText('.site-menu button', 'English');
   await check(
     'English profile navigation',
     `document.documentElement.lang==='en'&&document.querySelector('header nav').innerText.includes('Projects')`,
@@ -376,7 +377,7 @@ try {
   // Inline editing uses the same authenticated API, from the actual profile.
   await go('/');
   await evaluate(`localStorage.setItem('profile-language','vi');location.reload()`);
-  await waitFor(`!!document.querySelector('.inline-admin-menu')`);
+  await waitFor(`!!document.querySelector('.editable-avatar button')`);
   await clickText('.profile-body > .actions button', 'Chỉnh sửa hồ sơ');
   await fill('dialog [name=headline]', 'Inline QA engineer');
   await evaluate(`document.querySelector('dialog form').requestSubmit()`);
@@ -384,7 +385,7 @@ try {
     `!document.querySelector('dialog')&&document.querySelector('.headline').textContent==='Inline QA engineer'`,
   );
   await go('/');
-  await waitFor(`!!document.querySelector('.inline-admin-menu')`);
+  await waitFor(`!!document.querySelector('.editable-avatar button')`);
   await check(
     'Inline profile save survives reload',
     `document.querySelector('.headline').textContent==='Inline QA engineer'`,
@@ -404,8 +405,8 @@ try {
     'Skills saved through inline dialog',
     `fetch('/api/content').then(r=>r.json()).then(r=>r.data.skills.join(',')==='TypeScript,Next.js,Accessibility')`,
   );
-  await evaluate(`document.querySelector('.inline-admin-menu summary').click()`);
-  await clickText('.inline-admin-options button', 'Các mục hồ sơ');
+  await evaluate(`document.querySelector('[aria-controls="site-menu"]').click()`);
+  await clickText('.site-menu button', 'Các mục hồ sơ');
   await check(
     'Empty sections remain editable in profile options',
     `!!document.querySelector('dialog [aria-label="Sửa Kinh nghiệm"]')`,
@@ -413,8 +414,8 @@ try {
   await fill('dialog [name=title]', 'Inline notes');
   await evaluate(`document.querySelector('dialog form').requestSubmit()`);
   await waitFor(`!document.querySelector('dialog')`);
-  await evaluate(`document.querySelector('.inline-admin-menu summary').click()`);
-  await clickText('.inline-admin-options button', 'Các mục hồ sơ');
+  await evaluate(`document.querySelector('[aria-controls="site-menu"]').click()`);
+  await clickText('.site-menu button', 'Các mục hồ sơ');
   await evaluate(`document.querySelector('dialog [aria-label="Sửa Inline notes"]').click()`);
   await clickText('dialog button', 'Thêm nội dung');
   await fill('dialog [name=title]', 'Inline public entry');
@@ -565,7 +566,29 @@ try {
       'Inline admin profile no overflow at ' + width,
       `document.documentElement.scrollWidth<=innerWidth`,
     );
+    await check(
+      'Avatar images stay square and centered at ' + width,
+      `(()=>{const images=[...document.querySelectorAll('.avatar > img')].filter(img=>img.getClientRects().length>0);return images.every(img=>{const r=img.getBoundingClientRect(),p=img.parentElement.getBoundingClientRect();return Math.abs(r.width-r.height)<0.6&&Math.abs((r.x+r.width/2)-(p.x+p.width/2))<0.6&&Math.abs((r.y+r.height/2)-(p.y+p.height/2))<0.6&&getComputedStyle(img).objectFit==='cover'})})()`,
+    );
+    await evaluate(`document.querySelector('[aria-controls="site-menu"]').click()`);
+    await check(
+      'Settings menu fits viewport at ' + width,
+      `(()=>{const r=document.querySelector('.site-menu').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight&&!![...document.querySelectorAll('.site-menu button')].find(b=>b.textContent==='Các mục hồ sơ')&&!document.querySelector('.inline-admin-menu')})()`,
+    );
+    await call('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape' });
+    await call('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape' });
+    await waitFor(`!document.querySelector('.site-menu')`);
   }
+  await check(
+    'Sidebar shows GitHub technologies instead of language settings',
+    `!!document.querySelector('.github-skills-card')&&!document.querySelector('.sidebar').textContent.includes('Ngôn ngữ giao diện')`,
+  );
+  await evaluate(`document.querySelector('[aria-controls="site-menu"]').click()`);
+  await clickText('.site-menu button', 'Giao diện hồ sơ');
+  await fill('dialog [name=density]', 'compact');
+  await evaluate(`document.querySelector('dialog form').requestSubmit()`);
+  await waitFor(`!document.querySelector('dialog')&&document.body.classList.contains('compact')`);
+  console.log('PASS Appearance saved from navbar settings');
   await evaluate(`scrollTo(0,0)`);
   await pause(100);
   await snapshot('inline-admin-profile.png');
@@ -582,9 +605,9 @@ try {
   );
   await snapshot('inline-editor-mobile.png');
   await clickText('.editor-head button', '×');
-  await evaluate(`document.querySelector('.inline-admin-menu summary').click()`);
-  await clickText('.inline-admin-options button', 'Đăng xuất');
-  await waitFor(`!document.querySelector('.inline-admin-menu')`);
+  await evaluate(`document.querySelector('[aria-controls="site-menu"]').click()`);
+  await clickText('.site-menu button', 'Đăng xuất');
+  await waitFor(`!document.querySelector('.editable-avatar button')`);
   await check(
     'Guest cannot see editing controls or empty sections',
     `!document.querySelector('.inline-edit-button')&&![...document.querySelectorAll('.section-heading h2')].some(e=>e.textContent==='Kinh nghiệm')`,
@@ -596,7 +619,7 @@ try {
   await go('/');
   await check(
     'Inline public changes remain after logout',
-    `document.querySelector('.headline').textContent==='Inline QA engineer'&&!document.querySelector('.inline-admin-menu')`,
+    `document.querySelector('.headline').textContent==='Inline QA engineer'&&!document.querySelector('.editable-avatar button')`,
   );
   await check(
     'Guest can load published cropped images',

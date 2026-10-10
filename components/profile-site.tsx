@@ -7,9 +7,12 @@ import { applyTheme } from '../lib/theme';
 import { Icon } from './icon';
 import { LanguageProvider, useLanguage } from './language';
 import { useInlineEdit } from './inline-edit';
+import type { GithubSkills } from '../lib/github-skills';
+import { GithubSkillsCard } from './github-skills';
 
 export function ProfileSite(props: {
   content: Content;
+  githubSkills: GithubSkills;
   page: string;
   id?: string;
   query: Record<string, string>;
@@ -22,11 +25,13 @@ export function ProfileSite(props: {
 }
 function Site({
   content,
+  githubSkills,
   page,
   id,
   query,
 }: {
   content: Content;
+  githubSkills: GithubSkills;
   page: string;
   id?: string;
   query: Record<string, string>;
@@ -39,7 +44,8 @@ function Site({
     [toast, setToast] = useState(''),
     [filter, setFilter] = useState('all'),
     [expanded, setExpanded] = useState<Set<string>>(new Set()),
-    menuButton = useRef<HTMLButtonElement>(null);
+    menuButton = useRef<HTMLButtonElement>(null),
+    menuPanel = useRef<HTMLDivElement>(null);
   useEffect(() => {
     applyTheme(data.accent, data.theme);
     document.body.classList.toggle('compact', data.density === 'compact');
@@ -82,6 +88,19 @@ function Site({
     };
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);
+  }, [menu]);
+  useEffect(() => {
+    if (!menu) return;
+    menuPanel.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    const outside = (event: PointerEvent) => {
+      if (
+        !menuPanel.current?.contains(event.target as Node) &&
+        !menuButton.current?.contains(event.target as Node)
+      )
+        setMenu(false);
+    };
+    document.addEventListener('pointerdown', outside);
+    return () => document.removeEventListener('pointerdown', outside);
   }, [menu]);
   const profile = data.profile;
   const names: Record<string, string> = {
@@ -444,7 +463,6 @@ function Site({
                   {t('Chia sẻ', 'Share')}
                 </button>
               )}
-              {editing.toolbar}
             </div>
           </div>
         </section>
@@ -470,17 +488,7 @@ function Site({
       </>,
       <>
         {card(t('Liên kết', 'Links'), links())}
-        {card(
-          t('Ngôn ngữ giao diện', 'Interface language'),
-          <>
-            <button className="btn neutral" onClick={toggle}>
-              {language === 'vi' ? 'English' : 'Tiếng Việt'}
-            </button>
-            <p className="muted">
-              {t('Nội dung do chủ hồ sơ biên soạn.', 'Content is written by the profile owner.')}
-            </p>
-          </>,
-        )}
+        <GithubSkillsCard stats={githubSkills} />
         {card(
           t('Trong hồ sơ này', 'On this profile'),
           sections.map((s, i) => (
@@ -795,7 +803,8 @@ function Site({
           </nav>
           <button
             className="icon-btn"
-            aria-label={t('Tùy chọn', 'Options')}
+            aria-label={t('Cài đặt', 'Settings')}
+            title={t('Cài đặt', 'Settings')}
             aria-expanded={menu}
             aria-controls="site-menu"
             ref={menuButton}
@@ -804,8 +813,21 @@ function Site({
             <Icon name="more" />
           </button>
           {menu && (
-            <div className="site-menu" id="site-menu">
+            <div
+              className="site-menu"
+              id="site-menu"
+              ref={menuPanel}
+              onClick={(event) => {
+                if ((event.target as HTMLElement).closest('button,a')) setMenu(false);
+              }}
+            >
+              <strong className="settings-title">{t('Cài đặt', 'Settings')}</strong>
+              <span className="settings-label">
+                {t('Ngôn ngữ giao diện', 'Interface language')}
+              </span>
               <button onClick={toggle}>{language === 'vi' ? 'English' : 'Tiếng Việt'}</button>
+              {editing.settings}
+              <div className="settings-divider" />
               <Link href="/github">GitHub ↗</Link>
               <button onClick={() => window.print()}>{t('In hồ sơ', 'Print profile')}</button>
             </div>

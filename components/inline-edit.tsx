@@ -393,6 +393,49 @@ export function useInlineEdit(publicData: Content) {
         }),
     });
   }
+  function appearance() {
+    if (!state) return;
+    open({
+      title: t('Giao diện hồ sơ', 'Profile appearance'),
+      fields: [
+        {
+          ...field('theme', t('Giao diện', 'Theme'), 'select'),
+          options: [
+            ['light', t('Sáng', 'Light')],
+            ['dark', t('Tối', 'Dark')],
+          ],
+        },
+        field('accent', t('Màu nhấn', 'Accent color'), 'color'),
+        {
+          ...field('density', t('Khoảng cách', 'Spacing'), 'select'),
+          options: [
+            ['comfortable', t('Thoáng', 'Comfortable')],
+            ['compact', t('Gọn', 'Compact')],
+          ],
+        },
+        {
+          ...field('layout', t('Bố cục', 'Layout'), 'select'),
+          options: [
+            ['standard', t('Tiêu chuẩn', 'Standard')],
+            ['wide', t('Rộng', 'Wide')],
+          ],
+        },
+      ],
+      values: {
+        theme: state.data.theme,
+        accent: state.data.accent,
+        density: state.data.density,
+        layout: state.data.layout,
+      },
+      submit: (v) =>
+        save((d) => {
+          d.theme = v.theme as Content['theme'];
+          d.accent = String(v.accent);
+          d.density = v.density as Content['density'];
+          d.layout = v.layout as Content['layout'];
+        }),
+    });
+  }
   const button = (label: string, action: () => void, showLabel = false) =>
     state && (
       <button
@@ -429,53 +472,27 @@ export function useInlineEdit(publicData: Content) {
     sectionSettings,
     addSection,
     item: editItem,
-    toolbar: state && (
-      <details
-        className="inline-admin-menu"
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') {
-            event.currentTarget.open = false;
-            event.currentTarget.querySelector('summary')?.focus();
-          }
-        }}
-      >
-        <summary
-          className="inline-icon-button"
-          aria-label={t('Tùy chỉnh hồ sơ', 'Profile options')}
-          title={t('Tùy chỉnh hồ sơ', 'Profile options')}
-        >
-          <Icon name="more" />
-        </summary>
-        <div
-          className="inline-admin-options"
-          onClick={(event) => {
-            if ((event.target as HTMLElement).closest('button,a'))
-              event.currentTarget.closest('details')?.removeAttribute('open');
+    settings: state && (
+      <>
+        <div className="settings-divider" />
+        <button onClick={addSection}>{t('Các mục hồ sơ', 'Profile sections')}</button>
+        <button onClick={appearance}>{t('Giao diện hồ sơ', 'Profile appearance')}</button>
+        <Link href="/admin">{t('Quản trị nâng cao', 'Advanced administration')}</Link>
+        <button
+          onClick={async () => {
+            try {
+              await request('/api/admin/logout', 'POST', {}, csrf);
+              setState(null);
+              setEditor(null);
+              router.refresh();
+            } catch {
+              setNotice(t('Không thể đăng xuất. Thử lại.', 'Unable to sign out. Try again.'));
+            }
           }}
         >
-          <button className="btn neutral" onClick={addSection}>
-            {t('Các mục hồ sơ', 'Profile sections')}
-          </button>
-          <Link className="btn neutral" href="/admin">
-            {t('Quản trị nâng cao', 'Advanced administration')}
-          </Link>
-          <button
-            className="btn neutral"
-            onClick={async () => {
-              try {
-                await request('/api/admin/logout', 'POST', {}, csrf);
-                setState(null);
-                setEditor(null);
-                router.refresh();
-              } catch {
-                setNotice(t('Không thể đăng xuất. Thử lại.', 'Unable to sign out. Try again.'));
-              }
-            }}
-          >
-            {t('Đăng xuất', 'Sign out')}
-          </button>
-        </div>
-      </details>
+          {t('Đăng xuất', 'Sign out')}
+        </button>
+      </>
     ),
     dialog: state && editor && (
       <EditorDialog key={editorKey} editor={editor} csrf={csrf} close={() => setEditor(null)} />

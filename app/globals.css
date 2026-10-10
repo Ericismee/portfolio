@@ -136,38 +136,6 @@
   border: 1px solid var(--border-subtle);
   box-shadow: 0 2px 5px #172b4d18;
 }
-.inline-admin-menu {
-  position: relative;
-  align-self: center;
-}
-.inline-admin-menu > summary {
-  list-style: none;
-  background: var(--bg);
-}
-.inline-admin-menu > summary::-webkit-details-marker {
-  display: none;
-}
-.inline-admin-options {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
-  width: 230px;
-  max-width: calc(100vw - 40px);
-  display: grid;
-  gap: 4px;
-  padding: 8px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  background: var(--card);
-  box-shadow: 0 8px 28px #172b4d20;
-  z-index: 20;
-}
-.inline-admin-options .btn {
-  justify-content: flex-start;
-  text-align: left;
-  border: 0;
-  box-shadow: none;
-}
 .project-content {
   position: relative;
 }
@@ -319,12 +287,6 @@
   .editable-avatar {
     margin-top: -44px;
   }
-  .profile-body > .actions {
-    position: relative;
-  }
-  .profile-body .inline-admin-menu {
-    position: static;
-  }
   .inline-cover-action {
     right: 12px;
     bottom: 12px;
@@ -355,8 +317,13 @@
 }
 .site-menu {
   position: absolute;
-  right: 20px;
-  top: 70px;
+  right: 8px;
+  top: calc(100% + 8px);
+  width: 280px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 100px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   min-width: 200px;
   background: var(--card);
   border: 1px solid var(--border-subtle);
@@ -365,16 +332,126 @@
   box-shadow: 0 8px 24px #172b4d22;
   z-index: 100;
 }
-.site-menu > * {
+.site-menu > :is(button, a) {
   display: block;
   width: 100%;
   text-align: left;
   padding: 12px;
-  color: var(--text);
+  color: var(--ink);
   text-decoration: none;
 }
-.site-menu > *:hover {
-  background: var(--soft);
+.site-menu > :is(button, a):hover {
+  background: var(--bg);
+}
+.site-menu > :is(button, a) {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.site-menu .settings-title {
+  display: block;
+  padding: 8px 12px;
+}
+.site-menu .settings-label {
+  display: block;
+  padding: 4px 12px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.settings-divider {
+  border-top: 1px solid var(--border-subtle);
+  margin: 6px;
+}
+.header-inner {
+  position: relative;
+}
+
+/* Keep intrinsic image dimensions out of grid sizing, for every avatar size. */
+.avatar {
+  position: relative;
+  flex-shrink: 0;
+  aspect-ratio: 1;
+  isolation: isolate;
+}
+.avatar > img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+  object-position: 50% 50%;
+  transform: none;
+}
+.header-inner > nav > .avatar.tiny {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  flex: 0 0 28px;
+}
+.profile-intro .avatar.profile-avatar {
+  width: 120px;
+  height: 120px;
+  min-width: 120px;
+  min-height: 120px;
+  margin: 0;
+}
+.github-language-list {
+  display: grid;
+  gap: 18px;
+  padding: 0;
+  margin: 0 0 16px;
+  list-style: none;
+}
+.github-language-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+.github-language-heading > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.github-language-track {
+  height: 5px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.github-language-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+.github-skills-note {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.github-skills-card > small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.5;
+}
+@media (max-width: 600px) {
+  .profile-intro .avatar.profile-avatar {
+    width: 88px;
+    height: 88px;
+    min-width: 88px;
+    min-height: 88px;
+  }
 }
 .site-toast {
   position: fixed;

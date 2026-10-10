@@ -3,6 +3,7 @@ import { getDatabase } from '../../lib/database';
 import { publicContent } from '../../lib/schema';
 import { ProfileSite } from '../../components/profile-site';
 import type { Metadata } from 'next';
+import { getGithubSkills } from '../../lib/github-skills';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export function generateMetadata(): Metadata {
@@ -48,6 +49,7 @@ export default async function PublicPage({
   return (
     <ProfileSite
       content={content}
+      githubSkills={await getGithubSkills(content.githubUsername)}
       page={segments[0] || 'profile'}
       id={segments[1]}
       query={Object.fromEntries(

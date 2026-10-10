@@ -244,7 +244,8 @@ export function EditorDialog({
     (firstField || ref.current?.querySelector<HTMLElement>('button'))?.focus();
     return () => {
       dialog?.removeEventListener('cancel', preventNativeClose);
-      lastFocus.current?.focus();
+      if (lastFocus.current?.isConnected) lastFocus.current.focus();
+      else document.querySelector<HTMLButtonElement>('[aria-controls="site-menu"]')?.focus();
     };
   }, []);
   useEffect(() => {
