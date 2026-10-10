@@ -429,17 +429,21 @@ function Site({
               <Link className="btn primary" href="/projects">
                 {t('Xem dự án', 'View projects')}
               </Link>
-              <Link className="btn neutral" href="/contact">
-                {t('Liên hệ', 'Contact')}
-              </Link>
+              {!editing.enabled && (
+                <Link className="btn neutral" href="/contact">
+                  {t('Liên hệ', 'Contact')}
+                </Link>
+              )}
               {data.cv && (
                 <a className="btn neutral" href={data.cv.url} download={data.cv.name}>
                   {t('Tải CV', 'Download CV')}
                 </a>
               )}
-              <button className="btn neutral" onClick={() => share()}>
-                {t('Chia sẻ', 'Share')}
-              </button>
+              {!editing.enabled && (
+                <button className="btn neutral" onClick={() => share()}>
+                  {t('Chia sẻ', 'Share')}
+                </button>
+              )}
               {editing.toolbar}
             </div>
           </div>

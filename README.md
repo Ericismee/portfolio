@@ -55,7 +55,9 @@ The administrator command asks for a password of 12–256 characters. Terminal i
 
 Open [the website](http://localhost:3001) and [administration](http://localhost:3001/admin). The database is initialized automatically on first use; existing content is never replaced by startup seeds. The supplied sample posts start as drafts.
 
-After signing in, return to the profile to edit in place. Administrator-only buttons open editors for identity, avatar/cover uploads, links/CV, about, skills, projects, posts and section entries. Empty or hidden sections remain editable for the administrator. Section settings change the title, visibility and order; Add section creates a custom section. Changes save to the same database as the dashboard. Visitors see only published content and no editing controls. Sign out from the profile toolbar to return to visitor mode.
+After signing in, return to the profile to edit in place. Small pencil buttons edit the adjacent section; camera buttons edit the avatar and cover. The profile's **… → Profile sections** menu lets the administrator fill empty sections, edit hidden sections or add custom sections, without displaying placeholder cards to visitors. Section settings change the title, visibility and order. Changes save to the same database as the dashboard. Visitors see only published content and no editing controls or administration links. Sign out from the **…** menu to return to visitor mode.
+
+Image uploads include a framing preview: drag with a mouse or touch, use arrow keys to reposition (Shift for larger steps), and use the zoom slider. Avatar previews include a circular guide; covers use a 4:1 frame. Choose **Use this framing**, then **Save** to publish. Until framing is applied or cancelled, saving the form is disabled. Cancel keeps the saved image. Applied crops are exported as JPEG (800×800 avatars; 1600×400 covers); GIF uploads become still images. Reframing an existing image uses the saved crop, so choose the original file again to recover areas outside that crop.
 
 ## Environment
 

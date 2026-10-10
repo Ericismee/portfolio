@@ -5,7 +5,7 @@
 - Prettier check passed for the active Next.js/TypeScript application.
 - ESLint passed with the TypeScript recommended rules and React Hooks rules.
 - Strict TypeScript `tsc --noEmit` passed.
-- Four Node test suites passed: authentication/CSRF/logout; publishing/scheduling/reorder/conflicts/revisions/persistence; custom sections/input validation/contact inbox; uploads and embedded-asset import.
+- Five Node tests passed: authentication/CSRF/logout; publishing/scheduling/reorder/conflicts/revisions/persistence; custom sections/input validation/contact inbox; uploads and embedded-asset import; crop geometry with source bounds and aspect-ratio checks.
 - `next build` completed with the public pages, private admin entry, API Route Handlers and protected upload handler.
 - `npm audit` reported no known dependency vulnerabilities after removing an affected optional lint dependency chain.
 
@@ -17,7 +17,7 @@ The production standalone build ran locally on port 3002 with `.qa-next-data`, s
 
 - Signed in through the actual admin form using a temporary QA account.
 - Created a draft; verified it was absent from the public API.
-- Edited and published the post with a display time and a PNG uploaded through the actual file field.
+- Edited and published the post with a display time and a PNG selected through the actual file field, framed and uploaded as JPEG.
 - Hid and showed the post; checked the public API after each mutation.
 - Deleted the post, restored it from trash, and verified it returned as a draft.
 - Reordered projects and verified the public order persisted.
@@ -29,7 +29,8 @@ The production standalone build ran locally on port 3002 with `.qa-next-data`, s
 - Verified the editor focuses its first field and retains keyboard focus through 20 Tab presses.
 - Verified Escape retains unsaved content, Continue editing returns focus to the field, and only explicit discard closes the editor and restores the opener's focus.
 - No uncaught browser runtime exceptions were observed.
-- Inline profile editing: saved identity, skills, a project and a custom published section entry; verified persistence after reload and logout. Verified empty sections are editable only for the administrator, editing controls disappear after logout, and unauthenticated direct API writes are rejected. Checked the inline admin profile at all five widths and the editing dialog at 390 px.
+- Inline profile editing: saved identity, skills, a project and a custom published section entry; verified persistence after reload and logout. Empty sections remain editable in the private profile options menu, without placeholder cards or a large administration banner. Editing controls disappear after logout, and unauthenticated direct API writes are rejected. Checked the inline admin profile at all five widths and the editing dialog at 390 px.
+- Image framing: checked pointer dragging, zoom, keyboard repositioning and cancellation. Verified pending framing blocks premature form saves and selected images stay private before saving. Decoded the actual exported JPEGs and checked dimensions and pixel colors against the chosen region: 800×800 avatar and 1600×400 cover. Verified guests can load the published cropped images. Captured avatar/cover framing screenshots at 390 px.
 
 Responsive checks covered **360, 390, 768, 1024 and 1440 px**:
 

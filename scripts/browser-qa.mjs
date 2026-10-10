@@ -121,6 +121,12 @@ async function chooseTestImage(selector, vertical = false) {
 try {
   await call('Runtime.enable');
   await call('Page.enable');
+  await call('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1000,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
   await go('/admin');
   await evaluate(`localStorage.setItem('profile-language','vi');location.reload()`);
   await waitFor(`!!document.querySelector('[name=username]')`);
@@ -438,6 +444,7 @@ try {
     `fetch('/api/content').then(r=>r.json()).then(r=>!r.data.profile.avatar)`,
   );
   await fill('dialog [name=avatar-zoom]', '2');
+  await evaluate(`document.querySelector('.crop-frame').scrollIntoView({block:'center'})`);
   await pause(100);
   const frameBox = await evaluate(
     `(()=>{const r=document.querySelector('.crop-frame').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`,
