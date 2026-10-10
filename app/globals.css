@@ -859,6 +859,28 @@
   line-height: 1.5;
   color: var(--muted);
 }
+.gh-content-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.gh-content-toolbar > .gh-tabs {
+  flex: 1 1 280px;
+  min-width: 0;
+  order: -1;
+}
+.gh-content-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.gh-content-actions > .btn {
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
 .gh-tabs {
   margin: 0;
   width: 100%;

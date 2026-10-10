@@ -132,3 +132,12 @@ Production build passed. In the running preview on port 3001, checked 360, 390, 
 - In the actual port-3001 editor, dragged the existing cover by 20 px horizontally and 5 px vertically. Preview offsets changed from (-26, -6.5) to (-6, -1.5), confirming pointer movement. ArrowRight changed the offset again; Reset restored initial offsets. Visually reviewed the grid. Canceled without applying/uploading or saving the test crop.
 - Checked the open framing editor at 360, 390, 768, 1024 and 1440 px: no document horizontal overflow; frame stayed within the viewport and cover heights were as expected. Physical touch-device behavior and crop export were not retested in this pass.
 - Lint, TypeScript, all 15 existing tests and production build passed.
+
+## Compact GitHub page and complete repository configuration — 10 October 2026
+
+- Removed the large GitHub introduction card; kept manual refresh and owner configuration in a compact toolbar beside the tabs. Automatic refresh logic remains unchanged and connection failures still show a notice.
+- Removed the normal Synced label from the profile sidebar while retaining incomplete/unavailable source labels.
+- Repository configuration uses the editor's single scrolling area instead of a nested list scrollbar. Repository names and visibility/featured controls wrap as needed.
+- Verified 33 loaded repositories in isolated port-3002 administration and inline configuration, including visibility/featured controls, at 360, 390, 768, 1024 and 1440 px: no list horizontal overflow or clipped option groups. No test settings were saved. Visually reviewed the inline list.
+- Verified the actual port-3001 GitHub page at the same widths: old heading absent, compact refresh present, no document horizontal overflow. Clicked Refresh and switched to Repositories successfully; visually reviewed the final page. The home sidebar's normal Synced label was absent.
+- Lint and the production build, including TypeScript compilation, passed.

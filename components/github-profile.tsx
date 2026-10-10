@@ -247,56 +247,44 @@ export function GithubProfile({
         </Link>
       </aside>
       <div className="gh-main">
-        <section className="card pad gh-page-heading">
-          <div>
-            <span className="gh-eyebrow">@{stats.username} / GitHub</span>
-            <h2>{settings.title}</h2>
-            <p className="muted">{settings.description}</p>
-            <span className="gh-sync-cadence">
-              {t('Tự cập nhật mỗi ', 'Auto refresh every ')}
-              {settings.refreshMinutes}
-              {t(' phút khi đang mở trang', ' minutes while this page is visible')}
-            </span>
-          </div>
-          <div className="gh-refresh">
+        <div className="gh-content-toolbar">
+          <div className="gh-content-actions">
             {configure}
             <button className="btn neutral" disabled={checking} onClick={() => void refresh()}>
               {checking ? t('Đang kiểm tra…', 'Checking…') : t('Làm mới', 'Refresh')}
             </button>
-            <small role="status">
-              {error
-                ? t(
-                    'Chưa kết nối được. Giữ dữ liệu đã tải.',
-                    'Connection unavailable. Keeping loaded data.',
-                  )
-                : activity
-                  ? t('Đã kiểm tra ', 'Checked ') + date(activity.checkedAt)
-                  : t('Đang kết nối GitHub…', 'Connecting to GitHub…')}
-            </small>
           </div>
-        </section>
-        <nav className="gh-tabs" aria-label={t('Nội dung GitHub', 'GitHub content')}>
-          {(
-            [
-              'overview',
-              ...(settings.showRepositories ? ['repositories'] : []),
-              ...(settings.showCommits || settings.showEvents ? ['activity'] : []),
-            ] as Tab[]
-          ).map((value) => (
-            <button
-              key={value}
-              className={tab === value ? 'active' : ''}
-              aria-pressed={tab === value}
-              onClick={() => setTab(value)}
-            >
-              {value === 'overview'
-                ? t('Tổng quan', 'Overview')
-                : value === 'repositories'
-                  ? t('Kho mã', 'Repositories') + ' · ' + stats.repos.length
-                  : t('Hoạt động', 'Activity')}
-            </button>
-          ))}
-        </nav>
+          <nav className="gh-tabs" aria-label={t('Nội dung GitHub', 'GitHub content')}>
+            {(
+              [
+                'overview',
+                ...(settings.showRepositories ? ['repositories'] : []),
+                ...(settings.showCommits || settings.showEvents ? ['activity'] : []),
+              ] as Tab[]
+            ).map((value) => (
+              <button
+                key={value}
+                className={tab === value ? 'active' : ''}
+                aria-pressed={tab === value}
+                onClick={() => setTab(value)}
+              >
+                {value === 'overview'
+                  ? t('Tổng quan', 'Overview')
+                  : value === 'repositories'
+                    ? t('Kho mã', 'Repositories') + ' · ' + stats.repos.length
+                    : t('Hoạt động', 'Activity')}
+              </button>
+            ))}
+          </nav>
+        </div>
+        {error && (
+          <p className="notice" role="status">
+            {t(
+              'Chưa kết nối được. Giữ dữ liệu đã tải.',
+              'Connection unavailable. Keeping loaded data.',
+            )}
+          </p>
+        )}
         {stats.partial && (
           <p className="notice">
             {t(
