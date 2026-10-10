@@ -11,6 +11,7 @@ import { useInlineEdit } from './inline-edit';
 import type { GithubSkills } from '../lib/github-skills';
 import { GithubSkillsCard } from './github-skills';
 import { GithubProfile } from './github-profile';
+import { RichContent } from './rich-content';
 
 export function ProfileSite(props: {
   content: Content;
@@ -49,7 +50,14 @@ function Site({
     menuButton = useRef<HTMLButtonElement>(null),
     menuPanel = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    applyTheme(data.accent, data.theme);
+    let theme = data.theme;
+    try {
+      const saved = localStorage.getItem('profile-theme');
+      if (saved === 'light' || saved === 'dark') theme = saved;
+    } catch {
+      /* Storage may be unavailable. */
+    }
+    applyTheme(data.accent, theme);
     document.body.classList.toggle('compact', data.density === 'compact');
     return () => {
       document.body.classList.remove('compact');
@@ -133,7 +141,7 @@ function Site({
         {heading === t('Liên kết', 'Links') &&
           editing.button(t('Sửa liên kết', 'Edit links'), () => editing.profile('links'))}
         {heading === t('Hoạt động', 'Activity') &&
-          editing.button(t('Viết bài', 'Write post'), () => editing.item('posts', ''))}
+          editing.button(t('Viết bài', 'Write post'), () => editing.item('posts', ''), true)}
       </div>
       {body}
     </section>
@@ -156,8 +164,12 @@ function Site({
         <a
           className="side-link social-link"
           key={key}
-          href={key === 'email' ? 'mailto:' + value : value}
-          target={key === 'email' ? undefined : '_blank'}
+          href={
+            key === 'email'
+              ? 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(value)
+              : value
+          }
+          target="_blank"
           rel="noopener noreferrer"
         >
           <SocialLogo name={key.toLowerCase()} />
@@ -169,9 +181,19 @@ function Site({
       ));
   function aside() {
     return card(
-      profile.name,
+      t('Về tác giả', 'About the author'),
       <>
+        <div className="author-summary">
+          {avatar()}
+          <strong>{profile.name}</strong>
+        </div>
         <p className="muted">{profile.headline}</p>
+        <p className="sidebar-purpose">
+          {t(
+            'Tìm hiểu chuyên môn, dự án và mã nguồn của tôi.',
+            'Explore my experience, projects and source code.',
+          )}
+        </p>
         <Link className="side-link" href="/">
           {t('Xem hồ sơ →', 'View profile →')}
         </Link>
@@ -224,7 +246,11 @@ function Site({
         key={p.id}
         data-tone={['blue', 'lavender', 'mint', 'peach'][index % 4]}
       >
-        <Link className="project-art" href={'/projects/' + encodeURIComponent(p.id)}>
+        <Link
+          className="project-art"
+          data-frame={p.imageFrame}
+          href={'/projects/' + encodeURIComponent(p.id)}
+        >
           {p.thumbnail ? (
             <img src={p.thumbnail} alt={p.name} />
           ) : (
@@ -299,7 +325,11 @@ function Site({
             <Link href={'/posts/' + encodeURIComponent(p.id)}>{p.title}</Link>
           </h3>
         )}
-        <p className="preserve">{long ? p.text.slice(0, 360) + '…' : p.text}</p>
+        {p.richText && !long ? (
+          <RichContent value={p.richText} fallback={p.text} />
+        ) : (
+          <p className="preserve">{long ? p.text.slice(0, 360) + '…' : p.text}</p>
+        )}
         {p.text.length > 360 && !detail && (
           <button
             className="text-action"
@@ -328,7 +358,12 @@ function Site({
           </a>
         )}
         <div className="post-footer">
-          {editing.button(t('Sửa bài viết', 'Edit post'), () => editing.item('posts', '', p.id))}
+          {editing.button(
+            t('Sửa bài viết', 'Edit post'),
+            () => editing.item('posts', '', p.id),
+            true,
+          )}
+          {editing.button(t('Xóa bài viết', 'Delete post'), () => editing.removePost(p.id), true)}
           <button
             className="btn neutral"
             onClick={() => share('/posts/' + encodeURIComponent(p.id))}
@@ -566,20 +601,35 @@ function Site({
     return shell(
       <section className="card pad">
         <div className="section-heading">
-          <h1>{t('Dự án', 'Projects')}</h1>
-          {editing.button(t('Thêm dự án', 'Add project'), () => editing.item('projects', ''))}
-          <button
-            className="btn neutral"
-            onClick={() => {
-              const p = new URLSearchParams(query);
-              if (view === 'list') p.delete('view');
-              else p.set('view', 'list');
-              router.push('/projects?' + p);
-            }}
-          >
-            {view === 'list' ? t('Dạng lưới', 'Grid view') : t('Dạng danh sách', 'List view')}
-          </button>
+          <div>
+            <p className="page-eyebrow">{t('Sản phẩm & mã nguồn', 'Work & source code')}</p>
+            <h1>{t('Dự án', 'Projects')}</h1>
+          </div>
+          <div className="page-heading-actions">
+            {editing.button(
+              t('Thêm dự án', 'Add project'),
+              () => editing.item('projects', ''),
+              true,
+            )}
+            <button
+              className="btn neutral"
+              onClick={() => {
+                const p = new URLSearchParams(query);
+                if (view === 'list') p.delete('view');
+                else p.set('view', 'list');
+                router.push('/projects?' + p);
+              }}
+            >
+              {view === 'list' ? t('Dạng lưới', 'Grid view') : t('Dạng danh sách', 'List view')}
+            </button>
+          </div>
         </div>
+        <p className="page-description">
+          {t(
+            'Khám phá từng sản phẩm, công nghệ và quá trình xây dựng.',
+            'Explore each product, its technology and how it was built.',
+          )}
+        </p>
         <form
           className="filters"
           key={JSON.stringify(query)}
@@ -649,7 +699,7 @@ function Site({
       );
     return shell(
       <section className="card">
-        <div className="project-art" style={{ height: 220 }}>
+        <div className="project-art project-detail-art" data-frame={p.imageFrame}>
           {p.thumbnail ? <img src={p.thumbnail} alt={p.name} /> : p.name}
         </div>
         <div className="pad">
@@ -761,6 +811,12 @@ function Site({
         card(
           t('Hoạt động', 'Activity'),
           <>
+            <p className="page-description">
+              {t(
+                'Bài viết, chia sẻ và những cập nhật từ các dự án.',
+                'Articles, ideas and updates from my projects.',
+              )}
+            </p>
             {tabs()}
             {activities()}
           </>,
@@ -806,8 +862,27 @@ function Site({
                 'Get in touch about an idea or collaboration.',
               )}
             </p>
-            {links()}
             <ContactForm />
+          </>,
+        ),
+        card(
+          t('Kết nối trực tiếp', 'Connect directly'),
+          <>
+            <div className="author-summary">
+              {avatar()}
+              <strong>{profile.name}</strong>
+            </div>
+            <p className="muted">{profile.headline}</p>
+            <p className="sidebar-purpose">
+              {t(
+                'Chọn kênh phù hợp hoặc gửi lời nhắn qua biểu mẫu.',
+                'Choose a channel or send a message using the form.',
+              )}
+            </p>
+            {links()}
+            <Link className="side-link" href="/">
+              {t('Xem hồ sơ →', 'View profile →')}
+            </Link>
           </>,
         ),
       )
@@ -849,12 +924,9 @@ function Site({
               aria-label={t('Tìm kiếm', 'Search')}
             />
           </form>
-          <nav aria-label={t('Điều hướng chính', 'Main navigation')}>
-            {nav()}
-            {avatar('tiny')}
-          </nav>
+          <nav aria-label={t('Điều hướng chính', 'Main navigation')}>{nav()}</nav>
           <button
-            className="icon-btn"
+            className="icon-btn avatar-menu-button"
             aria-label={t('Cài đặt', 'Settings')}
             title={t('Cài đặt', 'Settings')}
             aria-expanded={menu}
@@ -862,7 +934,7 @@ function Site({
             ref={menuButton}
             onClick={() => setMenu(!menu)}
           >
-            <Icon name="more" />
+            {avatar('tiny')}
           </button>
           {menu && (
             <div
@@ -874,6 +946,19 @@ function Site({
               }}
             >
               <strong className="settings-title">{t('Cài đặt', 'Settings')}</strong>
+              <button
+                onClick={() => {
+                  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+                  applyTheme(data.accent, next);
+                  try {
+                    localStorage.setItem('profile-theme', next);
+                  } catch {
+                    /* Optional local preference. */
+                  }
+                }}
+              >
+                {t('☼ / ☾  Đổi sáng / tối', '☼ / ☾  Toggle light / dark')}
+              </button>
               <span className="settings-label">
                 {t('Ngôn ngữ giao diện', 'Interface language')}
               </span>

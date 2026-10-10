@@ -17,6 +17,7 @@ import {
 } from '../lib/schema';
 import { entries, prepareLegacyImport, request, RequestError } from '../lib/client';
 import { Icon } from './icon';
+import { readRichText, richPlainText } from '../lib/rich-text';
 import { applyTheme } from '../lib/theme';
 import { LanguageProvider, useLanguage } from './language';
 import { EditorDialog, FieldsForm, type Editor, type Field, type Values } from './admin-form';
@@ -208,6 +209,7 @@ function AdminDashboard() {
     if (kind === 'projects') {
       const project = p as Project | undefined;
       values.technologies = project?.technologies.join(', ') || '';
+      values.imageFrame = project?.imageFrame || 'square';
       fields.push(
         field('name', t('Tên dự án', 'Project name'), 'text', true),
         field('description', t('Mô tả ngắn', 'Short description'), 'textarea'),
@@ -230,15 +232,22 @@ function AdminDashboard() {
         field('demo', 'Demo URL', 'url'),
         field('source', t('Nguồn tham khảo', 'Reference URL'), 'url'),
         field('thumbnail', t('Ảnh dự án', 'Project image'), 'image'),
+        select('imageFrame', t('Khung ảnh (hiển thị trọn ảnh)', 'Image frame (show full image)'), [
+          ['square', t('Vuông 1:1', 'Square 1:1')],
+          ['landscape', t('Ngang 16:9', 'Landscape 16:9')],
+          ['portrait', t('Dọc 3:4', 'Portrait 3:4')],
+          ['original', t('Tỷ lệ gốc', 'Original ratio')],
+        ]),
         field('pinned', t('Ghim trong mục nổi bật', 'Pin in featured section'), 'checkbox'),
       );
     } else if (kind === 'posts') {
       const post = p as Post | undefined;
       values.displayAt = localDate(post?.displayAt || post?.createdAt || new Date().toISOString());
       values.type = post?.type || 'Bài viết';
+      values.richText = JSON.stringify(readRichText(post?.richText || '', post?.text || ''));
       fields.push(
         field('title', t('Tiêu đề', 'Title'), 'text', true),
-        field('text', t('Nội dung', 'Content'), 'textarea', true),
+        field('richText', t('Nội dung', 'Content'), 'richtext', true),
         select('type', t('Loại bài', 'Post type'), [
           ['Bài viết', t('Bài viết', 'Article')],
           ['Cập nhật dự án', t('Cập nhật dự án', 'Project update')],
@@ -290,6 +299,7 @@ function AdminDashboard() {
           } else if (kind === 'posts') {
             const next = postSchema.parse({
               ...input,
+              text: richPlainText(String(v.richText || '')),
               createdAt: (p as Post | undefined)?.createdAt || new Date().toISOString(),
               displayAt: v.displayAt
                 ? new Date(String(v.displayAt)).toISOString()

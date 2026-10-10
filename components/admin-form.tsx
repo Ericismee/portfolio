@@ -2,12 +2,14 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useLanguage } from './language';
 import { ImageFramePicker } from './image-frame-picker';
+import { RichTextEditor } from './rich-text-editor';
 export type Field = {
   key: string;
   label: string;
   type?:
     | 'text'
     | 'textarea'
+    | 'richtext'
     | 'url'
     | 'email'
     | 'password'
@@ -61,7 +63,7 @@ export function FieldsForm({
   useEffect(() => {
     onDirty?.(dirty);
   }, [dirty, onDirty]);
-  async function upload(key: string, file: File) {
+  async function upload(key: string, file: File, done?: (url: string) => void) {
     setUploading((n) => n + 1);
     setError('');
     try {
@@ -72,7 +74,8 @@ export function FieldsForm({
       });
       const result = (await response.json()) as { url: string; error?: string };
       if (!response.ok) throw Error(result.error);
-      setValues((v) => ({ ...v, [key]: result.url }));
+      if (done) done(result.url);
+      else setValues((v) => ({ ...v, [key]: result.url }));
       return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : t('Không tải được file', 'Unable to upload'));
@@ -112,6 +115,19 @@ export function FieldsForm({
         const value = values[field.key] ?? '',
           update = (value: string | boolean) =>
             setValues((prev) => ({ ...prev, [field.key]: value }));
+        if (field.type === 'richtext')
+          return (
+            <div key={field.key}>
+              <h3>{field.label}</h3>
+              <RichTextEditor
+                name={field.key}
+                label={field.label}
+                value={String(value)}
+                change={update}
+                upload={(file, done) => upload(field.key, file, done)}
+              />
+            </div>
+          );
         if (field.type === 'image')
           return (
             <div key={field.key}>

@@ -19,6 +19,7 @@ import {
 import { EditorDialog, type Editor, type Field, type Values } from './admin-form';
 import { useLanguage } from './language';
 import { Icon } from './icon';
+import { readRichText, richPlainText } from '../lib/rich-text';
 
 // Private content is fetched only after the server confirms an admin session.
 // The profile itself still renders the public projection, including after saves.
@@ -160,6 +161,7 @@ export function useInlineEdit(publicData: Content) {
     const fields: Field[] = [];
     if (kind === 'projects') {
       values.technologies = (existing as Project | undefined)?.technologies.join(', ') || '';
+      values.imageFrame = (existing as Project | undefined)?.imageFrame || 'square';
       fields.push(
         field('name', t('Tên dự án', 'Project name'), 'text', true),
         field('description', t('Mô tả', 'Description'), 'textarea'),
@@ -180,6 +182,19 @@ export function useInlineEdit(publicData: Content) {
         field('demo', 'Demo', 'url'),
         field('source', t('Nguồn', 'Source'), 'url'),
         field('thumbnail', t('Ảnh dự án', 'Project image'), 'image'),
+        {
+          ...field(
+            'imageFrame',
+            t('Khung ảnh (hiển thị trọn ảnh)', 'Image frame (show full image)'),
+            'select',
+          ),
+          options: [
+            ['square', t('Vuông 1:1', 'Square 1:1')],
+            ['landscape', t('Ngang 16:9', 'Landscape 16:9')],
+            ['portrait', t('Dọc 3:4', 'Portrait 3:4')],
+            ['original', t('Tỷ lệ gốc', 'Original ratio')],
+          ],
+        },
         field('pinned', t('Ghim nổi bật', 'Featured'), 'checkbox'),
       );
     } else if (kind === 'posts') {
@@ -188,9 +203,15 @@ export function useInlineEdit(publicData: Content) {
         .toISOString()
         .slice(0, 16);
       values.type ||= 'Bài viết';
+      values.richText = JSON.stringify(
+        readRichText(
+          (existing as Post | undefined)?.richText || '',
+          (existing as Post | undefined)?.text || '',
+        ),
+      );
       fields.push(
         field('title', t('Tiêu đề', 'Title'), 'text', true),
-        field('text', t('Nội dung', 'Content'), 'textarea', true),
+        field('richText', t('Nội dung', 'Content'), 'richtext', true),
         {
           ...field('type', t('Loại bài', 'Post type'), 'select'),
           options: [
@@ -246,6 +267,7 @@ export function useInlineEdit(publicData: Content) {
           } else if (kind === 'posts') {
             const item = postSchema.parse({
               ...input,
+              text: richPlainText(String(v.richText || '')),
               createdAt: (existing as Post | undefined)?.createdAt || new Date().toISOString(),
               displayAt: v.displayAt
                 ? new Date(String(v.displayAt)).toISOString()
@@ -508,6 +530,37 @@ export function useInlineEdit(publicData: Content) {
     githubSettings,
     githubFeatured: () => openGithubSettings(true),
     item: editItem,
+    removePost: (id: string) => {
+      if (!state) return;
+      open({
+        title: t('Chuyển bài viết vào thùng rác?', 'Move post to trash?'),
+        body: (
+          <p>
+            {t(
+              'Bạn có thể khôi phục bài trong trang quản trị.',
+              'You can restore this post in administration.',
+            )}
+          </p>
+        ),
+        submitLabel: t('Chuyển vào thùng rác', 'Move to trash'),
+        fields: [],
+        values: {},
+        submit: () =>
+          save((d) => {
+            const value = d.posts.find((p) => p.id === id);
+            if (value) {
+              d.trash.unshift({
+                id: crypto.randomUUID(),
+                kind: 'posts',
+                section: '',
+                deletedAt: new Date().toISOString(),
+                value,
+              });
+              d.posts = d.posts.filter((p) => p.id !== id);
+            }
+          }),
+      });
+    },
     settings: state && (
       <>
         <div className="settings-divider" />

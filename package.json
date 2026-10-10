@@ -27,6 +27,11 @@
     "typescript-eslint": "^8.71.1"
   },
   "dependencies": {
+    "@tiptap/extension-image": "^3.31.4",
+    "@tiptap/extension-youtube": "^3.31.4",
+    "@tiptap/pm": "^3.31.4",
+    "@tiptap/react": "^3.31.4",
+    "@tiptap/starter-kit": "^3.31.4",
     "next": "^16.4.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

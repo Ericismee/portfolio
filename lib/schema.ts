@@ -45,6 +45,7 @@ export const projectSchema = z.object({
   demo: url,
   source: url,
   thumbnail: url,
+  imageFrame: z.enum(['square', 'landscape', 'portrait', 'original']).default('square'),
   pinned: z.boolean().default(false),
   sample: z.boolean().default(false),
 });
@@ -52,6 +53,7 @@ export const postSchema = z.object({
   ...base,
   title: z.string().trim().min(1).max(200),
   text: text(30000),
+  richText: text(100000),
   type: text(200),
   link: url,
   image: url,
