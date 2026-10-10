@@ -6,6 +6,7 @@ import type { Content, Project, Post } from '../lib/schema';
 import { applyTheme } from '../lib/theme';
 import { Icon } from './icon';
 import { LanguageProvider, useLanguage } from './language';
+import { useInlineEdit } from './inline-edit';
 
 export function ProfileSite(props: {
   content: Content;
@@ -20,7 +21,7 @@ export function ProfileSite(props: {
   );
 }
 function Site({
-  content: data,
+  content,
   page,
   id,
   query,
@@ -30,6 +31,8 @@ function Site({
   id?: string;
   query: Record<string, string>;
 }) {
+  const editing = useInlineEdit(content),
+    data = editing.data;
   const { language, t, toggle } = useLanguage(),
     router = useRouter(),
     [menu, setMenu] = useState(false),
@@ -106,6 +109,10 @@ function Site({
     <section className="card pad">
       <div className="section-heading">
         <h2>{heading}</h2>
+        {heading === t('Liên kết', 'Links') &&
+          editing.button(t('Sửa liên kết', 'Edit links'), () => editing.profile('links'))}
+        {heading === t('Hoạt động', 'Activity') &&
+          editing.button(t('Viết bài', 'Write post'), () => editing.item('posts', ''))}
       </div>
       {body}
     </section>
@@ -206,6 +213,7 @@ function Site({
           <h3>
             <Link href={'/projects/' + encodeURIComponent(p.id)}>{p.name}</Link>
           </h3>
+          {editing.button(t('Sửa dự án', 'Edit project'), () => editing.item('projects', '', p.id))}
           <p className="project-description">{p.description}</p>
           <div className="tags">
             <span className="tag">{p.tech}</span>
@@ -295,6 +303,7 @@ function Site({
           </a>
         )}
         <div className="post-footer">
+          {editing.button(t('Sửa bài viết', 'Edit post'), () => editing.item('posts', '', p.id))}
           <button
             className="btn neutral"
             onClick={() => share('/posts/' + encodeURIComponent(p.id))}
@@ -315,7 +324,7 @@ function Site({
     const featured = data.projects.filter((p) => p.pinned).slice(0, 2),
       sections: { name: string; body: ReactNode }[] = [];
     for (const name of data.sections) {
-      if (data.hidden.includes(name)) continue;
+      if (data.hidden.includes(name) && !editing.enabled) continue;
       let body: ReactNode = null;
       if (name === 'Giới thiệu' && profile.about)
         body = <p className="preserve">{profile.about}</p>;
@@ -375,24 +384,46 @@ function Site({
               <p>{item.organization}</p>
               <p className="muted">{item.period}</p>
               <p className="preserve">{item.description}</p>
+              {editing.button(t('Sửa nội dung', 'Edit content'), () =>
+                editing.item('items', name, item.id),
+              )}
             </div>
           </article>
         ));
+      if (!body && editing.enabled)
+        body = (
+          <p className="muted">
+            {data.hidden.includes(name)
+              ? t('Mục này đang ẩn với khách truy cập.', 'This section is hidden from visitors.')
+              : t(
+                  'Chưa có nội dung công khai. Bấm Chỉnh sửa để bổ sung.',
+                  'No published content yet. Choose Edit to add content.',
+                )}
+          </p>
+        );
       if (body) sections.push({ name, body });
     }
     return shell(
       <>
+        {editing.toolbar}
         <section className="card profile-intro">
           <div
             className="cover"
             data-label={profile.name.toUpperCase() + ' / ' + profile.headline.toUpperCase()}
           >
             {profile.cover && <img src={profile.cover} alt={t('Ảnh bìa', 'Cover image')} />}
+            <div className="inline-cover-action">
+              {editing.button(t('Sửa ảnh bìa', 'Edit cover'), () => editing.profile('cover'))}
+            </div>
           </div>
           <div className="profile-body">
             {avatar('profile-avatar')}
+            {editing.button(t('Sửa ảnh đại diện', 'Edit avatar'), () => editing.profile('avatar'))}
             <div className="profile-identity">
               <h1>{profile.name}</h1>
+              {editing.button(t('Chỉnh sửa hồ sơ', 'Edit profile'), () =>
+                editing.profile('identity'),
+              )}
               <div className="headline">{profile.headline}</div>
               {profile.summary && <p className="profile-summary">{profile.summary}</p>}
               <div className="muted">
@@ -422,6 +453,17 @@ function Site({
           <section className="card pad" id={'section-' + i} key={s.name}>
             <div className="section-heading">
               <h2>{title(s.name)}</h2>
+              {editing.enabled && (
+                <div className="inline-section-actions">
+                  {data.hidden.includes(s.name) && (
+                    <span className="badge">{t('Đã ẩn', 'Hidden')}</span>
+                  )}
+                  {editing.button(t('Chỉnh sửa', 'Edit'), () => editing.section(s.name))}
+                  {editing.button(t('Thiết lập mục', 'Section settings'), () =>
+                    editing.sectionSettings(s.name),
+                  )}
+                </div>
+              )}
             </div>
             {s.body}
           </section>
@@ -478,6 +520,7 @@ function Site({
       <section className="card pad">
         <div className="section-heading">
           <h1>{t('Dự án', 'Projects')}</h1>
+          {editing.button(t('Thêm dự án', 'Add project'), () => editing.item('projects', ''))}
           <button
             className="btn neutral"
             onClick={() => {
@@ -565,6 +608,7 @@ function Site({
         <div className="pad">
           <Link href="/projects">← {t('Tất cả dự án', 'All projects')}</Link>
           <h1>{p.name}</h1>
+          {editing.button(t('Sửa dự án', 'Edit project'), () => editing.item('projects', '', p.id))}
           <span className="badge">{p.status}</span>
           <p>{p.description}</p>
           <h3>{t('Công nghệ', 'Technologies')}</h3>
@@ -775,6 +819,8 @@ function Site({
       <main id="view" tabIndex={-1}>
         {body}
       </main>
+      {editing.dialog}
+      {editing.notice}
       <nav className="bottom-nav" aria-label={t('Điều hướng trên điện thoại', 'Mobile navigation')}>
         {nav()}
       </nav>

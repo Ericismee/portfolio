@@ -55,6 +55,8 @@ The administrator command asks for a password of 12–256 characters. Terminal i
 
 Open [the website](http://localhost:3001) and [administration](http://localhost:3001/admin). The database is initialized automatically on first use; existing content is never replaced by startup seeds. The supplied sample posts start as drafts.
 
+After signing in, return to the profile to edit in place. Administrator-only buttons open editors for identity, avatar/cover uploads, links/CV, about, skills, projects, posts and section entries. Empty or hidden sections remain editable for the administrator. Section settings change the title, visibility and order; Add section creates a custom section. Changes save to the same database as the dashboard. Visitors see only published content and no editing controls. Sign out from the profile toolbar to return to visitor mode.
+
 ## Environment
 
 Copy `.env.example` to `.env` when configuration is needed. Keep `.env` and real passwords out of Git.

@@ -29,6 +29,7 @@ The production standalone build ran locally on port 3002 with `.qa-next-data`, s
 - Verified the editor focuses its first field and retains keyboard focus through 20 Tab presses.
 - Verified Escape retains unsaved content, Continue editing returns focus to the field, and only explicit discard closes the editor and restores the opener's focus.
 - No uncaught browser runtime exceptions were observed.
+- Inline profile editing: saved identity, skills, a project and a custom published section entry; verified persistence after reload and logout. Verified empty sections are editable only for the administrator, editing controls disappear after logout, and unauthenticated direct API writes are rejected. Checked the inline admin profile at all five widths and the editing dialog at 390 px.
 
 Responsive checks covered **360, 390, 768, 1024 and 1440 px**:
 

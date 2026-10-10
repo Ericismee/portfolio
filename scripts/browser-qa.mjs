@@ -243,7 +243,7 @@ try {
   }
   await go('/');
   await check(
-    'Public has no owner editing controls',
+    'Profile no longer exposes legacy mock controls',
     `!document.querySelector('[data-action=edit-profile]')&&!document.body.innerText.includes('Bản demo')`,
   );
   for (const width of [360, 390, 768, 1024, 1440]) {
@@ -361,6 +361,115 @@ try {
     'Explicit discard restores opener focus',
     `document.activeElement===document.querySelector('.admin-title button')`,
   );
+  // Inline editing uses the same authenticated API, from the actual profile.
+  await go('/');
+  await evaluate(`localStorage.setItem('profile-language','vi');location.reload()`);
+  await waitFor(`!!document.querySelector('.inline-admin-bar')`);
+  await clickText('.profile-identity button', 'Chỉnh sửa hồ sơ');
+  await fill('dialog [name=headline]', 'Inline QA engineer');
+  await evaluate(`document.querySelector('dialog form').requestSubmit()`);
+  await waitFor(
+    `!document.querySelector('dialog')&&document.querySelector('.headline').textContent==='Inline QA engineer'`,
+  );
+  await go('/');
+  await waitFor(`!!document.querySelector('.inline-admin-bar')`);
+  await check(
+    'Inline profile save survives reload',
+    `document.querySelector('.headline').textContent==='Inline QA engineer'`,
+  );
+  await check(
+    'Empty sections are editable for admin',
+    `[...document.querySelectorAll('.section-heading h2')].some(e=>e.textContent==='Kinh nghiệm')`,
+  );
+  await evaluate(
+    `(()=>{const section=[...document.querySelectorAll('section')].find(s=>s.querySelector('h2')?.textContent==='Kỹ năng');[...section.querySelectorAll('button')].find(b=>b.textContent==='Chỉnh sửa').click()})()`,
+  );
+  await waitFor(`!!document.querySelector('dialog [name=skills]')`);
+  await fill('dialog [name=skills]', 'TypeScript\nNext.js\nAccessibility');
+  await evaluate(`document.querySelector('dialog form').requestSubmit()`);
+  await waitFor(`!document.querySelector('dialog')`);
+  await check(
+    'Skills saved through inline dialog',
+    `fetch('/api/content').then(r=>r.json()).then(r=>r.data.skills.join(',')==='TypeScript,Next.js,Accessibility')`,
+  );
+  await clickText('.inline-admin-bar button', 'Thêm mục');
+  await fill('dialog [name=title]', 'Inline notes');
+  await evaluate(`document.querySelector('dialog form').requestSubmit()`);
+  await waitFor(
+    `!document.querySelector('dialog')&&document.body.innerText.includes('Inline notes')`,
+  );
+  await evaluate(
+    `(()=>{const s=[...document.querySelectorAll('section')].find(s=>s.querySelector('h2')?.textContent==='Inline notes');[...s.querySelectorAll('button')].find(b=>b.textContent==='Chỉnh sửa').click()})()`,
+  );
+  await clickText('dialog button', 'Thêm nội dung');
+  await fill('dialog [name=title]', 'Inline public entry');
+  await fill('dialog [name=visibility]', 'public');
+  await evaluate(`document.querySelector('dialog form').requestSubmit()`);
+  await waitFor(
+    `!document.querySelector('dialog')&&document.body.innerText.includes('Inline public entry')`,
+  );
+  await check(
+    'Custom entry published from profile',
+    `fetch('/api/content').then(r=>r.json()).then(r=>r.data.items['Inline notes'].some(i=>i.title==='Inline public entry'))`,
+  );
+  await clickText('.project-content button', 'Sửa dự án');
+  await fill('dialog [name=description]', 'Project changed inline');
+  await evaluate(`document.querySelector('dialog form').requestSubmit()`);
+  await waitFor(
+    `!document.querySelector('dialog')&&document.body.innerText.includes('Project changed inline')`,
+  );
+  for (const width of [360, 390, 768, 1024, 1440]) {
+    await call('Emulation.setDeviceMetricsOverride', {
+      width,
+      height: 1000,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await pause(100);
+    await check(
+      'Inline admin profile no overflow at ' + width,
+      `document.documentElement.scrollWidth<=innerWidth`,
+    );
+  }
+  await evaluate(`scrollTo(0,0)`);
+  await pause(100);
+  await snapshot('inline-admin-profile.png');
+  await clickText('.profile-identity button', 'Chỉnh sửa hồ sơ');
+  await call('Emulation.setDeviceMetricsOverride', {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await check(
+    'Inline dialog fits mobile',
+    `(()=>{const r=document.querySelector('dialog').getBoundingClientRect();return document.documentElement.scrollWidth<=innerWidth&&r.width<=innerWidth&&r.top>=0&&r.bottom<=innerHeight})()`,
+  );
+  await snapshot('inline-editor-mobile.png');
+  await clickText('.editor-head button', '×');
+  await clickText('.inline-admin-bar button', 'Đăng xuất');
+  await waitFor(`!document.querySelector('.inline-admin-bar')`);
+  await check(
+    'Guest cannot see editing controls or empty sections',
+    `!document.querySelector('.inline-edit-button')&&![...document.querySelectorAll('.section-heading h2')].some(e=>e.textContent==='Kinh nghiệm')`,
+  );
+  await check(
+    'Logged-out direct API write is rejected',
+    `fetch('/api/admin/content',{method:'PUT',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.status===403||r.status===401)`,
+  );
+  await go('/');
+  await check(
+    'Inline public changes remain after logout',
+    `document.querySelector('.headline').textContent==='Inline QA engineer'&&!document.querySelector('.inline-admin-bar')`,
+  );
+  await snapshot('profile-mobile.png');
+  await call('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 1000,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await snapshot('profile-desktop.png');
   assert.deepEqual(errors, [], 'No browser runtime exceptions');
   console.log('PASS Browser runtime has no uncaught exceptions');
 } finally {

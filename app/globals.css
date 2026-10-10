@@ -43,6 +43,89 @@
   max-height: 64dvh;
   overflow: auto;
 }
+.content-editor .editor-fields {
+  max-height: none;
+  min-height: 0;
+  overflow: auto;
+  background: #fff;
+  color: #172b4d;
+}
+.content-editor {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  max-height: 90dvh;
+  overflow: hidden;
+}
+.content-editor[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.inline-admin-bar {
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--border-subtle);
+}
+.inline-admin-bar small,
+.inline-entry-row small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+}
+.inline-admin-bar .actions,
+.inline-section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.inline-section-actions {
+  justify-content: flex-end;
+}
+.inline-edit-button {
+  min-height: 44px;
+  white-space: normal;
+}
+.cover {
+  position: relative;
+}
+.inline-cover-action {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 3;
+}
+.cover .inline-cover-action .btn {
+  position: relative;
+  right: auto;
+  background: #fff;
+  color: #172b4d;
+}
+.inline-entry-list {
+  display: grid;
+  gap: 12px;
+}
+.inline-entry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #dbe3ef;
+  overflow-wrap: anywhere;
+}
+.inline-entry-row small {
+  color: #51627a;
+}
+@media (max-width: 600px) {
+  .section-heading:has(.inline-section-actions) {
+    flex-wrap: wrap;
+  }
+  .inline-section-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
 .admin-page dialog {
   overflow: auto;
 }

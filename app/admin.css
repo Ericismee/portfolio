@@ -108,16 +108,16 @@
 .admin-row .badge {
   margin: 4px 6px 0 0;
 }
-.admin-page label {
+:is(.admin-page, .content-editor) label {
   display: flex;
   flex-direction: column;
   gap: 7px;
   font-weight: 600;
   margin-bottom: 18px;
 }
-.admin-page input,
-.admin-page textarea,
-.admin-page select {
+:is(.admin-page, .content-editor) input,
+:is(.admin-page, .content-editor) textarea,
+:is(.admin-page, .content-editor) select {
   width: 100%;
   border: 1px solid #bac8db;
   border-radius: 8px;
@@ -127,19 +127,19 @@
   background: #fff;
   font: inherit;
 }
-.admin-page textarea {
+:is(.admin-page, .content-editor) textarea {
   min-height: 120px;
   resize: vertical;
 }
-.admin-page input[type='checkbox'] {
+:is(.admin-page, .content-editor) input[type='checkbox'] {
   width: 20px;
   min-height: 20px;
 }
-.admin-page label.check {
+:is(.admin-page, .content-editor) label.check {
   flex-direction: row;
   align-items: center;
 }
-.admin-page :focus-visible {
+:is(.admin-page, .content-editor) :focus-visible {
   outline: 3px solid #315fd2;
   outline-offset: 3px;
 }
@@ -151,7 +151,7 @@
 .admin-login h1 {
   font-size: 26px;
 }
-.admin-page dialog {
+.content-editor {
   width: min(720px, calc(100vw - 28px));
   max-height: 90dvh;
   padding: 0;
@@ -159,7 +159,7 @@
   border-radius: 16px;
   color: #172b4d;
 }
-.admin-page dialog::backdrop {
+.content-editor::backdrop {
   background: #172b4d88;
 }
 .editor-head,

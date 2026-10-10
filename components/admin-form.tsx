@@ -237,6 +237,7 @@ export function EditorDialog({
   };
   return (
     <dialog
+      className="content-editor"
       ref={ref}
       aria-labelledby="editor-title"
       onKeyDown={(event) => {
