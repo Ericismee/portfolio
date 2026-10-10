@@ -37,13 +37,13 @@ export function GithubSkillsCard({
     >
       <div className="section-heading">
         <h2>GitHub</h2>
-        <span className="github-source-state">
-          {stats.status === 'ready'
-            ? stats.partial
+        {(stats.status !== 'ready' || stats.partial) && (
+          <span className="github-source-state">
+            {stats.status === 'ready'
               ? t('Đồng bộ một phần', 'Partially synced')
-              : t('Đã đồng bộ', 'Synced')
-            : t('Chưa có dữ liệu', 'No data')}
-        </span>
+              : t('Chưa có dữ liệu', 'No data')}
+          </span>
+        )}
       </div>
       <a className="github-account" href={url} target="_blank" rel="noopener noreferrer">
         <span className="github-account-symbol" aria-hidden="true">
