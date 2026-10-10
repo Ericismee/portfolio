@@ -141,7 +141,13 @@ async function loadSkills(username: string): Promise<GithubSkills> {
   const signal = AbortSignal.timeout(12000);
   async function read(path: string) {
     const response = await fetch('https://api.github.com' + path, {
-      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'Eric-Profile' },
+      headers: {
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'Eric-Profile',
+        ...(process.env.GITHUB_TOKEN
+          ? { Authorization: 'Bearer ' + process.env.GITHUB_TOKEN }
+          : {}),
+      },
       signal,
       cache: 'no-store',
     });

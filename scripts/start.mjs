@@ -14,4 +14,5 @@ process.env.HOSTNAME = process.env.HOST || '127.0.0.1';
 // upgrade never creates an empty database inside the build output directory.
 process.env.DATA_DIR = path.resolve(process.env.DATA_DIR || '.data');
 await cp('.next/static', '.next/standalone/.next/static', { recursive: true });
+await cp('public', '.next/standalone/public', { recursive: true });
 await import('../.next/standalone/server.js');

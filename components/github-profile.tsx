@@ -48,7 +48,7 @@ export function GithubProfile({
       pollSeconds.current = Math.max(60, next.activity.pollSeconds);
       setError(false);
     } catch {
-      if (!controller.signal.aborted) setError(true);
+      if (request.current === controller) setError(true);
     } finally {
       clearTimeout(timeout);
       if (request.current === controller) {
@@ -62,7 +62,10 @@ export function GithubProfile({
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
       if (document.visibilityState === 'visible') await refresh();
-      if (!stopped) timer = setTimeout(poll, pollSeconds.current * 1000);
+      if (!stopped) {
+        clearTimeout(timer);
+        timer = setTimeout(poll, pollSeconds.current * 1000);
+      }
     };
     void poll();
     const visible = () => {
@@ -531,8 +534,8 @@ export function GithubProfile({
         )}
         <p className="github-skills-note gh-update-note">
           {t(
-            'Tự kiểm tra mỗi phút khi trang đang mở. Sự kiện tuân theo nhịp cập nhật của GitHub; commit lưu đệm 5 phút, lịch đóng góp 15 phút. GitHub có thể trả dữ liệu trễ.',
-            'Checks every minute while visible. Events follow GitHub’s polling interval; commits cache for 5 minutes and contributions for 15 minutes. GitHub data may be delayed.',
+            'Tự cập nhật định kỳ khi trang đang mở. Sự kiện tuân theo nhịp cập nhật của GitHub; commit lưu đệm 5 phút, lịch đóng góp 15 phút. GitHub có thể trả dữ liệu trễ.',
+            'Updates periodically while visible. Events follow GitHub’s polling interval; commits cache for 5 minutes and contributions for 15 minutes. GitHub data may be delayed.',
           )}
         </p>
       </div>

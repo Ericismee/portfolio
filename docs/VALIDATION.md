@@ -5,7 +5,7 @@
 - Prettier check passed for the active Next.js/TypeScript application.
 - ESLint passed with the TypeScript recommended rules and React Hooks rules.
 - Strict TypeScript `tsc --noEmit` passed.
-- Eight Node tests passed: authentication/CSRF/logout; publishing/scheduling/reorder/conflicts/revisions/persistence; custom sections/input validation/contact inbox; uploads and embedded-asset import; crop geometry with source bounds and aspect-ratio checks; GitHub language aggregation/ranking; unavailable GitHub responses with cache reuse; paginated profile/repository import with fork exclusion from language totals.
+- Eleven Node tests passed: authentication/CSRF/logout; publishing/scheduling/reorder/conflicts/revisions/persistence; custom sections/input validation/contact inbox; uploads and embedded-asset import; crop geometry with source bounds and aspect-ratio checks; GitHub language aggregation/ranking; unavailable GitHub responses with cache reuse; paginated profile/repository import with fork exclusion from language totals.
 - `next build` completed with the public pages, private admin entry, API Route Handlers and protected upload handler.
 - `npm audit` reported no known dependency vulnerabilities after removing an affected optional lint dependency chain.
 
@@ -46,7 +46,7 @@ Issues found and fixed during browser verification: the mobile admin navigation'
 - These are desktop Chrome viewport checks, not tests on physical phones or with a screen reader.
 - No external production URL exists yet; hosting, domain/HTTPS and a persistent production disk have not been configured.
 - Docker configuration is supplied. Docker execution was unavailable because the Docker Desktop Linux engine was not running.
-- No email delivery, contribution/commit synchronization, OAuth, multi-region database or background notification service is claimed.
+- No email delivery, private GitHub synchronization, OAuth, multi-region database or background notification service is claimed.
 - Current language switching translates interface labels, not owner-authored content.
 
 The older `QA.md` describes the historical mock. This document records the Next.js application's validation.
@@ -67,3 +67,16 @@ The older `QA.md` describes the historical mock. This document records the Next.
 - Verified English labels and no uncaught browser exceptions. Captured and visually reviewed desktop/mobile cards and expanded repository views. This targeted browser pass did not rerun unrelated administrator workflows.
 - Fixed mobile’s inherited hidden-sidebar rule specifically for the GitHub card, keeping other sidebar cards hidden at widths up to 800 px.
 - `npm run check` passed all eight tests, lint and strict types; production build passed.
+
+## GitHub profile and activity page
+
+- Replaced `/github`’s external-link placeholder with GitHub identity, all detected technology logos, repository/overview/activity tabs, calendar year selection and commit/event history.
+- Real public sources returned 18 languages, 33 repositories, 30 recent owner-authored commits, 49 events and 420 contributions across 283 elapsed days of 2026 at verification. These are source snapshots, not guarantees of instantaneous updates or complete commit history.
+- Browser checks at 360, 390, 768, 1024, 1063 and 1440 px passed: no page overflow, all technology logos loaded, day details worked, repository search/empty/clear states worked, all 33 repositories restored, and commit/event timelines displayed.
+- Also checked the complete 365-day 2025 calendar, arrow-key day navigation, English labels, manual refresh, ten-to-eighteen technology expansion, and the actual automatic poll after waiting 62 seconds. No uncaught browser exceptions were observed.
+- New automated tests verify exact contribution counts, leap years, fail-closed parsing, source fetch deduplication, authored commit filtering and stale data retention when upstream is unavailable. All eleven tests, strict types and lint passed; production build passed.
+- Calendar HTML parsing is dependent on GitHub’s public markup. Invalid or incomplete markup is rejected, retaining a labelled old snapshot if available. GitHub’s API can delay or limit activity data; no second-by-second realtime claim is made.
+- Local logo serving was checked in the standalone build. Docker’s public-directory copy was updated, but Docker execution was not repeated.
+
+- Final targeted checks at 390 and 1063 px also verified tab alignment and repository filtering across the commit/event histories. Calendar and timeline screenshots were captured at their actual content positions and visually reviewed.
+- Invalid and future calendar years returned HTTP 400; local Python/Jinja logo requests returned HTTP 200.

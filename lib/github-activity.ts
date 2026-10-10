@@ -72,8 +72,11 @@ export function parseContributions(html: string, year: number): z.infer<typeof c
       throw Error('Incomplete contribution calendar');
     days.push(daySchema.parse({ date, count: tips.get(id), level }));
   }
-  if (!days.length || new Set(days.map((day) => day.date)).size !== days.length)
-    throw Error('Invalid contribution calendar');
+  const first = Date.UTC(year, 0, 1);
+  const end = Math.min(Date.UTC(year + 1, 0, 1), Date.parse(today + 'T00:00:00Z') + 86400000);
+  const expectedDays = Math.round((end - first) / 86400000);
+  if (days.length !== expectedDays || new Set(days.map((day) => day.date)).size !== days.length)
+    throw Error('Incomplete contribution calendar');
   days.sort((a, b) => a.date.localeCompare(b.date));
   return { year, days, total: days.reduce((sum, day) => sum + day.count, 0) };
 }
@@ -125,16 +128,21 @@ async function cached<T>(
   return promise;
 }
 const validRepo = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
+let apiRemaining = Infinity;
 async function api(route: string, etag?: string | null) {
-  return fetch('https://api.github.com' + route, {
+  const response = await fetch('https://api.github.com' + route, {
     headers: {
       Accept: 'application/vnd.github+json',
       'User-Agent': 'Eric-Profile',
+      ...(process.env.GITHUB_TOKEN ? { Authorization: 'Bearer ' + process.env.GITHUB_TOKEN } : {}),
       ...(etag ? { 'If-None-Match': etag } : {}),
     },
     cache: 'no-store',
     signal: AbortSignal.timeout(8000),
   });
+  const remaining = response.headers.get('x-ratelimit-remaining');
+  if (remaining !== null && Number.isFinite(Number(remaining))) apiRemaining = Number(remaining);
+  return response;
 }
 export async function getGithubActivity(
   username: string,
@@ -173,7 +181,11 @@ export async function getGithubActivity(
     cached('events-' + key, eventsSchema, 60 * 1000, async (previous) => {
       if (previous && previous.notBefore > Date.now()) return previous;
       const response = await api('/users/' + user + '/events/public?per_page=100', previous?.etag);
-      const pollSeconds = Math.max(60, Number(response.headers.get('x-poll-interval')) || 60);
+      const pollSeconds = Math.max(
+        60,
+        Number(response.headers.get('x-poll-interval')) || 60,
+        apiRemaining < 20 ? 300 : 60,
+      );
       if (response.status === 304 && previous)
         return { ...previous, pollSeconds, notBefore: Date.now() + pollSeconds * 1000 };
       if (!response.ok) throw Error('Events unavailable');

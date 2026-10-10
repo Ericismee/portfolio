@@ -34,6 +34,10 @@ const logos: Record<string, string> = {
   'Objective-C': 'objectivec',
   TeX: 'latex',
   Makefile: 'cmake',
+  PLpgSQL: 'postgresql',
+  Jinja: 'jinja',
+  Batchfile: 'windows11',
+  'Go Template': 'go',
 };
 export function TechLogo({ name }: { name: string }) {
   const [failed, setFailed] = useState(false);
