@@ -156,7 +156,15 @@ export function FieldsForm({
             </div>
           );
         return (
-          <div key={field.key}>
+          <div
+            key={field.key}
+            className={
+              ['textarea', 'pdf'].includes(field.type || '') ||
+              ['name', 'title'].includes(field.key)
+                ? 'field-wide'
+                : 'field-compact'
+            }
+          >
             <label className={field.type === 'checkbox' ? 'check' : ''}>
               {field.type !== 'checkbox' && field.label}
               {field.type === 'textarea' ? (

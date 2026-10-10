@@ -268,13 +268,21 @@ function Site({
           </h3>
           {editing.button(t('Sửa dự án', 'Edit project'), () => editing.item('projects', '', p.id))}
           <p className="project-description">{p.description}</p>
-          <div className="tags">
-            <span className="tag">{p.tech}</span>
-            <span className="badge">{p.status}</span>
+          <div className="tags project-technologies">
+            {(p.technologies.length ? p.technologies : p.tech.split(','))
+              .filter(Boolean)
+              .map((tech) => (
+                <span className="tag" key={tech}>
+                  {tech.trim()}
+                </span>
+              ))}
           </div>
-          <Link className="text-action" href={'/projects/' + encodeURIComponent(p.id)}>
-            {t('Xem chi tiết →', 'View details →')}
-          </Link>
+          <div className="project-card-actions">
+            <span className="badge">{p.status}</span>
+            <Link className="text-action" href={'/projects/' + encodeURIComponent(p.id)}>
+              {t('Xem chi tiết →', 'View details →')}
+            </Link>
+          </div>
         </div>
       </article>
     );

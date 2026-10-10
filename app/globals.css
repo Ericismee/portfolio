@@ -302,6 +302,7 @@
   color: #172b4d;
 }
 .content-editor {
+  width: min(1080px, calc(100vw - 48px));
   position: fixed;
   inset: 0;
   margin: auto;
@@ -1871,5 +1872,97 @@ button.gh-day:hover {
 @media (max-width: 600px) {
   .profile-intro .cover:has(> img) {
     height: 152px;
+  }
+}
+
+/* Shared card geometry keeps original images uncropped and rows aligned. */
+.project-grid:not(.list) {
+  grid-auto-rows: 1fr;
+}
+.project-grid .project[data-tone] > .project-art[data-frame] {
+  aspect-ratio: 16 / 10;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+.project-grid .project-art[data-frame] img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.project-grid .project-content h3 {
+  flex: 0 0 auto;
+  margin: 0;
+  min-height: 1.45em;
+}
+.project-grid .project-content > .project-description {
+  min-height: 5.25em;
+  margin: 12px 0 18px;
+}
+.project-technologies {
+  align-content: flex-start;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 20px;
+}
+.project-technologies .tag {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 5px 9px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  box-shadow: none;
+  overflow-wrap: anywhere;
+}
+.project-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+.project-card-actions .badge {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  border-radius: 5px;
+  padding: 4px 7px;
+}
+.project-card-actions .text-action {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.content-editor .editor-fields {
+  padding: 28px 32px;
+  scrollbar-gutter: stable;
+}
+@media (min-width: 800px) {
+  .content-editor .admin-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .content-editor .admin-form > * {
+    grid-column: 1 / -1;
+    margin: 0;
+    min-width: 0;
+  }
+  .content-editor .admin-form > .field-compact {
+    grid-column: auto;
+  }
+  .content-editor .admin-form label {
+    margin: 0;
+  }
+}
+@media (max-width: 600px) {
+  .content-editor {
+    width: calc(100vw - 20px);
+    max-height: 94dvh;
+  }
+  .content-editor .editor-fields {
+    padding: 20px 16px;
   }
 }
