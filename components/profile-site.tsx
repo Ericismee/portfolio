@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 import type { Content, Project, Post } from '../lib/schema';
 import { applyTheme } from '../lib/theme';
 import { Icon } from './icon';
+import { SocialLogo, socialLabels } from './social-logo';
 import { LanguageProvider, useLanguage } from './language';
 import { useInlineEdit } from './inline-edit';
 import type { GithubSkills } from '../lib/github-skills';
@@ -153,13 +154,17 @@ function Site({
       .filter(([, value]) => value)
       .map(([key, value]) => (
         <a
-          className="side-link"
+          className="side-link social-link"
           key={key}
           href={key === 'email' ? 'mailto:' + value : value}
           target={key === 'email' ? undefined : '_blank'}
           rel="noopener noreferrer"
         >
-          {key === 'email' ? 'Email' : key[0].toUpperCase() + key.slice(1)} ↗
+          <SocialLogo name={key.toLowerCase()} />
+          <span>{socialLabels[key.toLowerCase()] || key[0].toUpperCase() + key.slice(1)}</span>
+          <span className="social-link-arrow" aria-hidden="true">
+            ↗
+          </span>
         </a>
       ));
   function aside() {
@@ -468,7 +473,13 @@ function Site({
           </div>
         </section>
         {sections.map((s, i) => (
-          <section className="card pad" id={'section-' + i} key={s.name}>
+          <section
+            className="card pad"
+            id={'section-' + i}
+            tabIndex={-1}
+            aria-label={title(s.name)}
+            key={s.name}
+          >
             <div className="section-heading">
               <h2>{title(s.name)}</h2>
               {editing.enabled && (
@@ -489,16 +500,31 @@ function Site({
       </>,
       <>
         {card(t('Liên kết', 'Links'), links())}
+        {sections.length > 1 &&
+          card(
+            t('Đi đến nhanh', 'Jump to a section'),
+            <>
+              <p className="profile-jump-help">
+                {t(
+                  'Chọn một mục để cuộn đến nội dung trên trang này.',
+                  'Choose a section to jump to its content on this page.',
+                )}
+              </p>
+              <nav
+                className="profile-jump-nav"
+                aria-label={t('Đi đến các phần hồ sơ', 'Jump to profile sections')}
+              >
+                {sections.map((s, i) => (
+                  <a className="toc-link" href={'#section-' + i} key={s.name}>
+                    <span>{title(s.name)}</span>
+                    <span aria-hidden="true">↓</span>
+                  </a>
+                ))}
+              </nav>
+            </>,
+          )}
         {data.github.showSidebar && (
           <GithubSkillsCard stats={githubSkills} settings={data.github} avatar={profile.avatar} />
-        )}
-        {card(
-          t('Trong hồ sơ này', 'On this profile'),
-          sections.map((s, i) => (
-            <a className="toc-link" href={'#section-' + i} key={s.name}>
-              {title(s.name)}
-            </a>
-          )),
         )}
         <div className="footer">
           {t('Thông tin do chủ hồ sơ cung cấp', 'Information provided by the profile owner')}

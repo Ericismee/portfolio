@@ -101,3 +101,12 @@ The older `QA.md` describes the historical mock. This document records the Next.
 Added a static alpha gradient to the profile cover image, blending its lower edge into the card background. The avatar and edit controls are outside the mask. The cover-only geometric backdrop and bottom border are removed when a photo is present; the empty-cover design remains unchanged.
 
 Production build passed. In the running preview on port 3001, checked 360, 390, 768, 1024 and 1440 px: the image mask was active, the avatar had no mask and there was no document-level horizontal overflow. Visually reviewed desktop and 390 px screenshots. The background uses the card theme token; a dark-theme visual check was not performed in this pass.
+
+
+## Link logos and profile jump navigation — 10 October 2026
+
+- Added local inline SVG brand marks to social links, including canonical GitHub and LinkedIn labels. Other supported platforms have their corresponding marks and unknown link types use a globe.
+- Renamed the profile contents card to “Đi đến nhanh”, added a short explanation and downward arrows, and moved it above the GitHub card. It is omitted when fewer than two sections exist.
+- In the actual port-3001 preview, clicking Skills moved to section-3 and focused that section. Pressing Enter on Introduction moved to section-0 with its top at approximately 88 px, clear of the fixed header. Fixed inherited global navigation styling that initially arranged these links horizontally.
+- Checked actual viewport widths 360, 390, 768, 1024 and 1440 px on the active profile tab: no document horizontal overflow. Visually reviewed the desktop link logos and vertical jump navigation. Lint, strict types and the production build passed.
+- The requested TikTok avatar awaits the owner's TikTok URL or username. No account has been inferred from the reference image and the existing GitHub avatar remains in place.

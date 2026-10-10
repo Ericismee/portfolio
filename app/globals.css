@@ -1432,3 +1432,72 @@ button.gh-day:hover {
     transparent 100%
   );
 }
+
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+}
+.social-logo {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.social-logo svg {
+  width: 20px;
+  height: 20px;
+}
+.social-logo[data-brand='linkedin'],
+.social-logo[data-brand='facebook'] {
+  color: #0a66c2;
+}
+.social-logo[data-brand='instagram'],
+.social-logo[data-brand='youtube'] {
+  color: #c62d52;
+}
+.social-link-arrow {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 15px;
+}
+.profile-jump-help {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 0 0 10px;
+}
+.profile-jump-nav .toc-link {
+  justify-content: space-between;
+  min-height: 44px;
+  gap: 12px;
+  text-decoration: none;
+}
+.profile-jump-nav .toc-link::before {
+  display: none;
+}
+.profile-jump-nav .toc-link > span:last-child {
+  color: var(--muted);
+}
+.profile-jump-nav .toc-link:hover,
+.profile-jump-nav .toc-link:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.profile-intro ~ section[id]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.profile-jump-nav {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  height: auto;
+  margin: 0;
+}
