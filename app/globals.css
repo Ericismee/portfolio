@@ -1339,6 +1339,25 @@ button.gh-day:hover {
   gap: 22px;
   min-width: 0;
 }
+.github-config-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  height: auto;
+  margin: 0;
+}
+.github-config-nav a {
+  padding: 8px 12px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.github-settings-form fieldset {
+  scroll-margin-top: 100px;
+}
 .github-settings-form fieldset {
   margin: 0;
   padding: 16px;

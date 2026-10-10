@@ -141,3 +141,11 @@ Production build passed. In the running preview on port 3001, checked 360, 390, 
 - Verified 33 loaded repositories in isolated port-3002 administration and inline configuration, including visibility/featured controls, at 360, 390, 768, 1024 and 1440 px: no list horizontal overflow or clipped option groups. No test settings were saved. Visually reviewed the inline list.
 - Verified the actual port-3001 GitHub page at the same widths: old heading absent, compact refresh present, no document horizontal overflow. Clicked Refresh and switched to Repositories successfully; visually reviewed the final page. The home sidebar's normal Synced label was absent.
 - Lint and the production build, including TypeScript compilation, passed.
+
+## Roomier administration and image controls — 10 October 2026
+
+- Added section jump links to GitHub configuration, moved repository selection before visibility toggles, and removed obsolete title/description inputs after the public introduction card was removed. Existing stored copy remains preserved.
+- Expanded image framing to available editor width, enlarged the existing cover preview, styled the administration image workspace, and added horizontal/vertical position sliders and a 1× zoom button. Clarified that restoring previously cropped areas requires the original image.
+- In isolated port-3002 administration, clicking Choose repositories placed its fieldset at approximately 100 px below the top, clear of the header. All 33 repositories loaded. At 360, 390, 768, 1024 and 1440 px, the repository list and document had no horizontal overflow.
+- Tested the cover position sliders with End/Home: horizontal 100%, vertical 0% changed preview offsets accordingly. Zoom out returned 1×; Reset returned centered 1.1×. Visually reviewed the enlarged desktop workspace. Checked the framing editor at the same five widths without document overflow. Canceled without applying or saving a crop. Owner content was not changed.
+- Lint and production build, including TypeScript compilation, passed. No physical-device touch or export test was performed for this UI-only adjustment.

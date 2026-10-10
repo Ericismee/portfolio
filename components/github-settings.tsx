@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { GithubSettings } from '../lib/schema';
 import type { GithubSkills } from '../lib/github-skills';
 import { request } from '../lib/client';
@@ -17,6 +17,7 @@ export function GithubSettingsForm({
   onDirty?: (dirty: boolean) => void;
 }) {
   const { t } = useLanguage();
+  const sectionId = useId();
   const [value, setValue] = useState(initial);
   const [username, setUsername] = useState(initialUsername);
   const [loadedUsername, setLoadedUsername] = useState(initialUsername);
@@ -94,7 +95,15 @@ export function GithubSettingsForm({
         }
       }}
     >
-      <fieldset disabled={busy}>
+      <nav
+        className="github-config-nav"
+        aria-label={t('Đi đến phần cấu hình', 'Configuration sections')}
+      >
+        <a href={'#' + sectionId + '-account'}>{t('Tài khoản', 'Account')}</a>
+        <a href={'#' + sectionId + '-repos'}>{t('Chọn kho mã', 'Choose repositories')}</a>
+        <a href={'#' + sectionId + '-sections'}>{t('Các phần hiển thị', 'Visible sections')}</a>
+      </nav>
+      <fieldset id={sectionId + '-account'} disabled={busy}>
         <legend>{t('Nội dung & cập nhật', 'Content & updates')}</legend>
         <label>
           {t('Tài khoản GitHub công khai', 'Public GitHub username')}
@@ -158,7 +167,7 @@ export function GithubSettingsForm({
         </p>
       </fieldset>
 
-      <fieldset disabled={busy}>
+      <fieldset id={sectionId + '-repos'} disabled={busy}>
         <legend>{t('Chọn kho mã', 'Choose repositories')}</legend>
         <label className="github-check">
           <input
@@ -354,7 +363,7 @@ export function GithubSettingsForm({
           )}
         </p>
       </fieldset>
-      <fieldset disabled={busy}>
+      <fieldset id={sectionId + '-sections'} disabled={busy}>
         <legend>{t('Các phần hiển thị', 'Visible sections')}</legend>
         <div className="github-setting-toggles">
           {toggles.map(([key, label]) => (
