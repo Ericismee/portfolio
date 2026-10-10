@@ -117,3 +117,10 @@ Production build passed. In the running preview on port 3001, checked 360, 390, 
 - Extended the photo cover to 184 px on desktop/tablet and 128 px on mobile, preserving its fade and avatar overlap.
 - Updated sidebar order to Links, GitHub, then Jump to a section.
 - Production build passed. Checked actual preview widths 360, 390, 768, 1024 and 1440 px: expected cover heights and sidebar order, with no document horizontal overflow. Visually reviewed the final desktop screenshot.
+
+## GitHub copy and local administrator login — 10 October 2026
+
+- Shortened the GitHub heading to Dấu ấn mã nguồn and its description to Dự án và đóng góp trên GitHub. Updated the current stored settings through the versioned database writer, preserving the previous revision, as well as schema defaults.
+- Configured the ignored local .env with PUBLIC_ORIGIN=http://localhost:3001. The startup script now stops with an actionable configuration message if the trusted origin is absent; origin checks, CSRF and secure production cookies remain intact.
+- Submitted the existing filled login form in the actual port-3001 browser: login succeeded and the administration editor opened. Reloaded the GitHub page and verified its updated heading and description.
+- Lint, TypeScript, all 15 tests and the production build passed. Added regression coverage for missing origin, rejection of a different origin and successful configured-origin production login with a Secure session cookie.
