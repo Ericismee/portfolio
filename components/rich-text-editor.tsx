@@ -56,14 +56,25 @@ export function RichTextEditor({
         setError(t('Nhập liên kết video YouTube hợp lệ.', 'Enter a valid YouTube video URL.'));
         return;
       }
-      editor.chain().focus().setYoutubeVideo({ src: url }).run();
+      editor
+        .chain()
+        .focus()
+        .setTextSelection(editor.state.selection.to)
+        .setYoutubeVideo({ src: url })
+        .run();
     } else {
       const safe = safeMediaUrl(url);
       if (!safe) {
         setError(t('Nhập liên kết http hoặc https hợp lệ.', 'Enter a valid http or https URL.'));
         return;
       }
-      if (insert === 'image') editor.chain().focus().setImage({ src: safe }).run();
+      if (insert === 'image')
+        editor
+          .chain()
+          .focus()
+          .setTextSelection(editor.state.selection.to)
+          .setImage({ src: safe })
+          .run();
       else editor.chain().focus().extendMarkRange('link').setLink({ href: safe }).run();
     }
     setInsert('');
@@ -156,7 +167,15 @@ export function RichTextEditor({
           onChange={async (e) => {
             const input = e.currentTarget;
             const file = input.files?.[0];
-            if (file) await upload(file, (src) => editor.chain().focus().setImage({ src }).run());
+            if (file)
+              await upload(file, (src) =>
+                editor
+                  .chain()
+                  .focus()
+                  .setTextSelection(editor.state.selection.to)
+                  .setImage({ src })
+                  .run(),
+              );
             input.value = '';
           }}
         />
