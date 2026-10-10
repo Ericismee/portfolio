@@ -44,6 +44,34 @@
   gap: 12px;
   flex-wrap: wrap;
 }
+.projects-heading {
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 18px;
+}
+.projects-heading h1 {
+  margin: 0;
+  font-size: 26px;
+}
+.projects-heading .page-heading-actions {
+  margin-left: auto;
+  gap: 8px;
+  width: auto;
+}
+.projects-heading .btn {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 13px;
+  box-shadow: none;
+}
+.project-back {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border, #d9e2ee);
+}
+.project-back a {
+  font-size: 14px;
+  font-weight: 650;
+}
 .page-description {
   color: var(--muted);
   margin: 0 0 24px;

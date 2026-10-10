@@ -18,6 +18,7 @@ import {
 import { entries, prepareLegacyImport, request, RequestError } from '../lib/client';
 import { Icon } from './icon';
 import { readRichText, richPlainText } from '../lib/rich-text';
+import { saveGithubChanges } from '../lib/github-save';
 import { applyTheme } from '../lib/theme';
 import { LanguageProvider, useLanguage } from './language';
 import { EditorDialog, FieldsForm, type Editor, type Field, type Values } from './admin-form';
@@ -209,7 +210,7 @@ function AdminDashboard() {
     if (kind === 'projects') {
       const project = p as Project | undefined;
       values.technologies = project?.technologies.join(', ') || '';
-      values.imageFrame = project?.imageFrame || 'square';
+      values.imageFrame = project?.imageFrame || 'original';
       fields.push(
         field('name', t('Tên dự án', 'Project name'), 'text', true),
         field('description', t('Mô tả ngắn', 'Short description'), 'textarea'),
@@ -237,6 +238,7 @@ function AdminDashboard() {
           ['landscape', t('Ngang 16:9', 'Landscape 16:9')],
           ['portrait', t('Dọc 3:4', 'Portrait 3:4')],
           ['original', t('Tỷ lệ gốc', 'Original ratio')],
+          ['none', t('Không hiển thị ảnh', 'Hide image')],
         ]),
         field('pinned', t('Ghim trong mục nổi bật', 'Pin in featured section'), 'checkbox'),
       );
@@ -558,12 +560,13 @@ function AdminDashboard() {
           initial={d.github}
           initialUsername={d.githubUsername}
           onDirty={setDirty}
-          save={(settings, username) =>
-            mutate((next) => {
-              next.github = settings;
-              next.githubUsername = username;
-            })
-          }
+          save={async (settings, username, resolve) => {
+            const result = await saveGithubChanges(d, settings, username, csrfToken, resolve);
+            setState(result);
+            setDirty(false);
+            setError('');
+            setToast(t('Đã lưu trên máy chủ', 'Saved to server'));
+          }}
         />
       );
     if (tab === 'profile') {

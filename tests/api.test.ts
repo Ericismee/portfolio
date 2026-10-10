@@ -264,6 +264,42 @@ test('Custom sections, safe input and contact inbox', async () => {
     await f.cleanup();
   }
 });
+test('Contact accepts short and long messages without character-count limits', async () => {
+  const f = await fixture();
+  try {
+    await f.login();
+    for (const message of ['Hi', 'Nội dung dài '.repeat(2000)]) {
+      assert.equal(
+        (
+          await f.call('/api/contact', 'POST', {
+            name: 'Visitor',
+            email: 'visitor@example.com',
+            subject: 'Hợp tác',
+            message,
+          })
+        ).response.status,
+        201,
+      );
+    }
+    assert.equal(
+      (
+        await f.call('/api/contact', 'POST', {
+          name: 'Visitor',
+          email: 'visitor@example.com',
+          subject: 'Trao đổi',
+          message: '   ',
+        })
+      ).response.status,
+      400,
+    );
+    const messages = (await f.call('/api/admin/messages')).data.messages;
+    assert.equal(messages.length, 2);
+    assert.ok(messages.some((m: { message: string }) => m.message.length > 10000));
+  } finally {
+    await f.cleanup();
+  }
+});
+
 test('Uploads validate signatures and imports preserve embedded assets', async () => {
   const f = await fixture();
   try {

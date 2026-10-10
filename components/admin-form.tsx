@@ -75,7 +75,12 @@ export function FieldsForm({
       const result = (await response.json()) as { url: string; error?: string };
       if (!response.ok) throw Error(result.error);
       if (done) done(result.url);
-      else setValues((v) => ({ ...v, [key]: result.url }));
+      else
+        setValues((v) => ({
+          ...v,
+          [key]: result.url,
+          ...(key === 'thumbnail' ? { imageFrame: 'original' } : {}),
+        }));
       return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : t('Không tải được file', 'Unable to upload'));

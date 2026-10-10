@@ -13,7 +13,7 @@ const messageInput = z.object({
   name: z.string().trim().min(1).max(200),
   email: z.email().max(254),
   subject: z.string().trim().min(1).max(200),
-  message: z.string().trim().min(10).max(10000),
+  message: z.string().trim().min(1),
 });
 export async function requestBytes(request: Request, max = 8 * 1024 * 1024) {
   const chunks: Uint8Array[] = [];

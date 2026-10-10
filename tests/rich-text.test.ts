@@ -13,8 +13,8 @@ test('Rich documents preserve plain posts and survive schema round trips with im
       .richText,
     richText,
   );
-  assert.equal(projectSchema.parse({ id: 'project', name: 'Project' }).imageFrame, 'square');
-  for (const imageFrame of ['square', 'landscape', 'portrait', 'original'])
+  assert.equal(projectSchema.parse({ id: 'project', name: 'Project' }).imageFrame, 'original');
+  for (const imageFrame of ['square', 'landscape', 'portrait', 'original', 'none'])
     assert.equal(
       projectSchema.parse({ id: 'project', name: 'Project', imageFrame }).imageFrame,
       imageFrame,

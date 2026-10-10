@@ -20,6 +20,7 @@ import { EditorDialog, type Editor, type Field, type Values } from './admin-form
 import { useLanguage } from './language';
 import { Icon } from './icon';
 import { readRichText, richPlainText } from '../lib/rich-text';
+import { saveGithubChanges } from '../lib/github-save';
 
 // Private content is fetched only after the server confirms an admin session.
 // The profile itself still renders the public projection, including after saves.
@@ -161,7 +162,7 @@ export function useInlineEdit(publicData: Content) {
     const fields: Field[] = [];
     if (kind === 'projects') {
       values.technologies = (existing as Project | undefined)?.technologies.join(', ') || '';
-      values.imageFrame = (existing as Project | undefined)?.imageFrame || 'square';
+      values.imageFrame = (existing as Project | undefined)?.imageFrame || 'original';
       fields.push(
         field('name', t('Tên dự án', 'Project name'), 'text', true),
         field('description', t('Mô tả', 'Description'), 'textarea'),
@@ -193,6 +194,7 @@ export function useInlineEdit(publicData: Content) {
             ['landscape', t('Ngang 16:9', 'Landscape 16:9')],
             ['portrait', t('Dọc 3:4', 'Portrait 3:4')],
             ['original', t('Tỷ lệ gốc', 'Original ratio')],
+            ['none', t('Không hiển thị ảnh', 'Hide image')],
           ],
         },
         field('pinned', t('Ghim nổi bật', 'Featured'), 'checkbox'),
@@ -481,11 +483,11 @@ export function useInlineEdit(publicData: Content) {
           initialUsername={state.data.githubUsername}
           focusRepositories={featured}
           onDirty={onDirty}
-          save={async (settings, username) => {
-            await save((d) => {
-              d.github = settings;
-              d.githubUsername = username;
-            });
+          save={async (settings, username, resolve) => {
+            const next = await saveGithubChanges(state.data, settings, username, csrf, resolve);
+            setState(next);
+            setNotice(t('Đã lưu thay đổi.', 'Changes saved.'));
+            router.refresh();
             setEditor(null);
           }}
         />

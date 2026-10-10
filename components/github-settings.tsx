@@ -2,7 +2,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { GithubSettings } from '../lib/schema';
 import type { GithubSkills } from '../lib/github-skills';
-import { request } from '../lib/client';
+import { request, RequestError } from '../lib/client';
 import { useLanguage } from './language';
 
 export function GithubSettingsForm({
@@ -15,7 +15,7 @@ export function GithubSettingsForm({
 }: {
   initial: GithubSettings;
   initialUsername: string;
-  save: (settings: GithubSettings, username: string) => Promise<void>;
+  save: (settings: GithubSettings, username: string, resolve?: boolean) => Promise<void>;
   onDirty?: (dirty: boolean) => void;
   focusRepositories?: boolean;
   formId?: string;
@@ -38,6 +38,7 @@ export function GithubSettingsForm({
   const [query, setQuery] = useState('');
   const [loadError, setLoadError] = useState('');
   const [error, setError] = useState('');
+  const [conflict, setConflict] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reload, setReload] = useState(0);
@@ -104,6 +105,7 @@ export function GithubSettingsForm({
         try {
           await save(value, username);
         } catch (e) {
+          setConflict(e instanceof RequestError && e.status === 409);
           setError(e instanceof Error ? e.message : t('Không lưu được.', 'Unable to save.'));
         } finally {
           setBusy(false);
@@ -400,6 +402,27 @@ export function GithubSettingsForm({
         </p>
       )}
       <div className="form-actions">
+        {conflict && (
+          <button
+            className="btn primary"
+            type="button"
+            disabled={busy || username !== loadedUsername}
+            onClick={async () => {
+              setBusy(true);
+              setError('');
+              try {
+                await save(value, username, true);
+                setConflict(false);
+              } catch (e) {
+                setError(e instanceof Error ? e.message : t('Không lưu được.', 'Unable to save.'));
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {t('Lưu lựa chọn của tôi trên bản mới', 'Save my choices on the latest version')}
+          </button>
+        )}
         <button className="btn" disabled={busy || !dirty}>
           {busy ? t('Đang lưu…', 'Saving…') : t('Lưu cấu hình GitHub', 'Save GitHub settings')}
         </button>
@@ -409,6 +432,7 @@ export function GithubSettingsForm({
           disabled={busy || !dirty}
           onClick={() => {
             setError('');
+            setConflict(false);
             setValue(initial);
             setUsername(initialUsername);
             if (loadedUsername !== initialUsername) {

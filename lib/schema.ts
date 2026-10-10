@@ -45,7 +45,7 @@ export const projectSchema = z.object({
   demo: url,
   source: url,
   thumbnail: url,
-  imageFrame: z.enum(['square', 'landscape', 'portrait', 'original']).default('square'),
+  imageFrame: z.enum(['square', 'landscape', 'portrait', 'original', 'none']).default('original'),
   pinned: z.boolean().default(false),
   sample: z.boolean().default(false),
 });

@@ -246,20 +246,22 @@ function Site({
         key={p.id}
         data-tone={['blue', 'lavender', 'mint', 'peach'][index % 4]}
       >
-        <Link
-          className="project-art"
-          data-frame={p.imageFrame}
-          href={'/projects/' + encodeURIComponent(p.id)}
-        >
-          {p.thumbnail ? (
-            <img src={p.thumbnail} alt={p.name} />
-          ) : (
-            <>
-              <span className="project-monogram">{p.name.slice(0, 2).toUpperCase()}</span>
-              <span className="project-art-label">{p.tech}</span>
-            </>
-          )}
-        </Link>
+        {p.imageFrame !== 'none' && (
+          <Link
+            className="project-art"
+            data-frame={p.imageFrame}
+            href={'/projects/' + encodeURIComponent(p.id)}
+          >
+            {p.thumbnail ? (
+              <img src={p.thumbnail} alt={p.name} />
+            ) : (
+              <>
+                <span className="project-monogram">{p.name.slice(0, 2).toUpperCase()}</span>
+                <span className="project-art-label">{p.tech}</span>
+              </>
+            )}
+          </Link>
+        )}
         <div className="project-content">
           <h3>
             <Link href={'/projects/' + encodeURIComponent(p.id)}>{p.name}</Link>
@@ -600,11 +602,8 @@ function Site({
     };
     return shell(
       <section className="card pad">
-        <div className="section-heading">
-          <div>
-            <p className="page-eyebrow">{t('Sản phẩm & mã nguồn', 'Work & source code')}</p>
-            <h1>{t('Dự án', 'Projects')}</h1>
-          </div>
+        <div className="section-heading projects-heading">
+          <h1>{t('Dự án', 'Projects')}</h1>
           <div className="page-heading-actions">
             {editing.button(
               t('Thêm dự án', 'Add project'),
@@ -624,12 +623,6 @@ function Site({
             </button>
           </div>
         </div>
-        <p className="page-description">
-          {t(
-            'Khám phá từng sản phẩm, công nghệ và quá trình xây dựng.',
-            'Explore each product, its technology and how it was built.',
-          )}
-        </p>
         <form
           className="filters"
           key={JSON.stringify(query)}
@@ -699,11 +692,15 @@ function Site({
       );
     return shell(
       <section className="card">
-        <div className="project-art project-detail-art" data-frame={p.imageFrame}>
-          {p.thumbnail ? <img src={p.thumbnail} alt={p.name} /> : p.name}
-        </div>
-        <div className="pad">
+        <div className="project-back">
           <Link href="/projects">← {t('Tất cả dự án', 'All projects')}</Link>
+        </div>
+        {p.imageFrame !== 'none' && (
+          <div className="project-art project-detail-art" data-frame={p.imageFrame}>
+            {p.thumbnail ? <img src={p.thumbnail} alt={p.name} /> : p.name}
+          </div>
+        )}
+        <div className="pad">
           <h1>{p.name}</h1>
           {editing.button(t('Sửa dự án', 'Edit project'), () => editing.item('projects', '', p.id))}
           <span className="badge">{p.status}</span>
@@ -1025,11 +1022,30 @@ function ContactForm() {
         </label>
       </div>
       <label>
-        {t('Chủ đề', 'Subject')} *<input name="subject" required maxLength={200} />
+        {t('Chủ đề', 'Subject')} *
+        <input
+          name="subject"
+          required
+          maxLength={200}
+          list="contact-subjects"
+          placeholder={t('Chọn hoặc nhập chủ đề…', 'Choose or enter a subject…')}
+        />
+        <datalist id="contact-subjects">
+          {[
+            t('Trao đổi', 'Discussion'),
+            t('Hợp tác', 'Collaboration'),
+            t('Cơ hội công việc', 'Job opportunity'),
+            t('Góp ý', 'Feedback'),
+            t('Hỗ trợ dự án', 'Project support'),
+            t('Khác', 'Other'),
+          ].map((subject) => (
+            <option key={subject} value={subject} />
+          ))}
+        </datalist>
       </label>
       <label>
         {t('Nội dung', 'Message')} *
-        <textarea name="message" required minLength={10} maxLength={10000} />
+        <textarea name="message" required />
       </label>
       <p className="muted">
         {t(
