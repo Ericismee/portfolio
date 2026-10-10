@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { openDatabase } from '../lib/database.ts';
+import { openDatabase, HttpError } from '../lib/database.ts';
 import { createApi } from '../lib/api.ts';
 import { passwordHash } from '../lib/auth.ts';
 import { type ContentState, publicContent, contentSchema } from '../lib/schema.ts';
@@ -287,7 +287,13 @@ test('Uploads validate signatures and imports preserve embedded assets', async (
       }),
     );
     assert.equal(uploaded.status, 201);
-    assert.match((await uploaded.json()).url, /^\/uploads\/.*\.png$/);
+    const imageUrl = (await uploaded.json()).url;
+    assert.match(imageUrl, /^\/uploads\/.*\.png$/);
+    assert.deepEqual(
+      await readFile(path.join(f.directory, imageUrl)),
+      Buffer.from(png, 'base64'),
+      'Uploads preserve the original bytes without resizing or converting',
+    );
     const state = (await f.call('/api/admin/content')).data as ContentState;
     state.data.profile.avatar = 'data:image/png;base64,' + png;
     const imported = await f.call('/api/admin/import', 'POST', state);
@@ -295,6 +301,43 @@ test('Uploads validate signatures and imports preserve embedded assets', async (
     assert.match(imported.data.data.profile.avatar, /^\/uploads\//);
     const publicView = publicContent(imported.data.data);
     assert.deepEqual(publicView.trash, []);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test('Appearance and logo save together, and stale saves retain HTTP 409 after module reload', async () => {
+  const f = await fixture();
+  try {
+    await f.login();
+    const state = (await f.call('/api/admin/content')).data as ContentState;
+    assert.equal(state.data.profile.logo, '');
+    state.data.profile.logo = '/uploads/1234-abcd.png';
+    state.data.theme = 'dark';
+    state.data.density = 'compact';
+    state.data.layout = 'wide';
+    const saved = await f.call('/api/admin/content', 'PUT', state);
+    assert.equal(saved.response.status, 200);
+    assert.equal(saved.data.data.profile.logo, state.data.profile.logo);
+    assert.equal(publicContent(f.database.read().data).profile.logo, state.data.profile.logo);
+    assert.equal(f.database.read().data.theme, 'dark');
+    assert.equal((await f.call('/api/admin/content', 'PUT', state)).response.status, 409);
+    // Recreate the constructor mismatch produced by development hot reload.
+    const reloaded = await import(new URL('../lib/database.ts?reload-test', import.meta.url).href);
+    const conflict = new reloaded.HttpError(409, 'Reload before saving');
+    assert.equal(conflict instanceof HttpError, false);
+    f.database.write = () => {
+      throw conflict;
+    };
+    const stale = await f.call('/api/admin/content', 'PUT', state);
+    assert.equal(stale.response.status, 409);
+    assert.equal(stale.data.error, 'Reload before saving');
+    const refreshed = openDatabase(f.directory, f.database.db);
+    assert.equal(refreshed.read().data.profile.logo, state.data.profile.logo);
+    assert.equal(f.database.read().data.profile.logo, state.data.profile.logo);
+    const latest = refreshed.read();
+    refreshed.write(latest.data, latest.version);
+    assert.equal(f.database.read().version, latest.version + 1);
   } finally {
     await f.cleanup();
   }

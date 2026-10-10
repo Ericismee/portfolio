@@ -126,6 +126,7 @@ export const contentSchema = z
       about: text(20000),
       avatar: url,
       cover: url,
+      logo: url,
     }),
     theme: z.enum(['light', 'dark']).default('light'),
     accent: z.string().regex(/^#[a-f0-9]{6}$/i),

@@ -819,8 +819,16 @@ function Site({
       </a>
       <header>
         <div className="header-inner">
-          <Link className="logo" href="/" aria-label={profile.name}>
-            {Array.from(profile.name)[0]}
+          <Link
+            className={'logo' + (profile.logo ? ' has-image' : '')}
+            href="/"
+            aria-label={profile.name}
+          >
+            {profile.logo ? (
+              <img src={profile.logo} alt={profile.name} />
+            ) : (
+              Array.from(profile.name)[0]
+            )}
           </Link>
           <form
             className="search"

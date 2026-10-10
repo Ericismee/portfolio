@@ -5,9 +5,7 @@ import { useLanguage } from './language';
 import { Icon } from './icon';
 
 type Source = { image: HTMLImageElement; url: string; owned: boolean };
-// Already cropped uploads can exactly fit the frame. A small initial zoom gives
-// repositioning room on both axes without permitting blank edges.
-const centered: CropPosition = { x: 0.5, y: 0.5, zoom: 1.1 };
+const centered: CropPosition = { x: 0.5, y: 0.5, zoom: 1 };
 
 export function ImageFramePicker({
   name,
@@ -37,7 +35,7 @@ export function ImageFramePicker({
   const sourceRef = useRef<Source | null>(null);
   const loadSequence = useRef(0);
   const avatar = name === 'avatar';
-  const aspect = avatar ? 1 : name === 'cover' ? 4 : 16 / 9;
+  const aspect = avatar || name === 'logo' ? 1 : name === 'cover' ? 4 : 16 / 9;
   useEffect(() => {
     if (!source || !frame.current) return;
     const observer = new ResizeObserver(([entry]) => setFrameWidth(entry.contentRect.width));
@@ -75,8 +73,22 @@ export function ImageFramePicker({
       );
       return;
     }
+    // Keep uploaded bytes (dimensions, transparency and animation) untouched.
+    // Framing is a separate, explicitly chosen operation on the saved image.
+    if (file) {
+      close();
+      setLoading(true);
+      try {
+        await upload(file);
+      } catch {
+        setError(t('Không thể tải ảnh lên. Hãy thử lại.', 'Unable to upload image. Try again.'));
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     const sequence = ++loadSequence.current;
-    const url = file ? URL.createObjectURL(file) : value;
+    const url = value;
     if (!url) return;
     setLoading(true);
     onEditingChange(true);
@@ -86,16 +98,14 @@ export function ImageFramePicker({
     try {
       await image.decode();
       if (sequence !== loadSequence.current) {
-        if (file) URL.revokeObjectURL(url);
         return;
       }
       if (sourceRef.current?.owned) URL.revokeObjectURL(sourceRef.current.url);
-      const next = { image, url, owned: !!file };
+      const next = { image, url, owned: false };
       sourceRef.current = next;
       setSource(next);
       setCrop(centered);
     } catch {
-      if (file) URL.revokeObjectURL(url);
       if (sequence === loadSequence.current) {
         setError(
           t(
@@ -129,12 +139,11 @@ export function ImageFramePicker({
     setLoading(true);
     try {
       const canvas = document.createElement('canvas');
-      canvas.width = avatar ? 800 : 1600;
+      // A chosen crop may shrink an image, but must never upscale it.
+      canvas.width = Math.max(1, Math.floor(rectangle.width));
       canvas.height = Math.round(canvas.width / aspect);
       const context = canvas.getContext('2d');
       if (!context) throw Error('Canvas unavailable');
-      context.fillStyle = '#fff';
-      context.fillRect(0, 0, canvas.width, canvas.height);
       context.drawImage(
         source.image,
         rectangle.x,
@@ -149,11 +158,10 @@ export function ImageFramePicker({
       const blob = await new Promise<Blob>((resolve, reject) =>
         canvas.toBlob(
           (blob) => (blob ? resolve(blob) : reject(Error('Unable to export image'))),
-          'image/jpeg',
-          0.9,
+          'image/png',
         ),
       );
-      if (await upload(new File([blob], name + '.jpg', { type: 'image/jpeg' }))) close();
+      if (await upload(new File([blob], name + '.png', { type: 'image/png' }))) close();
     } catch {
       setError(
         t(
@@ -355,8 +363,8 @@ export function ImageFramePicker({
       )}
       <small className="admin-help">
         {t(
-          'Ảnh tối đa 3 MB. Chọn khung → dùng khung → lưu để công khai. Muốn lấy lại vùng đã cắt, hãy chọn ảnh gốc. GIF được lưu thành ảnh tĩnh.',
-          'Images up to 3 MB. Frame → apply → save to publish. Choose the original image to recover previously cropped areas. GIF is saved as a still image.',
+          'Ảnh tối đa 3 MB. Tải lên giữ nguyên ảnh gốc và kích thước. Chọn “Chỉnh khung ảnh” nếu muốn cắt, rồi lưu để công khai. Chỉ khi cắt khung, GIF mới thành ảnh tĩnh; tải lại ảnh gốc để chỉnh vùng đã cắt.',
+          'Images up to 3 MB. Uploads retain original dimensions and file contents. Choose “Adjust framing” to crop, then save to publish. Cropping makes GIFs static; upload the original again to recover cropped areas.',
         )}
       </small>
     </div>

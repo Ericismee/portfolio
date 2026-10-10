@@ -3,17 +3,32 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { contentSchema, type ContentState } from './schema.ts';
 import { initial, skills } from './seed.ts';
+const httpErrorBrand = Symbol.for('profile.httpError');
 export class HttpError extends Error {
+  readonly [httpErrorBrand] = true;
   status: number;
   constructor(status: number, message: string) {
     super(message);
     this.status = status;
   }
 }
-export function openDatabase(directory = process.env.DATA_DIR || path.resolve('.data')) {
+// Development hot reload can leave cached database methods holding an older
+// constructor. Recognize intentional HTTP errors across module generations.
+export function isHttpError(error: unknown): error is HttpError {
+  return (
+    error instanceof Error &&
+    Reflect.get(error, httpErrorBrand) === true &&
+    Number.isInteger(Reflect.get(error, 'status'))
+  );
+}
+export function openDatabase(
+  directory = process.env.DATA_DIR || path.resolve('.data'),
+  connection?: DatabaseSync,
+) {
   mkdirSync(directory, { recursive: true, mode: 0o700 });
-  const db = new DatabaseSync(path.join(directory, 'profile.sqlite'));
-  db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;
+  const db = connection ?? new DatabaseSync(path.join(directory, 'profile.sqlite'));
+  if (!connection) {
+    db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;
  CREATE TABLE IF NOT EXISTS migrations(version INTEGER PRIMARY KEY);
  CREATE TABLE IF NOT EXISTS content(id INTEGER PRIMARY KEY CHECK(id=1),version INTEGER NOT NULL,body TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS admins(username TEXT PRIMARY KEY,password_hash TEXT NOT NULL);
@@ -21,14 +36,15 @@ export function openDatabase(directory = process.env.DATA_DIR || path.resolve('.
  CREATE TABLE IF NOT EXISTS revisions(id INTEGER PRIMARY KEY AUTOINCREMENT,body TEXT NOT NULL,created_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS messages(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,email TEXT NOT NULL,subject TEXT NOT NULL,message TEXT NOT NULL,created_at TEXT NOT NULL);
  INSERT OR IGNORE INTO migrations VALUES(1);`);
-  const seed = contentSchema.parse({
-    ...initial,
-    skills,
-    posts: initial.posts.map((p) => ({ ...p, visibility: 'draft' })),
-    projects: initial.projects.map((p) => ({ ...p, visibility: 'public' })),
-  });
-  // Seed once. Restarting or deploying a new build must never replace authored content.
-  db.prepare('INSERT OR IGNORE INTO content VALUES(1,1,?)').run(JSON.stringify(seed));
+    const seed = contentSchema.parse({
+      ...initial,
+      skills,
+      posts: initial.posts.map((p) => ({ ...p, visibility: 'draft' })),
+      projects: initial.projects.map((p) => ({ ...p, visibility: 'public' })),
+    });
+    // Seed once. Restarting or deploying a new build must never replace authored content.
+    db.prepare('INSERT OR IGNORE INTO content VALUES(1,1,?)').run(JSON.stringify(seed));
+  }
   const read = (): ContentState => {
     const r = db.prepare('SELECT version,body FROM content WHERE id=1').get() as {
       version: number;
@@ -67,5 +83,17 @@ export function openDatabase(directory = process.env.DATA_DIR || path.resolve('.
   return { db, read, write, directory };
 }
 export type Database = ReturnType<typeof openDatabase>;
-const globalDB = globalThis as typeof globalThis & { profileDB?: Database };
-export const getDatabase = () => (globalDB.profileDB ??= openDatabase());
+const globalDB = globalThis as typeof globalThis & {
+  profileDB?: Database;
+  profileDBSchema?: typeof contentSchema;
+};
+export const getDatabase = () => {
+  if (globalDB.profileDBSchema !== contentSchema) {
+    // Pages and API routes may load separate module generations. Reuse the
+    // connection without closing one still used by an in-flight handler.
+    const previous = globalDB.profileDB;
+    globalDB.profileDB = previous ? openDatabase(previous.directory, previous.db) : undefined;
+    globalDB.profileDBSchema = contentSchema;
+  }
+  return (globalDB.profileDB ??= openDatabase());
+};

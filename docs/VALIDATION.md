@@ -158,3 +158,12 @@ Production build passed. In the running preview on port 3001, checked 360, 390, 
 - In isolated port-3002 browser QA, opened the new action, selected portfolio, saved, verified its featured card and reloaded. Then removed portfolio and saved to restore the previous QA selection. Owner selections were not altered.
 - Clicked the actual port-3001 account card and confirmed /github. Verified home headings and three project summary descriptions; checked 360, 390, 768, 1024 and 1440 px without document horizontal overflow. Visually reviewed the project list and checked the owner featured action at 390 px without overflow.
 - Lint, TypeScript, all 15 tests and the production build passed.
+
+## Original uploads, website logo and appearance save — 10 October 2026
+
+- Added a separate website logo upload in Appearance & data. Existing profiles default to the initial letter. Uploaded logos use contain sizing in the header to preserve proportions.
+- New image selections upload the original bytes immediately, retaining dimensions, transparency and GIF animation. Cropping is explicitly optional; the crop starts at 1× and exports a PNG at source crop dimensions without upscaling. Applying a crop still requires Save to publish.
+- Fixed HTTP error recognition across reloaded modules so stale saves remain 409 conflicts instead of becoming generic 500 errors. API/schema caches refresh with module generations while sharing the SQLite connection without closing active handlers. Unexpected server failures now retain stack diagnostics in server logs.
+- In isolated port-3002 administration, uploaded an existing 236×419 JPEG as a logo; confirmed the original dimensions, saved successfully and visually reviewed the logo on a project page in its 38×38 header box with contain sizing. Returned to administration and saved again after visiting the public page. Opened optional framing, moved the position with ArrowDown, applied it, and confirmed a 236×236 PNG before saving successfully.
+- Added regression checks for original byte preservation, logo/appearance persistence, stale conflicts across constructor generations and reuse of a live database connection. Lint, TypeScript, all 16 tests and the production build passed. The final API suite also passed after the shared-connection assertion was added.
+- Restarted the port-3001 development server and confirmed the new logo upload is available in owner administration. Owner content was not modified by the tests. Touch-device behavior and animated GIF cropping were not exercised in this pass.

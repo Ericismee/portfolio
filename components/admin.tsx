@@ -812,6 +812,7 @@ function AdminDashboard() {
             csrf={csrfToken}
             onDirty={setDirty}
             fields={[
+              field('logo', t('Logo website', 'Website logo'), 'image'),
               field('accent', t('Màu chủ đạo', 'Accent color'), 'color'),
               select('theme', t('Giao diện', 'Theme'), [
                 ['light', t('Sáng', 'Light')],
@@ -826,9 +827,16 @@ function AdminDashboard() {
                 ['wide', t('Rộng', 'Wide')],
               ]),
             ]}
-            initial={{ accent: d.accent, theme: d.theme, density: d.density, layout: d.layout }}
+            initial={{
+              logo: d.profile.logo,
+              accent: d.accent,
+              theme: d.theme,
+              density: d.density,
+              layout: d.layout,
+            }}
             submit={(v) =>
               mutate((d) => {
+                d.profile.logo = String(v.logo || '');
                 d.accent = String(v.accent);
                 d.theme = v.theme === 'dark' ? 'dark' : 'light';
                 d.density = v.density === 'compact' ? 'compact' : 'comfortable';

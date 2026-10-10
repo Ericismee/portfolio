@@ -1,6 +1,6 @@
 import { getGithubSkills } from './github-skills.ts';
 import { z, ZodError } from 'zod';
-import { getDatabase, HttpError, type Database } from './database.ts';
+import { getDatabase, HttpError, isHttpError, type Database } from './database.ts';
 import { authService, passwordHash, verifyPassword } from './auth.ts';
 import { publicContent } from './schema.ts';
 import { migrateAssets, storeUpload } from './uploads.ts';
@@ -36,7 +36,7 @@ async function json(request: Request) {
   try {
     return JSON.parse((await requestBytes(request)).toString()) as unknown;
   } catch (e) {
-    if (e instanceof HttpError) throw e;
+    if (isHttpError(e)) throw e;
     throw new HttpError(400, 'Invalid JSON');
   }
 }
@@ -171,16 +171,24 @@ export function createApi(database: Database, production = false, origin?: strin
           },
           400,
         );
-      if (e instanceof HttpError) return send({ error: e.message }, e.status);
-      console.error('API request failed:', e instanceof Error ? e.name : 'Unknown error');
+      if (isHttpError(e)) return send({ error: e.message }, e.status);
+      console.error('API request failed:', e instanceof Error ? e.stack : 'Unknown error');
       return send({ error: 'Server error / Lỗi máy chủ' }, 500);
     }
   };
 }
-const apiGlobal = globalThis as typeof globalThis & { profileAPI?: ReturnType<typeof createApi> };
-export const handleApi = (request: Request) =>
-  (apiGlobal.profileAPI ??= createApi(
+const apiGlobal = globalThis as typeof globalThis & {
+  profileAPI?: ReturnType<typeof createApi>;
+  profileAPIFactory?: typeof createApi;
+};
+export const handleApi = (request: Request) => {
+  if (apiGlobal.profileAPIFactory !== createApi) {
+    apiGlobal.profileAPI = undefined;
+    apiGlobal.profileAPIFactory = createApi;
+  }
+  return (apiGlobal.profileAPI ??= createApi(
     getDatabase(),
     process.env.NODE_ENV === 'production',
     process.env.PUBLIC_ORIGIN,
   ))(request);
+};
