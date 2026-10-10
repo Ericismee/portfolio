@@ -28,7 +28,7 @@ Screenshots are captured from the local production build using an isolated QA da
 
 ![Desktop profile](docs/screenshots/profile-desktop.png)
 ![Mobile profile](docs/screenshots/profile-mobile.png)
-![Administration](docs/screenshots/admin-desktop.png)
+
 
 ## Stack
 
