@@ -45,7 +45,7 @@ export function GithubSkillsCard({
           </span>
         )}
       </div>
-      <a className="github-account" href={url} target="_blank" rel="noopener noreferrer">
+      <Link className="github-account" href="/github">
         <span className="github-account-symbol" aria-hidden="true">
           {stats.profile?.avatarUrl || avatar ? (
             <img src={stats.profile?.avatarUrl || avatar} alt="" />
@@ -55,9 +55,9 @@ export function GithubSkillsCard({
         </span>
         <span>
           <strong>{stats.profile?.name || stats.username}</strong>
-          <small>@{stats.username} ↗</small>
+          <small>@{stats.username} →</small>
         </span>
-      </a>
+      </Link>
       {stats.profile?.bio && <p className="github-account-bio">{stats.profile.bio}</p>}
       {stats.status === 'ready' ? (
         <>

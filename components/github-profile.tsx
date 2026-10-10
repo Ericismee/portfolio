@@ -14,11 +14,13 @@ export function GithubProfile({
   owner,
   settings: initialSettings,
   configure,
+  configureFeatured,
 }: {
   initial: GithubSkills;
   owner: Content['profile'];
   settings: GithubSettings;
   configure?: ReactNode;
+  configureFeatured?: ReactNode;
 }) {
   const { t, language } = useLanguage();
   const [settings, setSettings] = useState(initialSettings);
@@ -392,6 +394,7 @@ export function GithubProfile({
               <section className="card pad">
                 <div className="gh-section-heading">
                   <h2>{t('Kho mã nổi bật', 'Featured repositories')}</h2>
+                  {configureFeatured}
                   {settings.showRepositories && (
                     <button className="text-action" onClick={() => setTab('repositories')}>
                       {t('Xem tất cả →', 'View all →')}

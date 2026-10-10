@@ -107,8 +107,8 @@ function Site({
   const profile = data.profile;
   const names: Record<string, string> = {
     'Giới thiệu': t('Giới thiệu', 'About'),
-    'Nổi bật': t('Nổi bật', 'Featured'),
-    'Dự án': t('Dự án', 'Projects'),
+    'Nổi bật': t('Dự án tiêu biểu', 'Selected work'),
+    'Dự án': t('Tất cả dự án', 'All projects'),
     'Kỹ năng': t('Kỹ năng', 'Skills'),
     'Kinh nghiệm': t('Kinh nghiệm', 'Experience'),
     'Học vấn': t('Học vấn', 'Education'),
@@ -354,28 +354,41 @@ function Site({
       if (name === 'Giới thiệu' && profile.about)
         body = <p className="preserve">{profile.about}</p>;
       else if (name === 'Nổi bật' && featured.length)
-        body = <div className="project-grid featured-grid">{featured.map(projectCard)}</div>;
+        body = (
+          <>
+            <p className="profile-section-intro">
+              {t(
+                'Các dự án tiêu biểu — xem mục tiêu, công nghệ và cách tôi xây dựng.',
+                'Selected work — explore the goals, technology and how I built it.',
+              )}
+            </p>
+            <div className="project-grid featured-grid">{featured.map(projectCard)}</div>
+          </>
+        );
       else if (name === 'Dự án' && data.projects.length)
         body = (
           <div className="project-overview">
             <p className="muted">
-              {data.projects.length} {t('dự án trong hồ sơ', 'projects in this profile')}
+              {data.projects.length}{' '}
+              {t(
+                'dự án · Chọn một dự án để xem chi tiết.',
+                'projects · Choose a project to explore.',
+              )}
             </p>
-            {data.projects
-              .filter((p) => !featured.includes(p))
-              .map((p) => (
-                <Link
-                  className="project-summary-link"
-                  key={p.id}
-                  href={'/projects/' + encodeURIComponent(p.id)}
-                >
-                  <span>
-                    <strong>{p.name}</strong>
-                    <small>{p.tech}</small>
-                  </span>
-                  <span aria-hidden="true">↗</span>
-                </Link>
-              ))}
+            {data.projects.map((p) => (
+              <Link
+                className="project-summary-link"
+                key={p.id}
+                href={'/projects/' + encodeURIComponent(p.id)}
+              >
+                <span>
+                  <strong>{p.name}</strong>
+                  <small>{p.tech}</small>
+                  <span className="project-summary-description">{p.description}</span>
+                </span>
+                <span aria-hidden="true">↗</span>
+              </Link>
+            ))}
             <Link className="btn neutral all-projects" href="/projects">
               {t('Xem tất cả dự án →', 'View all projects →')}
             </Link>
@@ -774,6 +787,11 @@ function Site({
         configure={editing.button(
           t('Cấu hình GitHub', 'GitHub settings'),
           editing.githubSettings,
+          true,
+        )}
+        configureFeatured={editing.button(
+          t('Chọn repo nổi bật', 'Choose featured repos'),
+          editing.githubFeatured,
           true,
         )}
       />

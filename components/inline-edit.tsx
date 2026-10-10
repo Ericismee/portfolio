@@ -438,6 +438,9 @@ export function useInlineEdit(publicData: Content) {
     });
   }
   function githubSettings() {
+    openGithubSettings(false);
+  }
+  function openGithubSettings(featured: boolean) {
     if (!state) return;
     open({
       title: t('Cấu hình GitHub', 'GitHub settings'),
@@ -445,6 +448,7 @@ export function useInlineEdit(publicData: Content) {
         <GithubSettingsForm
           initial={state.data.github}
           initialUsername={state.data.githubUsername}
+          focusRepositories={featured}
           onDirty={onDirty}
           save={async (settings, username) => {
             await save((d) => {
@@ -493,6 +497,7 @@ export function useInlineEdit(publicData: Content) {
     sectionSettings,
     addSection,
     githubSettings,
+    githubFeatured: () => openGithubSettings(true),
     item: editItem,
     settings: state && (
       <>

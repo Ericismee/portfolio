@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { GithubSettings } from '../lib/schema';
 import type { GithubSkills } from '../lib/github-skills';
 import { request } from '../lib/client';
@@ -10,14 +10,25 @@ export function GithubSettingsForm({
   initialUsername,
   save,
   onDirty,
+  focusRepositories = false,
 }: {
   initial: GithubSettings;
   initialUsername: string;
   save: (settings: GithubSettings, username: string) => Promise<void>;
   onDirty?: (dirty: boolean) => void;
+  focusRepositories?: boolean;
 }) {
   const { t } = useLanguage();
   const sectionId = useId();
+  const repositoryFieldset = useRef<HTMLFieldSetElement>(null);
+  useEffect(() => {
+    if (!focusRepositories) return;
+    const frame = requestAnimationFrame(() => {
+      repositoryFieldset.current?.scrollIntoView({ block: 'start' });
+      repositoryFieldset.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focusRepositories]);
   const [value, setValue] = useState(initial);
   const [username, setUsername] = useState(initialUsername);
   const [loadedUsername, setLoadedUsername] = useState(initialUsername);
@@ -167,7 +178,7 @@ export function GithubSettingsForm({
         </p>
       </fieldset>
 
-      <fieldset id={sectionId + '-repos'} disabled={busy}>
+      <fieldset ref={repositoryFieldset} tabIndex={-1} id={sectionId + '-repos'} disabled={busy}>
         <legend>{t('Chọn kho mã', 'Choose repositories')}</legend>
         <label className="github-check">
           <input

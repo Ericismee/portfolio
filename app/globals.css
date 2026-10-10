@@ -952,10 +952,24 @@
 }
 .gh-section-heading {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
+}
+.profile-section-intro {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+  margin: 0 0 20px;
+}
+.project-summary-description {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 8px;
 }
 .gh-section-heading h2,
 .gh-history h2,
