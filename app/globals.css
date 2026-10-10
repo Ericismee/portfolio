@@ -1520,7 +1520,7 @@ button.gh-day:hover {
 
 /* Blend only the cover into the card; keep the avatar and edit controls crisp. */
 .profile-intro .cover:has(> img) {
-  height: 240px;
+  height: 264px;
   background: var(--card);
   border-bottom: 0;
 }
