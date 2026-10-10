@@ -2005,6 +2005,16 @@ button.gh-day:hover {
   padding: 2px 0 2px 20px;
 }
 @media (max-width: 600px) {
+  .projects-heading {
+    flex-wrap: wrap;
+  }
+  .projects-heading h1 {
+    white-space: nowrap;
+  }
+  .projects-heading .page-heading-actions {
+    width: 100%;
+    margin-left: 0;
+  }
   .project-grid {
     gap: 18px;
   }
