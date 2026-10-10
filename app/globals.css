@@ -61,19 +61,11 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
-.inline-admin-bar {
-  padding: 18px 20px;
-  border-radius: 16px;
-  background: var(--card);
-  border: 1px solid var(--border-subtle);
-}
-.inline-admin-bar small,
 .inline-entry-row small {
   display: block;
   margin-top: 6px;
   color: var(--muted);
 }
-.inline-admin-bar .actions,
 .inline-section-actions {
   display: flex;
   flex-wrap: wrap;
@@ -85,6 +77,200 @@
 .inline-edit-button {
   min-height: 44px;
   white-space: normal;
+}
+.inline-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  padding: 10px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.inline-icon-button:hover {
+  background: var(--bg);
+  color: var(--ink);
+}
+.inline-edit-button svg,
+.inline-icon-button svg {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+}
+.inline-edit-button:not(.inline-edit-text) .edit-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.inline-edit-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.editable-avatar {
+  position: relative;
+  z-index: 3;
+  width: fit-content;
+  margin-top: -60px;
+}
+.editable-avatar .profile-avatar {
+  margin: 0;
+}
+.editable-avatar > .inline-edit-button {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 5px #172b4d18;
+}
+.inline-admin-menu {
+  position: relative;
+  align-self: center;
+}
+.inline-admin-menu > summary {
+  list-style: none;
+  background: var(--bg);
+}
+.inline-admin-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.inline-admin-options {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 230px;
+  max-width: calc(100vw - 40px);
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 8px 28px #172b4d20;
+  z-index: 20;
+}
+.inline-admin-options .btn {
+  justify-content: flex-start;
+  text-align: left;
+  border: 0;
+  box-shadow: none;
+}
+.project-content {
+  position: relative;
+}
+.project-content:has(> .inline-edit-button) h3 {
+  padding-right: 42px;
+}
+.project-content > .inline-edit-button {
+  position: absolute;
+  right: 8px;
+  top: 10px;
+}
+.image-field-title {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+.image-frame-picker {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.frame-current {
+  display: block;
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+.frame-current.is-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.frame-workspace {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.crop-frame {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #edf1f7;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.crop-frame.is-avatar {
+  max-width: 300px;
+}
+.crop-frame:active {
+  cursor: grabbing;
+}
+.crop-frame > img {
+  position: absolute;
+  max-width: none;
+  max-height: none;
+  object-fit: fill;
+  pointer-events: none;
+}
+.crop-circle-guide {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 100px #172b4d88;
+  border: 2px solid #fff;
+  pointer-events: none;
+}
+.content-editor .crop-zoom {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-weight: 500;
+}
+.crop-zoom svg {
+  width: 20px;
+  height: 20px;
+}
+.content-editor .crop-zoom input {
+  flex: 1;
+  width: 120px;
+  min-width: 80px;
+  padding: 0;
+  border: 0;
+  accent-color: #4264da;
+}
+.crop-zoom output {
+  font-variant-numeric: tabular-nums;
+}
+.image-frame-picker .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.content-editor .image-upload-label {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
 }
 .cover {
   position: relative;
@@ -118,12 +304,37 @@
   color: #51627a;
 }
 @media (max-width: 600px) {
-  .section-heading:has(.inline-section-actions) {
-    flex-wrap: wrap;
-  }
   .inline-section-actions {
-    width: 100%;
-    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 0;
+  }
+  .section-heading:has(.inline-section-actions) {
+    align-items: center;
+  }
+  .section-heading:has(.inline-section-actions) h2 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .editable-avatar {
+    margin-top: -44px;
+  }
+  .profile-body > .actions {
+    position: relative;
+  }
+  .profile-body .inline-admin-menu {
+    position: static;
+  }
+  .inline-cover-action {
+    right: 12px;
+    bottom: 12px;
+  }
+  .inline-cover-action .inline-edit-text .edit-label {
+    display: none;
+  }
+  .inline-cover-action .inline-edit-text {
+    width: 44px;
+    padding: 10px;
+    justify-content: center;
   }
 }
 .admin-page dialog {

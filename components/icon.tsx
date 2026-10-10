@@ -1,5 +1,17 @@
 export function Icon({ name }: { name: string }) {
   const paths: Record<string, React.ReactNode> = {
+    edit: (
+      <>
+        <path d="m15 4 5 5M4 20l5-1L21 7a2.1 2.1 0 0 0-4-4L5 15z" />
+      </>
+    ),
+    camera: (
+      <>
+        <path d="M3 7h4l2-3h6l2 3h4v13H3z" />
+        <circle cx="12" cy="13" r="4" />
+      </>
+    ),
+    plus: <path d="M12 5v14M5 12h14" />,
     profile: (
       <>
         <circle cx="12" cy="8" r="4" />

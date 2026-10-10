@@ -324,7 +324,7 @@ function Site({
     const featured = data.projects.filter((p) => p.pinned).slice(0, 2),
       sections: { name: string; body: ReactNode }[] = [];
     for (const name of data.sections) {
-      if (data.hidden.includes(name) && !editing.enabled) continue;
+      if (data.hidden.includes(name)) continue;
       let body: ReactNode = null;
       if (name === 'Giới thiệu' && profile.about)
         body = <p className="preserve">{profile.about}</p>;
@@ -390,22 +390,10 @@ function Site({
             </div>
           </article>
         ));
-      if (!body && editing.enabled)
-        body = (
-          <p className="muted">
-            {data.hidden.includes(name)
-              ? t('Mục này đang ẩn với khách truy cập.', 'This section is hidden from visitors.')
-              : t(
-                  'Chưa có nội dung công khai. Bấm Chỉnh sửa để bổ sung.',
-                  'No published content yet. Choose Edit to add content.',
-                )}
-          </p>
-        );
       if (body) sections.push({ name, body });
     }
     return shell(
       <>
-        {editing.toolbar}
         <section className="card profile-intro">
           <div
             className="cover"
@@ -413,17 +401,18 @@ function Site({
           >
             {profile.cover && <img src={profile.cover} alt={t('Ảnh bìa', 'Cover image')} />}
             <div className="inline-cover-action">
-              {editing.button(t('Sửa ảnh bìa', 'Edit cover'), () => editing.profile('cover'))}
+              {editing.button(t('Sửa ảnh bìa', 'Edit cover'), () => editing.profile('cover'), true)}
             </div>
           </div>
           <div className="profile-body">
-            {avatar('profile-avatar')}
-            {editing.button(t('Sửa ảnh đại diện', 'Edit avatar'), () => editing.profile('avatar'))}
+            <div className="editable-avatar">
+              {avatar('profile-avatar')}
+              {editing.button(t('Sửa ảnh đại diện', 'Edit avatar'), () =>
+                editing.profile('avatar'),
+              )}
+            </div>
             <div className="profile-identity">
               <h1>{profile.name}</h1>
-              {editing.button(t('Chỉnh sửa hồ sơ', 'Edit profile'), () =>
-                editing.profile('identity'),
-              )}
               <div className="headline">{profile.headline}</div>
               {profile.summary && <p className="profile-summary">{profile.summary}</p>}
               <div className="muted">
@@ -432,6 +421,11 @@ function Site({
               </div>
             </div>
             <div className="actions">
+              {editing.button(
+                t('Chỉnh sửa hồ sơ', 'Edit profile'),
+                () => editing.profile('identity'),
+                true,
+              )}
               <Link className="btn primary" href="/projects">
                 {t('Xem dự án', 'View projects')}
               </Link>
@@ -446,6 +440,7 @@ function Site({
               <button className="btn neutral" onClick={() => share()}>
                 {t('Chia sẻ', 'Share')}
               </button>
+              {editing.toolbar}
             </div>
           </div>
         </section>

@@ -111,6 +111,13 @@ async function snapshot(name) {
   });
   await writeFile('docs/screenshots/' + name, Buffer.from(result.result.data, 'base64'));
 }
+async function chooseTestImage(selector, vertical = false) {
+  await evaluate(
+    `(async()=>{const c=document.createElement('canvas');c.width=1200;c.height=800;const ctx=c.getContext('2d');ctx.fillStyle='#ff0000';ctx.fillRect(0,0,1200,800);ctx.fillStyle='#0000ff';ctx.fillRect(${vertical ? '0,400,1200,400' : '600,0,600,800'});const blob=await new Promise(r=>c.toBlob(r,'image/png'));const transfer=new DataTransfer();transfer.items.add(new File([blob],'frame-test.png',{type:'image/png'}));const input=document.querySelector(${JSON.stringify(selector)});input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+  );
+  await waitFor(`!!document.querySelector('.crop-frame img')`);
+  await pause(100);
+}
 try {
   await call('Runtime.enable');
   await call('Page.enable');
@@ -138,10 +145,9 @@ try {
   await fill('dialog [name=title]', 'QA published');
   await fill('dialog [name=visibility]', 'public');
   await fill('dialog [name=displayAt]', '2026-01-01T12:00');
-  await evaluate(
-    `(()=>{const bytes=Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='),c=>c.charCodeAt(0)),transfer=new DataTransfer();transfer.items.add(new File([bytes],'pixel.png',{type:'image/png'}));const input=document.querySelector('dialog [type=file]');input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}))})()`,
-  );
-  await waitFor(`!!document.querySelector('dialog .admin-asset')`, 'Image upload');
+  await chooseTestImage('dialog [type=file]');
+  await clickText('dialog button', 'Dùng khung ảnh này');
+  await waitFor(`!!document.querySelector('dialog .frame-current')`, 'Image upload');
   await evaluate(`document.querySelector('dialog form').requestSubmit()`);
   await waitFor(`!document.querySelector('dialog')`);
   await check(
@@ -364,22 +370,22 @@ try {
   // Inline editing uses the same authenticated API, from the actual profile.
   await go('/');
   await evaluate(`localStorage.setItem('profile-language','vi');location.reload()`);
-  await waitFor(`!!document.querySelector('.inline-admin-bar')`);
-  await clickText('.profile-identity button', 'Chỉnh sửa hồ sơ');
+  await waitFor(`!!document.querySelector('.inline-admin-menu')`);
+  await clickText('.profile-body > .actions button', 'Chỉnh sửa hồ sơ');
   await fill('dialog [name=headline]', 'Inline QA engineer');
   await evaluate(`document.querySelector('dialog form').requestSubmit()`);
   await waitFor(
     `!document.querySelector('dialog')&&document.querySelector('.headline').textContent==='Inline QA engineer'`,
   );
   await go('/');
-  await waitFor(`!!document.querySelector('.inline-admin-bar')`);
+  await waitFor(`!!document.querySelector('.inline-admin-menu')`);
   await check(
     'Inline profile save survives reload',
     `document.querySelector('.headline').textContent==='Inline QA engineer'`,
   );
   await check(
-    'Empty sections are editable for admin',
-    `[...document.querySelectorAll('.section-heading h2')].some(e=>e.textContent==='Kinh nghiệm')`,
+    'Admin profile has no empty placeholder cards or large admin banner',
+    `!document.querySelector('.inline-admin-bar')&&![...document.querySelectorAll('.section-heading h2')].some(e=>e.textContent==='Kinh nghiệm')`,
   );
   await evaluate(
     `(()=>{const section=[...document.querySelectorAll('section')].find(s=>s.querySelector('h2')?.textContent==='Kỹ năng');[...section.querySelectorAll('button')].find(b=>b.textContent==='Chỉnh sửa').click()})()`,
@@ -392,15 +398,18 @@ try {
     'Skills saved through inline dialog',
     `fetch('/api/content').then(r=>r.json()).then(r=>r.data.skills.join(',')==='TypeScript,Next.js,Accessibility')`,
   );
-  await clickText('.inline-admin-bar button', 'Thêm mục');
+  await evaluate(`document.querySelector('.inline-admin-menu summary').click()`);
+  await clickText('.inline-admin-options button', 'Các mục hồ sơ');
+  await check(
+    'Empty sections remain editable in profile options',
+    `!!document.querySelector('dialog [aria-label="Sửa Kinh nghiệm"]')`,
+  );
   await fill('dialog [name=title]', 'Inline notes');
   await evaluate(`document.querySelector('dialog form').requestSubmit()`);
-  await waitFor(
-    `!document.querySelector('dialog')&&document.body.innerText.includes('Inline notes')`,
-  );
-  await evaluate(
-    `(()=>{const s=[...document.querySelectorAll('section')].find(s=>s.querySelector('h2')?.textContent==='Inline notes');[...s.querySelectorAll('button')].find(b=>b.textContent==='Chỉnh sửa').click()})()`,
-  );
+  await waitFor(`!document.querySelector('dialog')`);
+  await evaluate(`document.querySelector('.inline-admin-menu summary').click()`);
+  await clickText('.inline-admin-options button', 'Các mục hồ sơ');
+  await evaluate(`document.querySelector('dialog [aria-label="Sửa Inline notes"]').click()`);
   await clickText('dialog button', 'Thêm nội dung');
   await fill('dialog [name=title]', 'Inline public entry');
   await fill('dialog [name=visibility]', 'public');
@@ -418,6 +427,125 @@ try {
   await waitFor(
     `!document.querySelector('dialog')&&document.body.innerText.includes('Project changed inline')`,
   );
+  await clickText('.editable-avatar button', 'Sửa ảnh đại diện');
+  await chooseTestImage('dialog [name=avatar-upload]');
+  await check(
+    'Pending framing blocks premature profile save',
+    `document.querySelector('dialog button[type=submit]').disabled`,
+  );
+  await check(
+    'Selected image is not public before save',
+    `fetch('/api/content').then(r=>r.json()).then(r=>!r.data.profile.avatar)`,
+  );
+  await fill('dialog [name=avatar-zoom]', '2');
+  await pause(100);
+  const frameBox = await evaluate(
+    `(()=>{const r=document.querySelector('.crop-frame').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`,
+  );
+  const initialLeft = await evaluate(`document.querySelector('.crop-frame img').style.left`);
+  await call('Input.dispatchMouseEvent', {
+    type: 'mousePressed',
+    x: frameBox.x,
+    y: frameBox.y,
+    button: 'left',
+    clickCount: 1,
+  });
+  await call('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x: frameBox.x - 100,
+    y: frameBox.y,
+    button: 'left',
+    buttons: 1,
+  });
+  await call('Input.dispatchMouseEvent', {
+    type: 'mouseReleased',
+    x: frameBox.x - 100,
+    y: frameBox.y,
+    button: 'left',
+    clickCount: 1,
+  });
+  await pause(100);
+  assert.notEqual(
+    await evaluate(`document.querySelector('.crop-frame img').style.left`),
+    initialLeft,
+    'Pointer dragging changes image framing',
+  );
+  console.log('PASS Pointer dragging changes image framing');
+  await evaluate(`document.querySelector('.crop-frame').focus()`);
+  for (let i = 0; i < 3; i++) {
+    await call('Input.dispatchKeyEvent', {
+      type: 'keyDown',
+      key: 'ArrowRight',
+      code: 'ArrowRight',
+      modifiers: 8,
+    });
+    await call('Input.dispatchKeyEvent', {
+      type: 'keyUp',
+      key: 'ArrowRight',
+      code: 'ArrowRight',
+      modifiers: 8,
+    });
+  }
+  await pause(100);
+  await call('Emulation.setDeviceMetricsOverride', {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await pause(100);
+  await snapshot('avatar-framing-mobile.png');
+  await check(
+    'Avatar framing fits mobile',
+    `document.documentElement.scrollWidth<=innerWidth&&document.querySelector('dialog').getBoundingClientRect().bottom<=innerHeight`,
+  );
+  await clickText('dialog button', 'Dùng khung ảnh này');
+  await waitFor(
+    `!!document.querySelector('.frame-current')&&!document.querySelector('.crop-frame')`,
+  );
+  await evaluate(`document.querySelector('dialog form').requestSubmit()`);
+  await waitFor(
+    `!document.querySelector('dialog')&&!!document.querySelector('.editable-avatar img')`,
+  );
+  await check(
+    'Exported avatar preserves chosen pixels and square dimensions',
+    `(async()=>{const d=await fetch('/api/content').then(r=>r.json());const img=new Image();img.src=d.data.profile.avatar;await img.decode();const c=document.createElement('canvas');c.width=800;c.height=800;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);const p=ctx.getImageData(50,400,1,1).data;return img.naturalWidth===800&&img.naturalHeight===800&&p[2]>240&&p[0]<15})()`,
+  );
+  await clickText('.inline-cover-action button', 'Sửa ảnh bìa');
+  await chooseTestImage('dialog [name=cover-upload]', true);
+  await clickText('dialog button', 'Hủy');
+  await check(
+    'Cancel framing leaves cover unchanged',
+    `!document.querySelector('.crop-frame')&&!document.querySelector('dialog button[type=submit]').disabled`,
+  );
+  await chooseTestImage('dialog [name=cover-upload]', true);
+  await evaluate(`document.querySelector('.crop-frame').focus()`);
+  for (let i = 0; i < 7; i++) {
+    await call('Input.dispatchKeyEvent', {
+      type: 'keyDown',
+      key: 'ArrowDown',
+      code: 'ArrowDown',
+      modifiers: 8,
+    });
+    await call('Input.dispatchKeyEvent', {
+      type: 'keyUp',
+      key: 'ArrowDown',
+      code: 'ArrowDown',
+      modifiers: 8,
+    });
+  }
+  await pause(100);
+  await snapshot('cover-framing-mobile.png');
+  await clickText('dialog button', 'Dùng khung ảnh này');
+  await waitFor(
+    `!!document.querySelector('.frame-current')&&!document.querySelector('.crop-frame')`,
+  );
+  await evaluate(`document.querySelector('dialog form').requestSubmit()`);
+  await waitFor(`!document.querySelector('dialog')&&!!document.querySelector('.cover img')`);
+  await check(
+    'Exported cover preserves chosen pixels and wide dimensions',
+    `(async()=>{const d=await fetch('/api/content').then(r=>r.json());const img=new Image();img.src=d.data.profile.cover;await img.decode();const c=document.createElement('canvas');c.width=1600;c.height=400;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);const p=ctx.getImageData(800,10,1,1).data;return img.naturalWidth===1600&&img.naturalHeight===400&&p[2]>240&&p[0]<15})()`,
+  );
   for (const width of [360, 390, 768, 1024, 1440]) {
     await call('Emulation.setDeviceMetricsOverride', {
       width,
@@ -434,7 +562,7 @@ try {
   await evaluate(`scrollTo(0,0)`);
   await pause(100);
   await snapshot('inline-admin-profile.png');
-  await clickText('.profile-identity button', 'Chỉnh sửa hồ sơ');
+  await clickText('.profile-body > .actions button', 'Chỉnh sửa hồ sơ');
   await call('Emulation.setDeviceMetricsOverride', {
     width: 390,
     height: 844,
@@ -447,8 +575,9 @@ try {
   );
   await snapshot('inline-editor-mobile.png');
   await clickText('.editor-head button', '×');
-  await clickText('.inline-admin-bar button', 'Đăng xuất');
-  await waitFor(`!document.querySelector('.inline-admin-bar')`);
+  await evaluate(`document.querySelector('.inline-admin-menu summary').click()`);
+  await clickText('.inline-admin-options button', 'Đăng xuất');
+  await waitFor(`!document.querySelector('.inline-admin-menu')`);
   await check(
     'Guest cannot see editing controls or empty sections',
     `!document.querySelector('.inline-edit-button')&&![...document.querySelectorAll('.section-heading h2')].some(e=>e.textContent==='Kinh nghiệm')`,
@@ -460,7 +589,11 @@ try {
   await go('/');
   await check(
     'Inline public changes remain after logout',
-    `document.querySelector('.headline').textContent==='Inline QA engineer'&&!document.querySelector('.inline-admin-bar')`,
+    `document.querySelector('.headline').textContent==='Inline QA engineer'&&!document.querySelector('.inline-admin-menu')`,
+  );
+  await check(
+    'Guest can load published cropped images',
+    `(async()=>{const images=[document.querySelector('.editable-avatar img'),document.querySelector('.cover img')];await Promise.all(images.map(img=>img.decode()));return images.every(img=>img.naturalWidth>0)&&!document.querySelector('a[href="/admin"]')})()`,
   );
   await snapshot('profile-mobile.png');
   await call('Emulation.setDeviceMetricsOverride', {

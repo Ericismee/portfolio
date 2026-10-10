@@ -16,6 +16,7 @@ import {
 } from '../lib/schema';
 import { EditorDialog, type Editor, type Field, type Values } from './admin-form';
 import { useLanguage } from './language';
+import { Icon } from './icon';
 
 // Private content is fetched only after the server confirms an admin session.
 // The profile itself still renders the public projection, including after saves.
@@ -347,8 +348,39 @@ export function useInlineEdit(publicData: Content) {
     });
   }
   function addSection() {
+    if (!state) return;
     open({
-      title: t('Thêm mục hồ sơ', 'Add profile section'),
+      title: t('Các mục hồ sơ', 'Profile sections'),
+      body: (
+        <div className="inline-entry-list">
+          {state.data.sections.map((name) => (
+            <div className="inline-entry-row" key={name}>
+              <div>
+                <strong>{state.data.sectionTitles[name] || name}</strong>
+                {state.data.hidden.includes(name) && <small>{t('Đã ẩn', 'Hidden')}</small>}
+              </div>
+              <div className="inline-section-actions">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label={t('Sửa ', 'Edit ') + name}
+                  onClick={() => section(name)}
+                >
+                  <Icon name="edit" />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label={t('Thiết lập ', 'Configure ') + name}
+                  onClick={() => sectionSettings(name)}
+                >
+                  <Icon name="more" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ),
       fields: [field('title', t('Tên mục', 'Section name'), 'text', true)],
       values: {},
       submit: (v) =>
@@ -361,10 +393,31 @@ export function useInlineEdit(publicData: Content) {
         }),
     });
   }
-  const button = (label: string, action: () => void) =>
+  const button = (label: string, action: () => void, showLabel = false) =>
     state && (
-      <button className="btn neutral inline-edit-button" type="button" onClick={action}>
-        {label}
+      <button
+        className={
+          showLabel
+            ? 'btn neutral inline-edit-button inline-edit-text'
+            : 'inline-edit-button inline-icon-button'
+        }
+        type="button"
+        onClick={action}
+        aria-label={label}
+        title={label}
+      >
+        <Icon
+          name={
+            /ảnh|avatar|cover/i.test(label)
+              ? 'camera'
+              : /Thiết lập|settings/i.test(label)
+                ? 'more'
+                : /Thêm|Add|Viết|Write/i.test(label)
+                  ? 'plus'
+                  : 'edit'
+          }
+        />
+        <span className="edit-label">{label}</span>
       </button>
     );
   return {
@@ -377,24 +430,31 @@ export function useInlineEdit(publicData: Content) {
     addSection,
     item: editItem,
     toolbar: state && (
-      <div
-        className="inline-admin-bar"
-        aria-label={t('Chỉnh sửa hồ sơ quản trị', 'Admin profile editing')}
+      <details
+        className="inline-admin-menu"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            event.currentTarget.open = false;
+            event.currentTarget.querySelector('summary')?.focus();
+          }
+        }}
       >
-        <div>
-          <strong>
-            {t('Bạn đang xem với quyền quản trị', 'You are viewing as administrator')}
-          </strong>
-          <small>
-            {t(
-              'Sửa ngay từng mục. Khách truy cập không thấy các nút này.',
-              'Edit each section directly. Visitors do not see these controls.',
-            )}
-          </small>
-        </div>
-        <div className="actions">
+        <summary
+          className="inline-icon-button"
+          aria-label={t('Tùy chỉnh hồ sơ', 'Profile options')}
+          title={t('Tùy chỉnh hồ sơ', 'Profile options')}
+        >
+          <Icon name="more" />
+        </summary>
+        <div
+          className="inline-admin-options"
+          onClick={(event) => {
+            if ((event.target as HTMLElement).closest('button,a'))
+              event.currentTarget.closest('details')?.removeAttribute('open');
+          }}
+        >
           <button className="btn neutral" onClick={addSection}>
-            {t('Thêm mục', 'Add section')}
+            {t('Các mục hồ sơ', 'Profile sections')}
           </button>
           <Link className="btn neutral" href="/admin">
             {t('Quản trị nâng cao', 'Advanced administration')}
@@ -415,7 +475,7 @@ export function useInlineEdit(publicData: Content) {
             {t('Đăng xuất', 'Sign out')}
           </button>
         </div>
-      </div>
+      </details>
     ),
     dialog: state && editor && (
       <EditorDialog key={editorKey} editor={editor} csrf={csrf} close={() => setEditor(null)} />

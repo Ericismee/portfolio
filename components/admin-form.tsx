@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useLanguage } from './language';
+import { ImageFramePicker } from './image-frame-picker';
 export type Field = {
   key: string;
   label: string;
@@ -50,8 +51,9 @@ export function FieldsForm({
     [values, setValues] = useState<Values>(initial),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
-    [uploading, setUploading] = useState(0);
-  const dirty = JSON.stringify(values) !== JSON.stringify(initial);
+    [uploading, setUploading] = useState(0),
+    [pendingCrops, setPendingCrops] = useState<Set<string>>(new Set());
+  const dirty = pendingCrops.size > 0 || JSON.stringify(values) !== JSON.stringify(initial);
   useEffect(() => {
     onDirty?.(dirty);
   }, [dirty, onDirty]);
@@ -67,15 +69,17 @@ export function FieldsForm({
       const result = (await response.json()) as { url: string; error?: string };
       if (!response.ok) throw Error(result.error);
       setValues((v) => ({ ...v, [key]: result.url }));
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : t('Không tải được file', 'Unable to upload'));
+      return false;
     } finally {
       setUploading((n) => n - 1);
     }
   }
   async function save(e: FormEvent) {
     e.preventDefault();
-    if (busy || uploading) return;
+    if (busy || uploading || pendingCrops.size) return;
     setBusy(true);
     setError('');
     try {
@@ -93,6 +97,28 @@ export function FieldsForm({
         const value = values[field.key] ?? '',
           update = (value: string | boolean) =>
             setValues((prev) => ({ ...prev, [field.key]: value }));
+        if (field.type === 'image')
+          return (
+            <div key={field.key}>
+              <h3 className="image-field-title">{field.label}</h3>
+              <ImageFramePicker
+                name={field.key}
+                label={field.label}
+                value={String(value)}
+                busy={busy || uploading > 0}
+                upload={(file) => upload(field.key, file)}
+                change={update}
+                onEditingChange={(editing) =>
+                  setPendingCrops((previous) => {
+                    const next = new Set(previous);
+                    if (editing) next.add(field.key);
+                    else next.delete(field.key);
+                    return next;
+                  })
+                }
+              />
+            </div>
+          );
         return (
           <div key={field.key}>
             <label className={field.type === 'checkbox' ? 'check' : ''}>
@@ -126,30 +152,19 @@ export function FieldsForm({
                   />
                   {field.label}
                 </>
-              ) : ['image', 'pdf'].includes(field.type || '') ? (
+              ) : field.type === 'pdf' ? (
                 <>
-                  {value && field.type === 'image' && (
-                    <img className="admin-asset" src={String(value)} alt={field.label} />
-                  )}
                   <input
                     type="file"
                     name={field.key + '-upload'}
-                    accept={
-                      field.type === 'pdf'
-                        ? 'application/pdf'
-                        : 'image/png,image/jpeg,image/webp,image/gif'
-                    }
+                    accept="application/pdf"
                     disabled={busy || uploading > 0}
                     onChange={(e) => {
                       if (e.target.files?.[0]) void upload(field.key, e.target.files[0]);
                       e.target.value = '';
                     }}
                   />
-                  <small className="admin-help">
-                    {field.type === 'pdf'
-                      ? t('PDF tối đa 2 MB', 'PDF up to 2 MB')
-                      : t('PNG, JPG, WebP, GIF tối đa 3 MB', 'PNG, JPG, WebP, GIF up to 3 MB')}
-                  </small>
+                  <small className="admin-help">{t('PDF tối đa 2 MB', 'PDF up to 2 MB')}</small>
                 </>
               ) : (
                 <input
@@ -182,7 +197,11 @@ export function FieldsForm({
       </p>
       {footer && (
         <div className="actions">
-          <button type="submit" className="btn primary" disabled={busy || uploading > 0}>
+          <button
+            type="submit"
+            className="btn primary"
+            disabled={busy || uploading > 0 || pendingCrops.size > 0}
+          >
             {uploading
               ? t('Đang tải file…', 'Uploading…')
               : busy
