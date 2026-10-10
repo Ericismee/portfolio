@@ -1,4 +1,11 @@
 import type { Content, Kind, Project, Post, Entry } from './schema';
+export class RequestError extends Error {
+  readonly status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
 export async function request<T>(
   url: string,
   method = 'GET',
@@ -13,10 +20,11 @@ export async function request<T>(
   });
   const json: unknown = await response.json();
   if (!response.ok)
-    throw Error(
+    throw new RequestError(
       typeof json === 'object' && json && 'error' in json
         ? String(json.error)
         : 'Request failed / Không thể kết nối',
+      response.status,
     );
   return json as T;
 }

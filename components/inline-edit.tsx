@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { request, entries } from '../lib/client';
 import {
   publicContent,
+  publicationStatus,
   projectSchema,
   postSchema,
   itemSchema,
@@ -266,7 +267,12 @@ export function useInlineEdit(publicData: Content) {
     if (name === 'Kỹ năng')
       return open({
         title: t('Chỉnh sửa kỹ năng', 'Edit skills'),
-        fields: [field('skills', t('Mỗi dòng một kỹ năng', 'One skill per line'), 'textarea')],
+        fields: [
+          {
+            ...field('skills', t('Mỗi dòng một kỹ năng', 'One skill per line'), 'textarea'),
+            rows: Math.min(24, Math.max(12, state.data.skills.length + 2)),
+          },
+        ],
         values: { skills: state.data.skills.join('\n') },
         submit: (v) =>
           save((d) => {
@@ -297,11 +303,14 @@ export function useInlineEdit(publicData: Content) {
               <div>
                 <strong>{'name' in item ? item.name : item.title}</strong>
                 <small>
-                  {item.visibility === 'draft'
-                    ? t('Bản nháp', 'Draft')
-                    : !item.visible
-                      ? t('Đã ẩn', 'Hidden')
-                      : t('Đã xuất bản', 'Published')}
+                  {
+                    {
+                      draft: t('Bản nháp', 'Draft'),
+                      hidden: t('Đã ẩn', 'Hidden'),
+                      scheduled: t('Đã hẹn giờ', 'Scheduled'),
+                      public: t('Đã xuất bản', 'Published'),
+                    }[publicationStatus(item)]
+                  }
                 </small>
               </div>
               <button className="btn neutral" onClick={() => editItem(kind, name, item.id)}>

@@ -343,6 +343,76 @@ test('Appearance and logo save together, and stale saves retain HTTP 409 after m
   }
 });
 
+test('Failed imports and restores leave authored data intact; revision retention stays bounded', async () => {
+  const f = await fixture();
+  try {
+    await f.login();
+    let state = f.database.read();
+    const invalid = structuredClone(state);
+    invalid.data.skills = Array.from({ length: 61 }, (_, i) => 'Skill ' + i);
+    assert.equal((await f.call('/api/admin/import', 'POST', invalid)).response.status, 400);
+    assert.equal(
+      (await f.call('/api/admin/restore', 'POST', { id: 99999, version: state.version })).response
+        .status,
+      404,
+    );
+    assert.deepEqual(f.database.read(), state);
+    for (let i = 0; i < 35; i++) {
+      state.data.profile.summary = 'Revision ' + i;
+      const saved = await f.call('/api/admin/content', 'PUT', state);
+      assert.equal(saved.response.status, 200);
+      state = saved.data;
+    }
+    const history = (await f.call('/api/admin/revisions')).data.revisions;
+    assert.equal(history.length, 30);
+    const restored = await f.call('/api/admin/restore', 'POST', {
+      id: history[0].id,
+      version: state.version,
+    });
+    assert.equal(restored.response.status, 200);
+    assert.equal(restored.data.data.profile.summary, 'Revision 33');
+    f.database.db.prepare('UPDATE sessions SET expires=0').run();
+    assert.equal((await f.call('/api/admin/content')).response.status, 401);
+    assert.equal((await f.call('/api/admin/content', 'PUT', state)).response.status, 403);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test('Original GIF and PDF uploads retain bytes; oversized files are rejected without content changes', async () => {
+  const f = await fixture();
+  try {
+    const { cookie, csrf } = await f.login();
+    const before = f.database.read();
+    const upload = (body: Buffer, mime: string) =>
+      f.handle(
+        new Request(f.origin + '/api/admin/upload', {
+          method: 'POST',
+          headers: { origin: f.origin, cookie, 'x-csrf-token': csrf, 'content-type': mime },
+          body: new Uint8Array(body),
+        }),
+      );
+    for (const [body, mime] of [
+      [Buffer.from('GIF89a original animation bytes'), 'image/gif'],
+      [Buffer.from('%PDF-1.7 original CV bytes'), 'application/pdf'],
+    ] as const) {
+      const response = await upload(body, mime);
+      assert.equal(response.status, 201);
+      const { url } = await response.json();
+      assert.deepEqual(await readFile(path.join(f.directory, url)), body);
+    }
+    const large = Buffer.alloc(3 * 1024 * 1024 + 1);
+    large.write('GIF89a');
+    assert.equal((await upload(large, 'image/gif')).status, 413);
+    const pdf = Buffer.alloc(2 * 1024 * 1024 + 1);
+    pdf.write('%PDF-');
+    assert.equal((await upload(pdf, 'application/pdf')).status, 413);
+    assert.deepEqual(f.database.read(), before);
+  } finally {
+    await f.cleanup();
+  }
+});
+
 test('GitHub configuration requires admin authorization and survives saving and database reload', async () => {
   const f = await fixture();
   try {

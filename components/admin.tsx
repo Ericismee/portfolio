@@ -6,6 +6,7 @@ import {
   projectSchema,
   postSchema,
   itemSchema,
+  publicationStatus,
   type Content,
   type ContentState,
   type Kind,
@@ -14,7 +15,8 @@ import {
   type Entry,
   type InboxMessage,
 } from '../lib/schema';
-import { entries, prepareLegacyImport, request } from '../lib/client';
+import { entries, prepareLegacyImport, request, RequestError } from '../lib/client';
+import { Icon } from './icon';
 import { applyTheme } from '../lib/theme';
 import { LanguageProvider, useLanguage } from './language';
 import { EditorDialog, FieldsForm, type Editor, type Field, type Values } from './admin-form';
@@ -125,10 +127,16 @@ function AdminDashboard() {
   });
   async function save(next: Content) {
     if (!state) throw Error('Please sign in');
-    const result = await api<ContentState>('/api/admin/content', 'PUT', {
-      data: next,
-      version: state.version,
-    });
+    let result: ContentState;
+    try {
+      result = await api<ContentState>('/api/admin/content', 'PUT', {
+        data: next,
+        version: state.version,
+      });
+    } catch (e) {
+      if (e instanceof RequestError && [401, 403, 409].includes(e.status)) setError(e.message);
+      throw e;
+    }
     setState(result);
     setDirty(false);
     setToast(t('Đã lưu trên máy chủ', 'Saved to server'));
@@ -153,6 +161,7 @@ function AdminDashboard() {
     }
   }
   function navigate(next: Tab) {
+    if (next === tab) return;
     if (dirty && !confirm(t('Bỏ các thay đổi chưa lưu?', 'Discard unsaved changes?'))) return;
     setDirty(false);
     setTab(next);
@@ -160,15 +169,15 @@ function AdminDashboard() {
     setQuery('');
     setFilter('all');
     setError('');
+    window.scrollTo({ top: 0 });
   }
   const status = (p: Project | Post | Entry) =>
-    p.visibility === 'draft'
-      ? t('Bản nháp', 'Draft')
-      : !p.visible
-        ? t('Đã ẩn', 'Hidden')
-        : 'displayAt' in p && p.displayAt && new Date(p.displayAt) > new Date()
-          ? t('Đã hẹn giờ', 'Scheduled')
-          : t('Công khai', 'Published');
+    ({
+      draft: t('Bản nháp', 'Draft'),
+      hidden: t('Đã ẩn', 'Hidden'),
+      scheduled: t('Đã hẹn giờ', 'Scheduled'),
+      public: t('Công khai', 'Published'),
+    })[publicationStatus(p)];
   const confirmAction = (title: string, body: string, submit: () => Promise<void>) =>
     setEditor({
       title,
@@ -355,13 +364,7 @@ function AdminDashboard() {
             .toLocaleLowerCase()
             .includes(query.toLocaleLowerCase()),
         )
-        .filter(
-          (p) =>
-            filter === 'all' ||
-            (filter === 'draft' && p.visibility === 'draft') ||
-            (filter === 'hidden' && !p.visible) ||
-            (filter === 'public' && p.visibility === 'public' && p.visible),
-        );
+        .filter((p) => filter === 'all' || publicationStatus(p) === filter);
     return (
       <>
         <div className="admin-tools">
@@ -380,6 +383,7 @@ function AdminDashboard() {
               ['all', t('Tất cả', 'All')],
               ['public', t('Công khai', 'Published')],
               ['draft', t('Bản nháp', 'Draft')],
+              ...(kind === 'posts' ? [['scheduled', t('Đã hẹn giờ', 'Scheduled')]] : []),
               ['hidden', t('Đã ẩn', 'Hidden')],
             ].map(([value, label]) => (
               <option key={value} value={value}>
@@ -539,6 +543,7 @@ function AdminDashboard() {
     if (tab === 'github')
       body = (
         <GithubSettingsForm
+          formId="admin-content-form"
           key={'github:' + state.version}
           initial={d.github}
           initialUsername={d.githubUsername}
@@ -589,6 +594,7 @@ function AdminDashboard() {
           </p>
           <FieldsForm
             key={tab + ':' + state.version}
+            formId="admin-content-form"
             fields={fields}
             initial={initial}
             csrf={csrfToken}
@@ -774,6 +780,7 @@ function AdminDashboard() {
       body = (
         <FieldsForm
           key={tab + ':' + state.version}
+          formId="admin-content-form"
           csrf={csrfToken}
           onDirty={setDirty}
           fields={[
@@ -787,6 +794,7 @@ function AdminDashboard() {
                 'Thứ tự dòng cũng là thứ tự hiển thị.',
                 'Line order determines display order.',
               ),
+              rows: Math.min(24, Math.max(12, d.skills.length + 2)),
             },
           ]}
           initial={{ skills: d.skills.join('\n') }}
@@ -809,6 +817,7 @@ function AdminDashboard() {
         <>
           <FieldsForm
             key={tab + ':' + state.version}
+            formId="admin-content-form"
             csrf={csrfToken}
             onDirty={setDirty}
             fields={[
@@ -1065,7 +1074,15 @@ function AdminDashboard() {
             {t('Đến nội dung', 'Skip to content')}
           </a>
           <div className="admin-header">
-            <h1>{t('Quản trị hồ sơ', 'Profile admin')}</h1>
+            <div className="admin-brand">
+              <span className="admin-brand-mark" aria-hidden="true">
+                {Array.from(state.data.profile.name)[0]}
+              </span>
+              <div>
+                <h1>{t('Quản trị hồ sơ', 'Profile admin')}</h1>
+                <p>{state.data.profile.name}</p>
+              </div>
+            </div>
             <div className="actions">
               <Link className="btn neutral" href="/" target="_blank" rel="noopener noreferrer">
                 {t('Xem website ↗', 'View website ↗')}
@@ -1094,19 +1111,50 @@ function AdminDashboard() {
           </div>
           <div className="admin-shell">
             <nav className="admin-nav" aria-label={t('Quản trị', 'Administration')}>
+              <p className="admin-nav-label">{t('Không gian quản trị', 'Workspace')}</p>
               {Object.entries(labels).map(([key, label]) => (
                 <button
                   key={key}
                   aria-current={key === tab ? 'page' : undefined}
                   onClick={() => navigate(key as Tab)}
                 >
-                  {label}
+                  <Icon
+                    name={
+                      (
+                        {
+                          profile: 'profile',
+                          projects: 'projects',
+                          posts: 'feed',
+                          sections: 'sections',
+                          skills: 'skills',
+                          github: 'github',
+                          settings: 'settings',
+                          inbox: 'contact',
+                          trash: 'trash',
+                        } as Record<string, string>
+                      )[key]
+                    }
+                  />
+                  <span>{label}</span>
                 </button>
               ))}
             </nav>
             <main className="admin-content" id="admin-main">
               <div className="admin-title">
-                <h2>{labels[tab]}</h2>
+                <div>
+                  <p className="admin-eyebrow">{t('Quản lý nội dung', 'Content management')}</p>
+                  <h2>{labels[tab]}</h2>
+                </div>
+                {['profile', 'skills', 'settings', 'github'].includes(tab) && (
+                  <button
+                    className="btn primary"
+                    type="submit"
+                    form="admin-content-form"
+                    disabled={pending}
+                  >
+                    {t('Lưu thay đổi', 'Save changes')}
+                  </button>
+                )}
                 {(tab === 'projects' || tab === 'posts') && (
                   <button className="btn primary" onClick={() => edit(tab)}>
                     {t('＋ Thêm mới', '＋ Add new')}

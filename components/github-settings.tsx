@@ -11,12 +11,14 @@ export function GithubSettingsForm({
   save,
   onDirty,
   focusRepositories = false,
+  formId,
 }: {
   initial: GithubSettings;
   initialUsername: string;
   save: (settings: GithubSettings, username: string) => Promise<void>;
   onDirty?: (dirty: boolean) => void;
   focusRepositories?: boolean;
+  formId?: string;
 }) {
   const { t } = useLanguage();
   const sectionId = useId();
@@ -83,9 +85,11 @@ export function GithubSettingsForm({
     [];
   return (
     <form
+      id={formId}
       className="github-settings-form"
       onSubmit={async (event) => {
         event.preventDefault();
+        if (busy) return;
         if (username !== loadedUsername) {
           setError(
             t(

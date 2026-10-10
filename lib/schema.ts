@@ -189,20 +189,21 @@ export type InboxMessage = {
   message: string;
   created_at: string;
 };
+export function publicationStatus(
+  entry: { visible: boolean; visibility: string; displayAt?: string },
+  now = Date.now(),
+): 'draft' | 'hidden' | 'scheduled' | 'public' {
+  if (entry.visibility === 'draft') return 'draft';
+  if (!entry.visible) return 'hidden';
+  if (entry.displayAt && new Date(entry.displayAt).valueOf() > now) return 'scheduled';
+  return 'public';
+}
 export function publicContent(content: Content, now = Date.now()): Content {
   const d = structuredClone(content);
   d.trash = [];
   d.github = publicGithubSettings(d.github);
-  const published = (e: {
-    visible: boolean;
-    visibility: string;
-    displayAt?: string;
-    status?: string;
-  }) =>
-    e.visible &&
-    e.visibility === 'public' &&
-    e.status !== 'Bản nháp' &&
-    (!e.displayAt || new Date(e.displayAt).valueOf() <= now);
+  const published = (e: { visible: boolean; visibility: string; displayAt?: string }) =>
+    publicationStatus(e, now) === 'public';
   d.projects = d.projects.filter(published);
   d.posts = d.posts.filter(published);
   for (const key of Object.keys(d.items))

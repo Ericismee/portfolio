@@ -20,6 +20,7 @@ export type Field = {
   required?: boolean;
   options?: [string, string][];
   help?: string;
+  rows?: number;
 };
 export type Values = Record<string, string | boolean>;
 export type Editor = {
@@ -39,6 +40,7 @@ export function FieldsForm({
   onDirty,
   footer = true,
   submitLabel,
+  formId,
 }: {
   fields: Field[];
   initial: Values;
@@ -47,6 +49,7 @@ export function FieldsForm({
   onDirty?: (dirty: boolean) => void;
   footer?: boolean;
   submitLabel?: string;
+  formId?: string;
 }) {
   const { t } = useLanguage(),
     [values, setValues] = useState<Values>(initial),
@@ -78,13 +81,24 @@ export function FieldsForm({
       setUploading((n) => n - 1);
     }
   }
-  async function save(e: FormEvent) {
+  async function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy || uploading || pendingCrops.size) return;
     setBusy(true);
     setError('');
     try {
-      await submit(values);
+      // Native date controls and browser autofill can update the displayed
+      // value before React receives a change event. Save the form as displayed.
+      const formData = new FormData(e.currentTarget);
+      const next = { ...values };
+      for (const field of fields) {
+        if (field.type === 'image' || field.type === 'pdf') continue;
+        next[field.key] =
+          field.type === 'checkbox'
+            ? formData.has(field.key)
+            : String(formData.get(field.key) ?? values[field.key] ?? '');
+      }
+      await submit(next);
       onDirty?.(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : t('Không thể lưu', 'Unable to save'));
@@ -93,7 +107,7 @@ export function FieldsForm({
     }
   }
   return (
-    <form onSubmit={save} className="admin-form">
+    <form id={formId} onSubmit={save} className="admin-form">
       {fields.map((field) => {
         const value = values[field.key] ?? '',
           update = (value: string | boolean) =>
@@ -126,6 +140,7 @@ export function FieldsForm({
               {field.type !== 'checkbox' && field.label}
               {field.type === 'textarea' ? (
                 <textarea
+                  rows={field.rows || 6}
                   name={field.key}
                   value={String(value)}
                   required={field.required}
@@ -181,6 +196,11 @@ export function FieldsForm({
                         : undefined
                   }
                   onChange={(e) => update(e.target.value)}
+                  onInput={
+                    field.type === 'datetime-local'
+                      ? (e) => update(e.currentTarget.value)
+                      : undefined
+                  }
                 />
               )}
               {field.help && <small className="admin-help">{field.help}</small>}
@@ -335,6 +355,7 @@ export function EditorDialog({
         {editor.renderBody?.(setDirty)}
         {editor.submit && (
           <FieldsForm
+            formId="editor-content-form"
             fields={editor.fields || []}
             initial={editor.values || {}}
             csrf={csrf}
@@ -351,9 +372,16 @@ export function EditorDialog({
         <span className="admin-help">
           {t('Khu vực quản trị riêng tư', 'Private administration')}
         </span>
-        <button className="btn neutral" type="button" onClick={requestClose}>
-          {t('Đóng', 'Close')}
-        </button>
+        <div className="actions">
+          <button className="btn neutral" type="button" onClick={requestClose}>
+            {t('Đóng', 'Close')}
+          </button>
+          {editor.submit && (
+            <button className="btn primary" type="submit" form="editor-content-form">
+              {editor.submitLabel || t('Lưu', 'Save')}
+            </button>
+          )}
+        </div>
       </div>
     </dialog>
   );
