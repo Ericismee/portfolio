@@ -110,3 +110,10 @@ Production build passed. In the running preview on port 3001, checked 360, 390, 
 - In the actual port-3001 preview, clicking Skills moved to section-3 and focused that section. Pressing Enter on Introduction moved to section-0 with its top at approximately 88 px, clear of the fixed header. Fixed inherited global navigation styling that initially arranged these links horizontally.
 - Checked actual viewport widths 360, 390, 768, 1024 and 1440 px on the active profile tab: no document horizontal overflow. Visually reviewed the desktop link logos and vertical jump navigation. Lint, strict types and the production build passed.
 - The requested TikTok avatar awaits the owner's TikTok URL or username. No account has been inferred from the reference image and the existing GitHub avatar remains in place.
+
+
+## Cover height and sidebar order — 10 October 2026
+
+- Extended the photo cover to 184 px on desktop/tablet and 128 px on mobile, preserving its fade and avatar overlap.
+- Updated sidebar order to Links, GitHub, then Jump to a section.
+- Production build passed. Checked actual preview widths 360, 390, 768, 1024 and 1440 px: expected cover heights and sidebar order, with no document horizontal overflow. Visually reviewed the final desktop screenshot.

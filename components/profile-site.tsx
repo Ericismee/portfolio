@@ -500,6 +500,9 @@ function Site({
       </>,
       <>
         {card(t('Liên kết', 'Links'), links())}
+        {data.github.showSidebar && (
+          <GithubSkillsCard stats={githubSkills} settings={data.github} avatar={profile.avatar} />
+        )}
         {sections.length > 1 &&
           card(
             t('Đi đến nhanh', 'Jump to a section'),
@@ -523,9 +526,6 @@ function Site({
               </nav>
             </>,
           )}
-        {data.github.showSidebar && (
-          <GithubSkillsCard stats={githubSkills} settings={data.github} avatar={profile.avatar} />
-        )}
         <div className="footer">
           {t('Thông tin do chủ hồ sơ cung cấp', 'Information provided by the profile owner')}
         </div>
