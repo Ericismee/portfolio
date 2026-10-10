@@ -404,46 +404,189 @@
   min-height: 120px;
   margin: 0;
 }
-.github-language-list {
-  display: grid;
-  gap: 18px;
-  padding: 0;
-  margin: 0 0 16px;
-  list-style: none;
+.github-source-state {
+  font-size: 11px;
+  color: var(--muted);
 }
-.github-language-heading {
+.github-account {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
   gap: 12px;
-  font-size: 14px;
+  text-decoration: none;
+  min-width: 0;
 }
-.github-language-heading > span {
+.github-account > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.github-account strong,
+.github-account small {
+  display: block;
+}
+.github-account small {
+  margin-top: 3px;
   color: var(--muted);
   font-size: 12px;
-  font-variant-numeric: tabular-nums;
 }
-.github-language-track {
-  height: 5px;
+.github-account-symbol {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 12px;
   background: var(--bg);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-top: 8px;
+  font-weight: 800;
 }
-.github-language-track > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
+.github-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 20px 0;
+  gap: 8px;
 }
-.github-skills-note {
+.github-metrics > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+}
+.github-metrics dt {
+  font-size: 11px;
+  color: var(--muted);
+}
+.github-metrics dd {
+  font-size: 20px;
+  font-weight: 750;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.github-tech-block h3 {
+  font-size: 13px;
+  margin: 0 0 10px;
+}
+.github-tech-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.github-tech-chips li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
   font-size: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  overflow-wrap: anywhere;
+}
+.github-tech-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #4264da;
+}
+.github-tech-dot.tone-1 {
+  background: #8b5bc2;
+}
+.github-tech-dot.tone-2 {
+  background: #137d69;
+}
+.github-tech-dot.tone-3 {
+  background: #b25c20;
+}
+.github-tech-dot.tone-4 {
+  background: #5c708c;
+}
+.github-details {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.github-details summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 650;
+  list-style: none;
+}
+.github-details summary::-webkit-details-marker {
+  display: none;
+}
+.github-details[open] summary > span {
+  transform: rotate(180deg);
+}
+.github-detail-body {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.github-detail-body > label {
+  display: block;
+  font-weight: 650;
+  margin-bottom: 8px;
+}
+.github-detail-body > input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+}
+.github-profile-facts {
+  display: grid;
+  gap: 8px;
+}
+.github-profile-facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.github-profile-facts dt {
+  color: var(--muted);
+}
+.github-profile-facts dd {
+  margin: 0;
+  text-align: right;
+}
+.github-repositories {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.github-repositories > li {
+  padding: 14px 4px;
+  border-top: 1px solid var(--line);
+}
+.github-repositories a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 650;
+}
+.github-repositories p {
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.github-repositories small {
+  display: block;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.github-skills-note,
+.github-sync-note {
+  font-size: 11px;
   color: var(--muted);
   line-height: 1.6;
 }
-.github-skills-card > small {
+.github-sync-note {
   display: block;
-  font-size: 11px;
-  line-height: 1.5;
+  margin-top: 8px;
 }
 @media (max-width: 600px) {
   .profile-intro .avatar.profile-avatar {
@@ -544,5 +687,14 @@
   }
   * {
     transition: none !important;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .layout > .sidebar:has(.github-skills-card) {
+    display: block;
+  }
+  .layout > .sidebar:has(.github-skills-card) > :not(.github-skills-card) {
+    display: none;
   }
 }

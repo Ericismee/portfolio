@@ -146,10 +146,12 @@ The active application code is in `app`, `components` and `lib`. The earlier bui
 
 Public project summaries are based on the owner-provided GitHub repositories. [CONTENT-SOURCES.md](CONTENT-SOURCES.md) records sources and limits; personal roles or measured outcomes have not been invented.
 
-## GitHub technology sidebar
+## GitHub profile and technology sidebar
 
-The sidebar ranks languages by summed source-code bytes returned by GitHub’s [repository languages endpoint](https://docs.github.com/en/rest/repos/repos#list-repository-languages). Percentages use all detected languages as the denominator, so the five displayed values may not total 100%. This is code distribution, not a proficiency score or a framework detector.
+The profile connects to the configured public GitHub account automatically, without OAuth or a token. A compact card shows repository/star/follower counts and the top five language chips. **Explore GitHub** opens the public bio, location/company, join date, following/fork counts and searchable repositories with descriptions, topics, primary languages, stars, forks, archive/fork flags and update dates. Search matches names, languages and topics. The card remains accessible on mobile even though other sidebar cards are hidden.
 
-The server considers up to 30 recently updated, non-empty public repositories owned by the configured account, excluding forks, from the first 100 results. It makes at most four concurrent requests under an eight-second deadline. Truncated or incomplete results are labelled. Unavailable and empty states show an explanation instead of invented skills.
+Languages are ranked by summed source-code bytes from GitHub’s [repository languages endpoint](https://docs.github.com/en/rest/repos/repos#list-repository-languages), excluding forks and empty repositories. This describes code distribution, not proficiency or framework knowledge. Repository and profile data use the public [repository list](https://docs.github.com/en/rest/repos/repos#list-repositories-for-a-user) and [user profile](https://docs.github.com/en/rest/users/users#get-a-user) endpoints. Existing site content and uploaded pictures are not overwritten by GitHub data.
 
-Successful responses are cached in memory and under `DATA_DIR/github-cache`; disk entries expire after one hour, and unavailable results after five minutes. No GitHub token is required. Interface language, administrator section management, appearance settings and sign out are grouped in the navbar’s three-dot Settings menu. Administrator actions require an authenticated session.
+The server paginates repositories, up to ten pages of 100, and requests languages four repositories at a time under a twelve-second deadline. A timeout, API limit, failed page or truncation is labelled as partial or unavailable. Private repositories, private account details, contribution history and authentication are outside this public integration. No full-account export is claimed.
+
+Responses are cached in memory and under `DATA_DIR/github-cache` for one hour; unavailable responses expire after five minutes. No background worker is required: the next page request after expiry refreshes the data. Interface language, administrator section management, appearance settings and sign out remain in the navbar’s three-dot Settings menu.

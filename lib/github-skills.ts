@@ -3,7 +3,30 @@ import path from 'node:path';
 import { z } from 'zod';
 
 export type GithubLanguage = { name: string; bytes: number; percent: number };
+const repoSchema = z.object({
+  name: z.string(),
+  description: z.string().nullable(),
+  language: z.string().nullable(),
+  stars: z.number().nonnegative(),
+  forks: z.number().nonnegative(),
+  fork: z.boolean(),
+  archived: z.boolean(),
+  updatedAt: z.string(),
+  topics: z.array(z.string()),
+});
+const profileSchema = z.object({
+  name: z.string().nullable(),
+  bio: z.string().nullable(),
+  location: z.string().nullable(),
+  company: z.string().nullable(),
+  followers: z.number().nonnegative(),
+  following: z.number().nonnegative(),
+  publicRepos: z.number().nonnegative(),
+  createdAt: z.string(),
+});
 export type GithubSkills = {
+  profile: z.infer<typeof profileSchema> | null;
+  repos: z.infer<typeof repoSchema>[];
   username: string;
   status: 'ready' | 'unavailable' | 'empty';
   languages: GithubLanguage[];
@@ -25,9 +48,23 @@ export function rankLanguages(groups: Record<string, number>[]): GithubLanguage[
     .map(([name, bytes]) => ({ name, bytes, percent: (bytes / total) * 100 }));
 }
 
-type Repository = { name: string; fork: boolean; private: boolean; size: number };
+type Repository = {
+  name: string;
+  description: string | null;
+  language: string | null;
+  fork: boolean;
+  private: boolean;
+  size: number;
+  archived: boolean;
+  stargazers_count: number;
+  forks_count: number;
+  updated_at: string;
+  topics?: string[];
+};
 const cache = new Map<string, { expires: number; value: Promise<GithubSkills> }>();
 const cachedSkills = z.object({
+  profile: profileSchema.nullable(),
+  repos: z.array(repoSchema),
   username: z.string(),
   status: z.enum(['ready', 'unavailable', 'empty']),
   languages: z
@@ -45,7 +82,7 @@ const cachedSkills = z.object({
 });
 
 // Public GitHub data only. Deduplicate page requests and keep anonymous API
-// traffic bounded: at most 30 owned repositories, four requests at a time.
+// traffic bounded: paginated public repositories and four language requests at a time.
 export function getGithubSkills(username: string): Promise<GithubSkills> {
   const key = username.toLowerCase();
   const existing = cache.get(key);
@@ -53,8 +90,11 @@ export function getGithubSkills(username: string): Promise<GithubSkills> {
   const value = loadCachedSkills(username);
   cache.set(key, { expires: Date.now() + 60 * 60 * 1000, value });
   void value.then((result) => {
-    if (result.status === 'unavailable')
-      cache.set(key, { expires: Date.now() + 5 * 60 * 1000, value });
+    cache.set(key, {
+      expires:
+        Date.parse(result.updatedAt) + (result.status === 'unavailable' ? 5 : 60) * 60 * 1000,
+      value,
+    });
   });
   return value;
 }
@@ -87,6 +127,8 @@ async function loadCachedSkills(username: string): Promise<GithubSkills> {
 async function loadSkills(username: string): Promise<GithubSkills> {
   const result: GithubSkills = {
     username,
+    profile: null,
+    repos: [],
     status: 'empty',
     languages: [],
     repositories: 0,
@@ -96,7 +138,7 @@ async function loadSkills(username: string): Promise<GithubSkills> {
   if (!/^[a-zA-Z0-9-]{1,39}$/.test(username)) return result;
   // One deadline covers all requests, so an unreachable service cannot hold a
   // page open indefinitely. Never trust an API-supplied URL for outbound fetches.
-  const signal = AbortSignal.timeout(8000);
+  const signal = AbortSignal.timeout(12000);
   async function read(path: string) {
     const response = await fetch('https://api.github.com' + path, {
       headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'Eric-Profile' },
@@ -107,15 +149,57 @@ async function loadSkills(username: string): Promise<GithubSkills> {
     return response.json() as Promise<unknown>;
   }
   try {
-    const input = await read(
-      '/users/' + encodeURIComponent(username) + '/repos?per_page=100&sort=updated&type=owner',
+    const userPath = '/users/' + encodeURIComponent(username);
+    // User profile failure does not discard a successfully fetched repository list.
+    try {
+      const user = (await read(userPath)) as Record<string, unknown>;
+      result.profile = profileSchema.parse({
+        name: user.name,
+        bio: user.bio,
+        location: user.location,
+        company: user.company,
+        followers: user.followers,
+        following: user.following,
+        publicRepos: user.public_repos,
+        createdAt: user.created_at,
+      });
+    } catch {
+      result.partial = true;
+    }
+    const all: Repository[] = [];
+    for (let page = 1; page <= 10; page++) {
+      try {
+        const input = await read(
+          userPath + '/repos?per_page=100&sort=updated&type=owner&page=' + page,
+        );
+        if (!Array.isArray(input)) throw Error('Invalid repository list');
+        all.push(
+          ...(input as Repository[]).filter(
+            (repo) => !repo.private && typeof repo.name === 'string',
+          ),
+        );
+        if (input.length < 100) break;
+        if (page === 10) result.partial = true;
+      } catch {
+        if (!all.length) throw Error('GitHub unavailable');
+        result.partial = true;
+        break;
+      }
+    }
+    result.repos = all.map((repo) =>
+      repoSchema.parse({
+        name: repo.name,
+        description: repo.description ?? null,
+        language: repo.language ?? null,
+        stars: repo.stargazers_count ?? 0,
+        forks: repo.forks_count ?? 0,
+        fork: repo.fork,
+        archived: repo.archived ?? false,
+        updatedAt: repo.updated_at ?? '',
+        topics: repo.topics ?? [],
+      }),
     );
-    if (!Array.isArray(input)) throw Error('Invalid repository list');
-    const repos = (input as Repository[]).filter(
-      (repo) => !repo.fork && !repo.private && typeof repo.name === 'string' && repo.size > 0,
-    );
-    const selected = repos.slice(0, 30);
-    result.partial = repos.length > selected.length || input.length === 100;
+    const selected = all.filter((repo) => !repo.fork && repo.size > 0);
     const groups: Record<string, number>[] = [];
     for (let start = 0; start < selected.length; start += 4) {
       const batch = await Promise.allSettled(
@@ -148,11 +232,12 @@ async function loadSkills(username: string): Promise<GithubSkills> {
       }
     }
     result.languages = rankLanguages(groups);
-    result.status = result.languages.length
-      ? 'ready'
-      : selected.length && !groups.length
-        ? 'unavailable'
-        : 'empty';
+    result.status =
+      result.languages.length || result.repos.length || result.profile
+        ? 'ready'
+        : selected.length && !groups.length
+          ? 'unavailable'
+          : 'empty';
   } catch {
     result.status = 'unavailable';
   }

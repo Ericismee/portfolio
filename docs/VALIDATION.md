@@ -5,7 +5,7 @@
 - Prettier check passed for the active Next.js/TypeScript application.
 - ESLint passed with the TypeScript recommended rules and React Hooks rules.
 - Strict TypeScript `tsc --noEmit` passed.
-- Seven Node tests passed: authentication/CSRF/logout; publishing/scheduling/reorder/conflicts/revisions/persistence; custom sections/input validation/contact inbox; uploads and embedded-asset import; crop geometry with source bounds and aspect-ratio checks; GitHub language aggregation/ranking; unavailable GitHub responses with cache reuse.
+- Eight Node tests passed: authentication/CSRF/logout; publishing/scheduling/reorder/conflicts/revisions/persistence; custom sections/input validation/contact inbox; uploads and embedded-asset import; crop geometry with source bounds and aspect-ratio checks; GitHub language aggregation/ranking; unavailable GitHub responses with cache reuse; paginated profile/repository import with fork exclusion from language totals.
 - `next build` completed with the public pages, private admin entry, API Route Handlers and protected upload handler.
 - `npm audit` reported no known dependency vulnerabilities after removing an affected optional lint dependency chain.
 
@@ -58,3 +58,12 @@ The older `QA.md` describes the historical mock. This document records the Next.
 - Rechecked the owner’s original portrait avatar and the public Settings menu at 1063×704 and 390×704; captured and visually reviewed screenshots. The portrait is centered with cover fitting; both the main and navigation avatars retain their frames.
 - Confirmed the sidebar shows GitHub technologies instead of language configuration. The main preview returned HTTP 200 and a complete cached response from 20 non-empty public repositories: Python, TypeScript, Java, C# and HTML. No private repository access or manually fabricated proficiency values are used.
 - Re-ran the browser workflow including inline edits, image framing, public pages at five widths, language switching, keyboard dialogs and logout authorization checks; all passed with no uncaught exceptions.
+
+## Expanded GitHub integration verified
+
+- The real public API returned Eric’s profile and 33 public repositories, including forks, with complete language aggregation from 20 non-empty repositories excluding forks. Actual counts at verification: 4 repository stars and 10 followers.
+- Replaced percentage bars with compact technology chips, account identity, counts and an expandable searchable repository browser. GitHub data does not modify authored profile content.
+- Checked the actual production build at 360, 390, 768, 1024, 1063 and 1440 px. At every width: no horizontal overflow before or after expanding; Enter opens the details; TypeScript search matches; an unmatched query shows an empty state; clearing search restores all 33 repositories.
+- Verified English labels and no uncaught browser exceptions. Captured and visually reviewed desktop/mobile cards and expanded repository views. This targeted browser pass did not rerun unrelated administrator workflows.
+- Fixed mobile’s inherited hidden-sidebar rule specifically for the GitHub card, keeping other sidebar cards hidden at widths up to 800 px.
+- `npm run check` passed all eight tests, lint and strict types; production build passed.
