@@ -492,8 +492,6 @@ function Site({
         )}
         <div className="footer">
           {t('Thông tin do chủ hồ sơ cung cấp', 'Information provided by the profile owner')}
-          <br />
-          <Link href="/admin">{t('Quản trị', 'Administration')}</Link>
         </div>
       </>,
     );
@@ -810,7 +808,6 @@ function Site({
             <div className="site-menu" id="site-menu">
               <button onClick={toggle}>{language === 'vi' ? 'English' : 'Tiếng Việt'}</button>
               <Link href="/github">GitHub ↗</Link>
-              <Link href="/admin">{t('Quản trị', 'Administration')}</Link>
               <button onClick={() => window.print()}>{t('In hồ sơ', 'Print profile')}</button>
             </div>
           )}
