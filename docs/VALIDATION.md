@@ -149,3 +149,12 @@ Production build passed. In the running preview on port 3001, checked 360, 390, 
 - In isolated port-3002 administration, clicking Choose repositories placed its fieldset at approximately 100 px below the top, clear of the header. All 33 repositories loaded. At 360, 390, 768, 1024 and 1440 px, the repository list and document had no horizontal overflow.
 - Tested the cover position sliders with End/Home: horizontal 100%, vertical 0% changed preview offsets accordingly. Zoom out returned 1×; Reset returned centered 1.1×. Visually reviewed the enlarged desktop workspace. Checked the framing editor at the same five widths without document overflow. Canceled without applying or saving a crop. Owner content was not changed.
 - Lint and production build, including TypeScript compilation, passed. No physical-device touch or export test was performed for this UI-only adjustment.
+
+## Featured repository entry point and clearer portfolio sections — 10 October 2026
+
+- Added an administrator-only Choose featured repos action beside the GitHub featured list. It opens configuration focused/scrolled to repository selection; manual selections and ordering use the existing authenticated persistence flow.
+- The home GitHub account card now links internally to /github. External GitHub links remain available elsewhere.
+- Clarified default home headings as Selected work and All projects, preserving custom section-title overrides. Selected work has a short explanation; All projects now lists all three current projects with descriptions rather than excluding featured entries.
+- In isolated port-3002 browser QA, opened the new action, selected portfolio, saved, verified its featured card and reloaded. Then removed portfolio and saved to restore the previous QA selection. Owner selections were not altered.
+- Clicked the actual port-3001 account card and confirmed /github. Verified home headings and three project summary descriptions; checked 360, 390, 768, 1024 and 1440 px without document horizontal overflow. Visually reviewed the project list and checked the owner featured action at 390 px without overflow.
+- Lint, TypeScript, all 15 tests and the production build passed.
