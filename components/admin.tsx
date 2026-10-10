@@ -282,6 +282,7 @@ function AdminDashboard() {
     );
     setEditor({
       title: id ? t('Chỉnh sửa nội dung', 'Edit content') : t('Thêm nội dung', 'Add content'),
+      githubUsername: kind === 'projects' ? state.data.githubUsername : undefined,
       fields,
       values,
       submit: async (v) =>

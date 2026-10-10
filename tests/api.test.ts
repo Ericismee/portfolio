@@ -453,7 +453,15 @@ test('GitHub configuration requires admin authorization and survives saving and 
   const f = await fixture();
   try {
     assert.equal((await f.call('/api/admin/github')).response.status, 401);
+    assert.equal(
+      (await f.call('/api/admin/github-project?username=qa&repo=test')).response.status,
+      401,
+    );
     await f.login();
+    assert.equal(
+      (await f.call('/api/admin/github-project?username=qa&repo=..')).response.status,
+      400,
+    );
     assert.equal((await f.call('/api/admin/github?username=../invalid')).response.status, 400);
     const emptyAccount = await f.call('/api/admin/github?username=');
     assert.equal(emptyAccount.response.status, 200);

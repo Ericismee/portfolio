@@ -250,6 +250,7 @@ export function useInlineEdit(publicData: Content) {
     );
     open({
       title: id ? t('Sửa nội dung', 'Edit content') : t('Thêm nội dung', 'Add content'),
+      githubUsername: kind === 'projects' ? state.data.githubUsername : undefined,
       fields,
       values,
       submit: (v) =>

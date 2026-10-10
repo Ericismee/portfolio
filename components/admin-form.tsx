@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 import { useLanguage } from './language';
 import { ImageFramePicker } from './image-frame-picker';
 import { RichTextEditor } from './rich-text-editor';
+import { GithubProjectPicker } from './github-project-picker';
+import { applyGithubFields } from '../lib/github-project-fields';
 export type Field = {
   key: string;
   label: string;
@@ -26,6 +28,7 @@ export type Field = {
 };
 export type Values = Record<string, string | boolean>;
 export type Editor = {
+  githubUsername?: string;
   title: string;
   fields?: Field[];
   values?: Values;
@@ -43,6 +46,7 @@ export function FieldsForm({
   footer = true,
   submitLabel,
   formId,
+  githubUsername,
 }: {
   fields: Field[];
   initial: Values;
@@ -52,6 +56,7 @@ export function FieldsForm({
   footer?: boolean;
   submitLabel?: string;
   formId?: string;
+  githubUsername?: string;
 }) {
   const { t } = useLanguage(),
     [values, setValues] = useState<Values>(initial),
@@ -116,6 +121,15 @@ export function FieldsForm({
   }
   return (
     <form id={formId} onSubmit={save} className="admin-form">
+      {githubUsername && (
+        <GithubProjectPicker
+          username={githubUsername}
+          disabled={busy || uploading > 0}
+          apply={(incoming, replace) =>
+            setValues((current) => applyGithubFields(current, incoming, replace))
+          }
+        />
+      )}
       {fields.map((field) => {
         const value = values[field.key] ?? '',
           update = (value: string | boolean) =>
@@ -385,6 +399,7 @@ export function EditorDialog({
         {editor.submit && (
           <FieldsForm
             formId="editor-content-form"
+            githubUsername={editor.githubUsername}
             fields={editor.fields || []}
             initial={editor.values || {}}
             csrf={csrf}

@@ -1,4 +1,5 @@
 import { getGithubSkills } from './github-skills.ts';
+import { getGithubProject, githubProjectQuery } from './github-project.ts';
 import { z, ZodError } from 'zod';
 import { getDatabase, HttpError, isHttpError, type Database } from './database.ts';
 import { authService, passwordHash, verifyPassword } from './auth.ts';
@@ -120,6 +121,22 @@ export function createApi(database: Database, production = false, origin?: strin
                 database.read().data.githubUsername,
             );
           return send(await getGithubSkills(username));
+        }
+        if (pathname === '/api/admin/github-project' && method === 'GET') {
+          const query = new URL(request.url).searchParams;
+          const input = githubProjectQuery.parse({
+            username: query.get('username'),
+            repo: query.get('repo'),
+          });
+          try {
+            return send(await getGithubProject(input.username, input.repo));
+          } catch (error) {
+            if (isHttpError(error)) throw error;
+            throw new HttpError(
+              502,
+              'GitHub đang bận hoặc trả dữ liệu không hợp lệ. Hãy thử lại. / GitHub is unavailable. Please retry.',
+            );
+          }
         }
         if (pathname === '/api/admin/content' && method === 'GET') return send(database.read());
         if (pathname === '/api/admin/content' && method === 'PUT') {
