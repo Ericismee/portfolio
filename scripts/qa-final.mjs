@@ -16,6 +16,17 @@ try{
   await call('Runtime.enable');await call('Page.enable');
   await evaluate(`localStorage.removeItem('eric-profile-mock');localStorage.removeItem('eric-owner');location.hash='profile';location.reload()`);await pause(400);
   await call('Emulation.setDeviceMetricsOverride',{width:390,height:900,deviceScaleFactor:1,mobile:false});
+  await check('Only two featured project cards on profile',`document.querySelectorAll('.main .project').length===2&&document.querySelectorAll('.featured-grid .project').length===2`);
+  await check('Project overview avoids repeating featured cards',`document.querySelectorAll('.project-summary-link').length===1&&!document.querySelector('.project-overview').innerText.includes('NotebookE')`);
+  await check('Profile hint has one next action and no blue edge',`document.querySelectorAll('.profile-hint [data-action]').length===1&&getComputedStyle(document.querySelector('.profile-hint')).borderLeftWidth==='0px'`);
+  await check('Public profile content replaces the empty introduction',`!document.querySelector('.compact-about')&&document.querySelector('.profile-summary').textContent==='Simplify everything.'`);
+  await check('Owner guidance is collapsed initially',`!document.querySelector('.profile-hint').open&&document.querySelector('.profile-hint').getBoundingClientRect().height<=52`);
+  await evaluate(`document.querySelector('.profile-hint summary').click()`);
+  await pause(100);await check('Owner guidance expands',`document.querySelector('.profile-hint').open&&document.querySelector('.profile-hint [data-action]').getBoundingClientRect().height>=44`);
+  await evaluate(`document.querySelector('.profile-hint summary').click()`);
+  await check('Featured title and edit icon share a row',`getComputedStyle(document.querySelector('.featured-grid .project-content>.row')).display==='flex'`);
+  await shot('qa-profile-compact-mobile.png');
+
   await evaluate(`document.querySelector('[data-action=edit-profile]').focus();document.querySelector('[data-action=edit-profile]').click()`);
   await check('Editor focuses first field',`document.activeElement.matches('input')`);
   await evaluate(`document.querySelector('[name=name]').value='Unsaved name';document.querySelector('[name=name]').dispatchEvent(new Event('input',{bubbles:true}));`);
@@ -24,7 +35,8 @@ try{
   await evaluate(`document.querySelector('[data-discard-editor]').click()`);await pause(100);
   await check('Discard preserves profile and returns focus',`document.querySelector('h1').textContent==='Eric'&&document.activeElement.dataset.action==='edit-profile'`);
   await evaluate(`document.querySelector('[data-action=toggle-owner]').click()`);
-  await check('Guest hides empty sections and editor controls',`![...document.querySelectorAll('.main h2')].some(h=>['Giới thiệu','Kinh nghiệm','Học vấn','Chứng chỉ'].includes(h.textContent))&&!document.querySelector('[data-action=edit-profile]')`);
+  await check('Guest hides empty sections and editor controls',`![...document.querySelectorAll('.main h2')].some(h=>['Kinh nghiệm','Học vấn','Chứng chỉ'].includes(h.textContent))&&!document.querySelector('[data-action=edit-profile]')`);
+  await check('Guest navigation prioritizes profile and projects',`[...document.querySelectorAll('header nav [data-route]')].map(e=>e.dataset.route).join(',')==='profile,projects,feed,contact'&&!document.querySelector('header [data-route=github]')`);
   await shot('qa-guest-mobile.png');await go('feed');
   await check('Guest hides composer card',`!document.querySelector('[data-action=compose]')`);
   await evaluate(`document.querySelector('[data-action=toggle-owner]').click()`);await go('projects');
@@ -45,8 +57,11 @@ try{
   await check('Retry succeeds with honest mock status',`document.querySelector('#contact-result').dataset.state==='success'&&document.querySelector('#contact-result').textContent.includes('chưa được gửi')&&!document.querySelector('[name=message]').value`);
   await go('profile');await evaluate(`document.querySelector('[data-action=account]').click()`);
   await check('Account menu opens',`!!document.querySelector('.menu [data-route=settings]')`);
+  await check('GitHub stays available from the account menu',`!!document.querySelector('.menu [data-route=github]')`);
   await evaluate(`document.querySelector('.menu [data-route=settings]').click()`);await pause(200);
   await check('Menu navigates to settings and closes',`location.hash==='#settings'&&!document.querySelector('.menu')`);
+  await go('profile');await evaluate(`document.querySelector('.all-projects').click()`);await pause(200);
+  await check('Overview opens the full project list',`location.hash==='#projects'&&document.querySelectorAll('.project').length===3`);
   await go('projects');await shot('qa-projects-mobile.png');
   await evaluate(`document.querySelector('.project-open').click()`);await pause(200);
   await check('Project card opens its detail',`location.hash.startsWith('#projects/')&&!!document.querySelector('#view h1')`);
@@ -58,9 +73,13 @@ try{
   await check('Dark project cards use the dark palette',`document.documentElement.dataset.theme==='dark'&&getComputedStyle(document.querySelector('.project-art')).color==='rgb(245, 241, 232)'`);
   await go('settings');await evaluate(`document.querySelector('#theme-select').value='light';document.querySelector('#theme-select').dispatchEvent(new Event('change',{bubbles:true}))`);
   await go('profile');
-  await check('Profile suggestions open the real editor',`!!document.querySelector('.profile-hint [data-action=edit-about]')`);
-  await evaluate(`document.querySelector('.profile-hint [data-action=edit-about]').click();document.querySelector('[name=about]').value='A meaningful profile introduction for the UI preview.';document.querySelector('#modal-form').requestSubmit()`);
-  await check('Completed suggestion advances to remaining fields',`!document.querySelector('.profile-hint [data-action=edit-about]')&&!!document.querySelector('.profile-hint [data-action=upload-avatar]')`);
+  await check('Profile suggests the missing photo without inventing one',`!!document.querySelector('.profile-hint [data-action=upload-avatar]')&&!document.querySelector('.profile-avatar img')`);
+  await go('projects');await evaluate(`document.querySelector('[data-action=edit-project]').click();document.querySelector('[name=role]').value='QA role';document.querySelector('[name=problem]').value='QA problem';document.querySelector('[name=contribution]').value='QA contribution';document.querySelector('[name=outcome]').value='QA outcome';document.querySelector('#modal-form').requestSubmit()`);
+  await check('Project cards show supplied contribution',`document.querySelector('.project-role').textContent.includes('QA role')&&document.querySelector('.project-contribution').textContent.includes('QA contribution')`);
+  await evaluate(`document.querySelector('.project-open').click()`);await pause(200);
+  await check('Project detail shows the supplied case study',`['QA problem','QA contribution','QA outcome'].every(t=>document.querySelector('#view').innerText.includes(t))`);
+  await go('profile');await evaluate(`document.querySelector('[data-action=edit-profile]').click();document.querySelector('[name=summary]').value='QA short introduction';document.querySelector('#modal-form').requestSubmit()`);
+  await check('Profile displays the owner supplied introduction',`document.querySelector('.profile-summary').textContent==='QA short introduction'`);
   await evaluate(`document.querySelector('[data-action=edit-profile]').click();document.querySelector('[name=name]').value='LongName'.repeat(20);document.querySelector('[name=headline]').value='Headline'.repeat(35);document.querySelector('#modal-form').requestSubmit()`);
   for(const width of [360,390,768,1024,1440]){
     await call('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});
@@ -80,6 +99,9 @@ try{
 }finally{
   await evaluate(`localStorage.removeItem('eric-profile-mock');localStorage.removeItem('eric-owner');location.hash='profile';location.reload()`);ws.close();
 }
+
+
+
 
 
 

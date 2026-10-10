@@ -7,7 +7,15 @@ export function openEditor(title,body,onSave,{refresh,persist}){
   function returnFocus(){if(opener?.isConnected){opener.focus();return}const candidates=[...document.querySelectorAll('[data-action]')];const target=candidates.find(e=>e.dataset.action===identity.action&&(!identity.id||e.dataset.id===identity.id)&&(!identity.section||e.dataset.section===identity.section));(target||document.querySelector('#view'))?.focus()}
   function requestClose(){if(!dirty){d.close();return}if(d.querySelector('.discard-notice'))return;const notice=document.createElement('div');notice.className='notice discard-notice';notice.setAttribute('role','status');notice.innerHTML='<span>Có thay đổi chưa lưu.</span><button type="button" class="btn neutral" data-discard-editor>Bỏ thay đổi</button>';notice.querySelector('button').onclick=()=>d.close();d.querySelector('.dialog-body').prepend(notice);notice.querySelector('button').focus()}
   d.onclose=returnFocus;d.oncancel=e=>{e.preventDefault();requestClose()};
-  d.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();requestClose()}};
+  d.onkeydown=e=>{
+    if(e.key==='Escape'){e.preventDefault();e.stopPropagation();requestClose();return}
+    if(e.key==='Tab'){
+      const focusable=[...d.querySelectorAll('button,input,textarea,select,a[href],[tabindex]')].filter(el=>!el.disabled&&el.tabIndex>=0&&el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden');
+      const first=focusable[0],last=focusable.at(-1);
+      if(first&&e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+      else if(last&&!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+    }
+  };
   d.querySelectorAll('[data-close-editor]').forEach(b=>b.onclick=requestClose);
   d.querySelector('form').addEventListener('input',()=>dirty=true);
   d.querySelector('form').addEventListener('change',()=>dirty=true);

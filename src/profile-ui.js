@@ -14,7 +14,7 @@ export function profileHint(data){
   ].filter(Boolean);
   if(!suggestions.length)return '';
   const [label,action]=suggestions[0];
-  return `<div class="profile-hint"><div><strong>Thêm dấu ấn của bạn</strong><p>Hoàn thiện từng bước, với thông tin bạn muốn công khai.</p></div><button class="btn neutral" data-action="${action}">${label}</button></div>`;
+  return `<details class="profile-hint"><summary>Hoàn thiện hồ sơ <span class="muted">Gợi ý cho bạn</span></summary><div class="hint-content"><p>Chỉ thêm thông tin bạn muốn công khai.</p><button class="btn neutral" data-action="${action}">${label}</button></div></details>`;
 }
 
 export function projectOverview(projects,featured){
@@ -30,6 +30,8 @@ export function renderProjectCard(project,owner){
     <div class="project-content"><div class="row between"><h3><a href="${href}">${esc(project.name)}</a></h3>${owner?`<button class="icon-btn" aria-label="Sửa dự án ${esc(project.name)}" data-action="edit-project" data-id="${esc(project.id)}">${svg('edit')}</button>`:''}</div>
     <span class="badge">${project.visibility==='draft'?'Bản nháp':esc(project.status||'Dự án')}</span>
     <p class="muted project-description">${esc(project.description||'Chưa thêm mô tả dự án.')}</p>
+    ${project.role?`<p class="project-role"><span>Vai trò</span> ${esc(project.role)}</p>`:''}
+    ${project.contribution?`<p class="project-contribution"><strong>Đóng góp</strong> ${esc(project.contribution)}</p>`:''}
     <div class="project-card-footer">${project.tech?`<span class="tag">${esc(project.tech)}</span>`:''}<a class="project-open" href="${href}">Xem dự án <span aria-hidden="true">↗</span></a></div></div>
   </article>`;
 }

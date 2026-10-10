@@ -48,3 +48,14 @@ Giai đoạn hiện tại dừng ở bước 1; dữ liệu tiếp tục đượ
 - Card dự án dùng monogram hoặc ảnh tải lên, tên, trạng thái, mô tả tối đa ba dòng, công nghệ và liên kết chi tiết. Các vùng bấm và nút thao tác tối thiểu 44 px về chiều cao.
 - Mobile: thanh chủ sở hữu một hàng, featured một cột, kiểu danh sách tự chuyển thành card dọc. Trường nhập dùng cỡ chữ 16 px.
 - Nhãn dữ liệu mẫu giữ trên nội dung mẫu; bỏ các đoạn giải thích lặp dưới danh sách dự án.
+
+Đầu hồ sơ được thu gọn thêm: cover 160 px desktop/112 px mobile, avatar 120/88 px. Khối gợi ý giữ một hành động kế tiếp và không có đường kẻ màu. Giới thiệu trống được xử lý bằng gợi ý thay vì lặp một card trống; sau khi có nội dung, mục Giới thiệu xuất hiện bình thường. Mục Dự án trong hồ sơ dùng tổng quan, các dự án chưa xuất hiện ở Nổi bật và liên kết đến danh sách đầy đủ; sidebar không lặp lại danh sách ghim. Thứ tự các mục đã lưu vẫn được giữ.
+
+## Ưu tiên người xem hồ sơ
+
+- Điều hướng theo thứ tự Hồ sơ, Dự án, Hoạt động, Liên hệ. GitHub mô phỏng nằm trong menu tài khoản.
+- CTA chính trên hồ sơ dẫn đến dự án; Liên hệ vẫn xuất hiện trực tiếp. Giới thiệu một câu là trường tùy chọn, do chủ sở hữu nhập.
+- Gợi ý chủ sở hữu mặc định thu gọn bằng details/summary; khách không thấy khối này.
+- Case study dự án có các trường tùy chọn: vai trò, vấn đề, đóng góp, kết quả. Card và trang chi tiết chỉ hiển thị nội dung đã cung cấp.
+- Ảnh chụp sản phẩm được tải lên từ editor. Khi chưa có ảnh, placeholder chữ được giảm chiều cao; không tạo ảnh sản phẩm giả.
+- Nút chính dùng màu nhấn và bóng nhẹ; nút phụ phẳng; nút xóa có màu riêng theo theme.

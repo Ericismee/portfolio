@@ -39,6 +39,29 @@ Các kiểm tra trên dùng profile Chrome tạm, không thay dữ liệu trình
 - Modal/Escape/focus, bộ lọc mobile, lỗi/thử lại liên hệ, menu tài khoản và lưu sau reload tiếp tục qua assertion; không ghi nhận exception JavaScript.
 - Các kiểm tra vẫn dùng Chrome riêng. Chưa thử bàn phím điện thoại thật, screen reader hoặc thiết bị thật.
 
+## Thu gọn đầu hồ sơ và giảm lặp — 10/10/2026
+
+- Kiểm tra tối đa hai card nổi bật, tổng quan dự án không lặp tên dự án nổi bật và nút Xem tất cả mở đủ ba dự án mẫu.
+- Khối gợi ý chỉ có một thao tác kế tiếp, không có viền xanh. Khi chưa có giới thiệu, không lặp lại card trống với cùng thao tác.
+- Thu gọn cover/avatar và xem ảnh chụp hồ sơ 390 px.
+- Chạy lại assertion trên sáu màn hình ở năm chiều rộng, với tên/headline dài: không tràn ngang; modal, focus, theme, bộ lọc, liên hệ và lưu sau reload đều qua.
+
+## Ưu tiên trải nghiệm khách — 10/10/2026
+
+- Gợi ý chủ sở hữu mặc định đóng, mở bằng summary, nút thao tác đạt chiều cao 44 px. Đã sửa quy tắc cũ còn đặt 40 px.
+- Điều hướng khách ưu tiên hồ sơ/dự án; GitHub vẫn truy cập từ menu tài khoản.
+- Lưu thử giới thiệu một câu; vai trò, vấn đề, đóng góp và kết quả dự án. Card/trang chi tiết hiển thị đúng nội dung đã nhập.
+- Rà ảnh owner/guest mobile và sửa quy tắc cũ khiến icon sửa dự án nổi bật xuống dòng.
+- Kiểm tra nội dung dài, sáu màn hình, năm chiều rộng; modal/focus/theme/menu/bộ lọc/liên hệ/lưu sau reload tiếp tục qua. Chưa kiểm tra trên điện thoại thật.
+
+## Nghiệm thu và nội dung công khai — 10/10/2026
+
+- Bỏ 49 khai báo CSS bị ghi đè. So sánh computed style của 24 tổ hợp: sáu màn hình, 390/1440 px, light/dark; không thay đổi sau bước dọn CSS.
+- Đo 14 tổ hợp theme/màu nhấn: chữ nút chính, nút phụ và liên kết thông tin hồ sơ đều đạt tương phản tối thiểu 4.5:1 sau khi kết thúc chuyển màu.
+- Kiểm tra tên truy cập của điều khiển đang hiển thị trên sáu màn hình. Phím Space mở gợi ý; summary có focus 3 px. Sửa vòng Tab để giữ focus trong editor, kiểm tra 18 lần Tab liên tiếp.
+- Dữ liệu dự án đã chuyển sang NotebookE, LingoraAI và Horune theo nguồn công khai. Kiểm tra chuyển phiên bản giữ nội dung cá nhân, ảnh, liên kết và lựa chọn ghim; mô tả dự án tùy chỉnh không bị thay thế.
+- Chưa kiểm thử screen reader, điện thoại thật hoặc phỏng vấn người xem. Chưa xác minh hoạt động backend của các dự án nguồn.
+
 ## Rà thiết kế tổng thể — 10/10/2026
 
 - Rà ảnh chụp hồ sơ 390/1440 px, cài đặt mobile, dự án desktop và bảng tin desktop.

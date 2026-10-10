@@ -30,7 +30,7 @@ Mở http://localhost:3001. Kiểm tra cú pháp: `npm run check`.
 
 Hồ sơ, nội dung, ảnh và cấu hình được lưu vào localStorage với key `eric-profile-mock`; chế độ xem dùng key `eric-owner`. Dữ liệu chỉ thuộc trình duyệt và origin hiện tại. Xóa dữ liệu website sẽ đặt lại prototype. File ảnh tối đa 3 MB, CV PDF tối đa 2 MB; tổng dung lượng vẫn phụ thuộc trình duyệt.
 
-Tên Eric và Software Engineer là thông tin được cung cấp. NotebookE, ER AI và Horune dùng để minh họa cấu trúc. Mô tả mẫu có nhãn; không có số liệu thành tích, tài khoản GitHub hay kinh nghiệm tự tạo.
+Tên Eric và Software Engineer là thông tin được cung cấp. NotebookE, LingoraAI và Horune được biên tập từ README công khai theo liên kết chủ sở hữu cung cấp. GitHub Ericismee và LinkedIn được cấu hình sẵn; ảnh để chủ sở hữu tải lên. Các bài viết mẫu giữ nhãn mẫu. Nguồn và giới hạn được ghi trong `CONTENT-SOURCES.md`; không tạo thành tích, kinh nghiệm hay vai trò cá nhân.
 
 ## Cấu trúc
 
@@ -41,6 +41,7 @@ Tên Eric và Software Engineer là thông tin được cung cấp. NotebookE, E
 - `src/ui.js`: icon, nút, avatar và các thành phần dùng chung.
 - `src/profile-ui.js`: gợi ý hoàn thiện hồ sơ và card dự án dùng chung.
 - `src/store.js`: nạp/lưu dữ liệu demo và chế độ xem.
+- `src/public-content.js`: nội dung từ README công khai và chuyển dữ liệu mẫu cũ có kiểm soát.
 - `src/dialog.js`: chỉnh sửa, cảnh báo chưa lưu và quản lý focus.
 - `src/design.js`: cài đặt, sidebar, mục lục và bộ lọc mobile.
 - `src/theme.js`: tương phản màu chữ theo màu nhấn.
