@@ -135,26 +135,6 @@ export function GithubSettingsForm({
         </p>
 
         <label>
-          {t('Tiêu đề trang GitHub', 'GitHub page title')}
-          <input
-            name="githubTitle"
-            required
-            maxLength={120}
-            value={value.title}
-            onChange={(e) => change('title', e.target.value)}
-          />
-        </label>
-        <label>
-          {t('Giới thiệu ngắn', 'Short introduction')}
-          <textarea
-            name="githubDescription"
-            maxLength={300}
-            rows={2}
-            value={value.description}
-            onChange={(e) => change('description', e.target.value)}
-          />
-        </label>
-        <label>
           {t('Tự làm mới khi trang đang mở', 'Refresh while the page is open')}
           <select
             name="githubRefresh"
@@ -177,22 +157,7 @@ export function GithubSettingsForm({
           )}
         </p>
       </fieldset>
-      <fieldset disabled={busy}>
-        <legend>{t('Các phần hiển thị', 'Visible sections')}</legend>
-        <div className="github-setting-toggles">
-          {toggles.map(([key, label]) => (
-            <label key={key} className="github-check">
-              <input
-                type="checkbox"
-                name={key}
-                checked={Boolean(value[key])}
-                onChange={(e) => change(key, e.target.checked)}
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+
       <fieldset disabled={busy}>
         <legend>{t('Chọn kho mã', 'Choose repositories')}</legend>
         <label className="github-check">
@@ -388,6 +353,22 @@ export function GithubSettingsForm({
             'Hidden repositories are also excluded from this site’s history. Contributions and languages remain account-wide. These settings do not change GitHub data.',
           )}
         </p>
+      </fieldset>
+      <fieldset disabled={busy}>
+        <legend>{t('Các phần hiển thị', 'Visible sections')}</legend>
+        <div className="github-setting-toggles">
+          {toggles.map(([key, label]) => (
+            <label key={key} className="github-check">
+              <input
+                type="checkbox"
+                name={key}
+                checked={Boolean(value[key])}
+                onChange={(e) => change(key, e.target.checked)}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
       </fieldset>
       {error && (
         <p className="error" role="alert">

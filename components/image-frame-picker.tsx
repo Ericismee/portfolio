@@ -287,6 +287,28 @@ export function ImageFramePicker({
             />
             <output>{crop.zoom.toFixed(1)}×</output>
           </label>
+          <div className="crop-position-controls">
+            {(['x', 'y'] as const).map((axis) => (
+              <label className="crop-zoom" key={axis}>
+                {axis === 'x'
+                  ? t('Vị trí ngang', 'Horizontal position')
+                  : t('Vị trí dọc', 'Vertical position')}
+                <input
+                  type="range"
+                  name={name + '-position-' + axis}
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={Math.round(crop[axis] * 100)}
+                  disabled={busy || loading}
+                  onChange={(event) =>
+                    setCrop((c) => ({ ...c, [axis]: Number(event.target.value) / 100 }))
+                  }
+                />
+                <output>{Math.round(crop[axis] * 100)}%</output>
+              </label>
+            ))}
+          </div>
           <div className="actions">
             <button
               className="btn primary"
@@ -310,6 +332,14 @@ export function ImageFramePicker({
               className="btn neutral"
               type="button"
               disabled={busy || loading}
+              onClick={() => setCrop({ x: 0.5, y: 0.5, zoom: 1 })}
+            >
+              {t('Thu về 1×', 'Zoom out to 1×')}
+            </button>
+            <button
+              className="btn neutral"
+              type="button"
+              disabled={busy || loading}
               onClick={close}
             >
               {t('Hủy', 'Cancel')}
@@ -325,8 +355,8 @@ export function ImageFramePicker({
       )}
       <small className="admin-help">
         {t(
-          'Ảnh tối đa 3 MB. Chọn khung → dùng khung → lưu để công khai. GIF được lưu thành ảnh tĩnh.',
-          'Images up to 3 MB. Frame → apply → save to publish. GIF is saved as a still image.',
+          'Ảnh tối đa 3 MB. Chọn khung → dùng khung → lưu để công khai. Muốn lấy lại vùng đã cắt, hãy chọn ảnh gốc. GIF được lưu thành ảnh tĩnh.',
+          'Images up to 3 MB. Frame → apply → save to publish. Choose the original image to recover previously cropped areas. GIF is saved as a still image.',
         )}
       </small>
     </div>

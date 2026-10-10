@@ -158,8 +158,9 @@
 }
 .frame-current {
   display: block;
+  width: 100%;
   max-width: 100%;
-  max-height: 200px;
+  max-height: 320px;
   border-radius: 10px;
   object-fit: contain;
 }
@@ -177,7 +178,7 @@
 .crop-frame {
   position: relative;
   width: 100%;
-  max-width: 520px;
+  max-width: 100%;
   margin-inline: auto;
   overflow: hidden;
   border-radius: 10px;
@@ -236,7 +237,7 @@
       transparent calc(200% / 3 + 0.5px)
     );
 }
-.content-editor .crop-zoom {
+.image-frame-picker .crop-zoom {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -249,7 +250,7 @@
   width: 20px;
   height: 20px;
 }
-.content-editor .crop-zoom input {
+.image-frame-picker .crop-zoom input {
   flex: 1;
   width: 120px;
   min-width: 80px;
@@ -258,7 +259,33 @@
   accent-color: #4264da;
 }
 .crop-zoom output {
+  min-width: 42px;
+  text-align: right;
   font-variant-numeric: tabular-nums;
+}
+.crop-position-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 600px) {
+  .crop-position-controls {
+    grid-template-columns: 1fr;
+  }
+}
+.admin-content :is(fieldset, .image-frame-picker) {
+  scroll-margin-top: 100px;
+}
+.admin-page .image-frame-picker {
+  padding: 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: #f8faff;
+}
+@media (max-width: 600px) {
+  .admin-page .image-frame-picker {
+    padding: 12px;
+  }
 }
 .image-frame-picker .actions {
   display: flex;
