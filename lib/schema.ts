@@ -91,8 +91,8 @@ export const trashSchema = z.discriminatedUnion('kind', [
 ]);
 const repoNames = z.array(z.string().regex(/^[a-zA-Z0-9_.-]{1,100}$/)).max(1000);
 export const githubSettingsSchema = z.object({
-  title: z.string().trim().min(1).max(120).default('Không gian mã nguồn'),
-  description: text(300).default('Những dự án đang xây dựng và đóng góp trên GitHub.'),
+  title: z.string().trim().min(1).max(120).default('Dấu ấn mã nguồn'),
+  description: text(300).default('Dự án và đóng góp trên GitHub.'),
   refreshMinutes: z.union([z.literal(5), z.literal(15), z.literal(30), z.literal(60)]).default(60),
   showSidebar: z.boolean().default(true),
   showStatistics: z.boolean().default(true),

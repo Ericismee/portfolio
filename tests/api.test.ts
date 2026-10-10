@@ -56,6 +56,31 @@ async function fixture() {
   };
   return { database, handle, origin, call, login, cleanup, directory };
 }
+test('Production login requires the configured origin and retains secure session cookies', async () => {
+  const f = await fixture();
+  try {
+    const request = (origin: string) =>
+      new Request(f.origin + '/api/login', {
+        method: 'POST',
+        headers: { origin, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          username: 'admin',
+          password: 'test-password-never-production',
+        }),
+      });
+    const missing = await createApi(f.database, true)(request(f.origin));
+    assert.equal(missing.status, 503);
+    const handle = createApi(f.database, true, f.origin);
+    assert.equal((await handle(request('https://attacker.test'))).status, 403);
+    const login = await handle(request(f.origin));
+    assert.equal(login.status, 200);
+    assert.match(login.headers.get('set-cookie')!, /^__Host-profile_session=/);
+    assert.match(login.headers.get('set-cookie')!, /; Secure/);
+  } finally {
+    await f.cleanup();
+  }
+});
+
 test('Server authorization, CSRF, session logout and invalid credentials', async () => {
   const f = await fixture();
   try {

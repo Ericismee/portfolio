@@ -9,6 +9,12 @@ try {
   if (error.code !== 'ENOENT') throw error;
 }
 process.env.PORT ??= '3001';
+// Keep the trusted origin explicit instead of deriving it from request headers.
+if (!process.env.PUBLIC_ORIGIN) {
+  throw new Error(
+    'Set PUBLIC_ORIGIN in .env before starting (local preview: http://localhost:3001).',
+  );
+}
 process.env.HOSTNAME = process.env.HOST || '127.0.0.1';
 // Next's generated standalone server changes cwd; resolve storage first so an
 // upgrade never creates an empty database inside the build output directory.
