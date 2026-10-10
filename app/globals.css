@@ -1529,6 +1529,7 @@ button.gh-day:hover {
 }
 .profile-intro .cover > img {
   display: block;
+  object-position: center top;
   -webkit-mask-image: linear-gradient(
     to bottom,
     #000 28%,
