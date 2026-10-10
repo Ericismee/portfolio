@@ -1,0 +1,1126 @@
+'use client';
+import Link from 'next/link';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  projectSchema,
+  postSchema,
+  itemSchema,
+  type Content,
+  type ContentState,
+  type Kind,
+  type Project,
+  type Post,
+  type Entry,
+  type InboxMessage,
+} from '../lib/schema';
+import { entries, prepareLegacyImport, request } from '../lib/client';
+import { applyTheme } from '../lib/theme';
+import { LanguageProvider, useLanguage } from './language';
+import { EditorDialog, FieldsForm, type Editor, type Field, type Values } from './admin-form';
+
+type Tab =
+  'profile' | 'projects' | 'posts' | 'sections' | 'skills' | 'settings' | 'inbox' | 'trash';
+type Revision = { id: number; created_at: string };
+export function Admin() {
+  return (
+    <LanguageProvider>
+      <AdminDashboard />
+    </LanguageProvider>
+  );
+}
+function AdminDashboard() {
+  const { language, t, toggle } = useLanguage(),
+    [state, setState] = useState<ContentState | null>(null),
+    [loading, setLoading] = useState(true),
+    [error, setError] = useState(''),
+    [tab, setTab] = useState<Tab>('profile'),
+    [section, setSection] = useState(''),
+    [query, setQuery] = useState(''),
+    [filter, setFilter] = useState('all'),
+    [editor, setEditor] = useState<Editor | null>(null),
+    [toast, setToast] = useState(''),
+    [dirty, setDirty] = useState(false),
+    [pending, setPending] = useState(false),
+    [messages, setMessages] = useState<InboxMessage[]>([]),
+    [csrfToken, setCsrfToken] = useState(''),
+    csrf = useRef('');
+  const api = useCallback(
+    <T,>(url: string, method = 'GET', body?: unknown) =>
+      request<T>(url, method, body, csrf.current),
+    [],
+  );
+  // Session cookies stay HttpOnly. Only the matching CSRF token reaches React;
+  // both are checked by the server for every administrative mutation.
+  const reload = useCallback(async () => {
+    setLoading(true);
+    try {
+      const session = await api<{ authenticated: boolean; csrf?: string }>('/api/session');
+      csrf.current = session.csrf || '';
+      setCsrfToken(csrf.current);
+      if (session.authenticated) setState(await api<ContentState>('/api/admin/content'));
+      else setState(null);
+      setError('');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to connect');
+    } finally {
+      setLoading(false);
+    }
+  }, [api]);
+  useEffect(() => {
+    void reload();
+    applyTheme('#4264da', 'light');
+  }, [reload]);
+  useEffect(() => {
+    const beforeUnload = (e: BeforeUnloadEvent) => {
+      if (dirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, [dirty]);
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(''), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+  useEffect(() => {
+    if (tab === 'inbox' && state)
+      api<{ messages: InboxMessage[] }>('/api/admin/messages')
+        .then((result) => setMessages(result.messages))
+        .catch((e) => setError(e.message));
+  }, [tab, state, api]);
+  const labels: Record<Tab, string> = {
+    profile: t('Hồ sơ & liên hệ', 'Profile & contact'),
+    projects: t('Dự án', 'Projects'),
+    posts: t('Bài viết', 'Posts'),
+    sections: t('Các mục hồ sơ', 'Profile sections'),
+    skills: t('Kỹ năng', 'Skills'),
+    settings: t('Giao diện & dữ liệu', 'Appearance & data'),
+    inbox: t('Hộp thư', 'Inbox'),
+    trash: t('Thùng rác', 'Trash'),
+  };
+  const field = (
+    key: string,
+    label: string,
+    type: Field['type'] = 'text',
+    required = false,
+  ): Field => ({ key, label, type, required });
+  const select = (key: string, label: string, options: [string, string][]): Field => ({
+    key,
+    label,
+    type: 'select',
+    options,
+  });
+  async function save(next: Content) {
+    if (!state) throw Error('Please sign in');
+    const result = await api<ContentState>('/api/admin/content', 'PUT', {
+      data: next,
+      version: state.version,
+    });
+    setState(result);
+    setDirty(false);
+    setToast(t('Đã lưu trên máy chủ', 'Saved to server'));
+  }
+  async function mutate(change: (data: Content) => void) {
+    if (!state) return;
+    // A failed save leaves the last confirmed content intact in the dashboard.
+    const next = structuredClone(state.data);
+    change(next);
+    await save(next);
+  }
+  async function action(run: () => Promise<unknown>) {
+    if (pending) return;
+    setPending(true);
+    setError('');
+    try {
+      await run();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('Không thể thực hiện', 'Action failed'));
+    } finally {
+      setPending(false);
+    }
+  }
+  function navigate(next: Tab) {
+    if (dirty && !confirm(t('Bỏ các thay đổi chưa lưu?', 'Discard unsaved changes?'))) return;
+    setDirty(false);
+    setTab(next);
+    setSection('');
+    setQuery('');
+    setFilter('all');
+    setError('');
+  }
+  const status = (p: Project | Post | Entry) =>
+    p.visibility === 'draft'
+      ? t('Bản nháp', 'Draft')
+      : !p.visible
+        ? t('Đã ẩn', 'Hidden')
+        : 'displayAt' in p && p.displayAt && new Date(p.displayAt) > new Date()
+          ? t('Đã hẹn giờ', 'Scheduled')
+          : t('Công khai', 'Published');
+  const confirmAction = (title: string, body: string, submit: () => Promise<void>) =>
+    setEditor({
+      title,
+      body: <p>{body}</p>,
+      submit,
+      submitLabel:
+        title.includes('Xóa') || title.includes('Delete')
+          ? t('Xóa', 'Delete')
+          : t('Xác nhận', 'Confirm'),
+    });
+  function localDate(value: string) {
+    const d = new Date(value);
+    return new Date(d.valueOf() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  }
+  function edit(kind: Kind, id?: string, sectionName = section) {
+    if (!state) return;
+    const p = entries(state.data, kind, sectionName).find((p) => p.id === id),
+      values: Values = {
+        visible: true,
+        visibility: 'draft',
+        ...Object.fromEntries(
+          Object.entries(p || {}).filter(
+            ([, v]) => typeof v === 'string' || typeof v === 'boolean',
+          ),
+        ),
+      },
+      fields: Field[] = [];
+    if (kind === 'projects') {
+      const project = p as Project | undefined;
+      values.technologies = project?.technologies.join(', ') || '';
+      fields.push(
+        field('name', t('Tên dự án', 'Project name'), 'text', true),
+        field('description', t('Mô tả ngắn', 'Short description'), 'textarea'),
+        field('tech', t('Công nghệ chính', 'Primary technology')),
+        field(
+          'technologies',
+          t('Các công nghệ, cách nhau bằng dấu phẩy', 'Technologies, comma separated'),
+        ),
+        field('status', t('Trạng thái dự án', 'Project status')),
+        ...(
+          [
+            ['role', t('Vai trò của bạn', 'Your role')],
+            ['problem', t('Vấn đề', 'Problem')],
+            ['contribution', t('Đóng góp', 'Contribution')],
+            ['outcome', t('Kết quả', 'Outcome')],
+            ['details', t('Chi tiết', 'Details')],
+          ] as const
+        ).map(([k, label]) => field(k, label, 'textarea')),
+        field('github', 'GitHub URL', 'url'),
+        field('demo', 'Demo URL', 'url'),
+        field('source', t('Nguồn tham khảo', 'Reference URL'), 'url'),
+        field('thumbnail', t('Ảnh dự án', 'Project image'), 'image'),
+        field('pinned', t('Ghim trong mục nổi bật', 'Pin in featured section'), 'checkbox'),
+      );
+    } else if (kind === 'posts') {
+      const post = p as Post | undefined;
+      values.displayAt = localDate(post?.displayAt || post?.createdAt || new Date().toISOString());
+      values.type = post?.type || 'Bài viết';
+      fields.push(
+        field('title', t('Tiêu đề', 'Title'), 'text', true),
+        field('text', t('Nội dung', 'Content'), 'textarea', true),
+        select('type', t('Loại bài', 'Post type'), [
+          ['Bài viết', t('Bài viết', 'Article')],
+          ['Cập nhật dự án', t('Cập nhật dự án', 'Project update')],
+          ['Media', 'Media'],
+          ['Liên kết', t('Liên kết', 'Link')],
+        ]),
+        field('image', t('Ảnh đính kèm', 'Attached image'), 'image'),
+        field('link', t('Liên kết', 'Link'), 'url'),
+        {
+          ...field('displayAt', t('Thời gian hiển thị', 'Display time'), 'datetime-local'),
+          help: t(
+            'Theo múi giờ trên thiết bị. Bài hẹn giờ chưa hiển thị công khai trước thời điểm này.',
+            'Uses your device timezone. Scheduled posts stay private until this time.',
+          ),
+        },
+      );
+    } else
+      fields.push(
+        field('title', t('Tiêu đề / vai trò', 'Title / role'), 'text', true),
+        field('organization', t('Tổ chức / đơn vị', 'Organization')),
+        field('period', t('Thời gian', 'Period')),
+        field('description', t('Nội dung', 'Description'), 'textarea'),
+      );
+    fields.push(
+      select('visibility', t('Trạng thái xuất bản', 'Publishing status'), [
+        ['draft', t('Lưu nháp', 'Draft')],
+        ['public', t('Xuất bản', 'Publish')],
+      ]),
+      field('visible', t('Hiển thị trên trang công khai', 'Visible on public site'), 'checkbox'),
+    );
+    setEditor({
+      title: id ? t('Chỉnh sửa nội dung', 'Edit content') : t('Thêm nội dung', 'Add content'),
+      fields,
+      values,
+      submit: async (v) =>
+        mutate((d) => {
+          const input = { ...p, ...v, id: id || crypto.randomUUID(), sample: false };
+          if (kind === 'projects') {
+            const next = projectSchema.parse({
+              ...input,
+              technologies: String(v.technologies || '')
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean),
+            });
+            d.projects = id
+              ? d.projects.map((p) => (p.id === id ? next : p))
+              : [...d.projects, next];
+          } else if (kind === 'posts') {
+            const next = postSchema.parse({
+              ...input,
+              createdAt: (p as Post | undefined)?.createdAt || new Date().toISOString(),
+              displayAt: v.displayAt
+                ? new Date(String(v.displayAt)).toISOString()
+                : new Date().toISOString(),
+            });
+            d.posts = id ? d.posts.map((p) => (p.id === id ? next : p)) : [...d.posts, next];
+          } else {
+            const next = itemSchema.parse(input);
+            d.items[sectionName] = id
+              ? (d.items[sectionName] || []).map((p) => (p.id === id ? next : p))
+              : [...(d.items[sectionName] || []), next];
+          }
+        }),
+    });
+  }
+  function remove(kind: Kind, id: string, sectionName = section) {
+    confirmAction(
+      t('Xóa nội dung?', 'Delete this entry?'),
+      t(
+        'Nội dung chuyển vào thùng rác và có thể khôi phục.',
+        'The entry moves to trash and can be restored.',
+      ),
+      () =>
+        mutate((d) => {
+          const value = entries(d, kind, sectionName).find((p) => p.id === id);
+          if (!value) return;
+          const record = {
+            id: crypto.randomUUID(),
+            section: sectionName,
+            deletedAt: new Date().toISOString(),
+          };
+          if (kind === 'projects') {
+            d.trash.unshift({ ...record, kind, value: projectSchema.parse(value) });
+            d.projects = d.projects.filter((p) => p.id !== id);
+          } else if (kind === 'posts') {
+            d.trash.unshift({ ...record, kind, value: postSchema.parse(value) });
+            d.posts = d.posts.filter((p) => p.id !== id);
+          } else {
+            d.trash.unshift({ ...record, kind, value: itemSchema.parse(value) });
+            d.items[sectionName] = d.items[sectionName].filter((p) => p.id !== id);
+          }
+          d.trash = d.trash.slice(0, 100);
+        }),
+    );
+  }
+  function preview(p: Project | Post | Entry) {
+    const image = 'thumbnail' in p ? p.thumbnail : 'image' in p ? p.image : '';
+    setEditor({
+      title: 'name' in p ? p.name : p.title,
+      body: (
+        <>
+          <span className="badge">{status(p)}</span>
+          {image && <img className="admin-asset" src={image} alt="" />}
+          <p className="preserve">{'text' in p ? p.text : p.description}</p>
+          {'details' in p && <p className="preserve">{p.details}</p>}
+          <p className="admin-help">
+            {t(
+              'Xem trước nội dung. Chỉ bản công khai mới xuất hiện trên website.',
+              'Content preview. Only published entries appear on the website.',
+            )}
+          </p>
+        </>
+      ),
+    });
+  }
+  function rows(kind: Kind, sectionName = '') {
+    if (!state) return null;
+    const group = entries(state.data, kind, sectionName),
+      list = group
+        .filter((p) =>
+          `${'name' in p ? p.name : p.title} ${'text' in p ? p.text : p.description}`
+            .toLocaleLowerCase()
+            .includes(query.toLocaleLowerCase()),
+        )
+        .filter(
+          (p) =>
+            filter === 'all' ||
+            (filter === 'draft' && p.visibility === 'draft') ||
+            (filter === 'hidden' && !p.visible) ||
+            (filter === 'public' && p.visibility === 'public' && p.visible),
+        );
+    return (
+      <>
+        <div className="admin-tools">
+          <input
+            aria-label={t('Tìm nội dung', 'Search content')}
+            placeholder={t('Tìm tiêu đề hoặc nội dung…', 'Search title or content…')}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <select
+            aria-label={t('Lọc nội dung', 'Filter content')}
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          >
+            {[
+              ['all', t('Tất cả', 'All')],
+              ['public', t('Công khai', 'Published')],
+              ['draft', t('Bản nháp', 'Draft')],
+              ['hidden', t('Đã ẩn', 'Hidden')],
+            ].map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <p className="admin-help">
+          {t('Dùng ↑ ↓ để đổi thứ tự hiển thị.', 'Use ↑ ↓ to change display order.')}
+        </p>
+        {list.map((p) => {
+          const index = group.indexOf(p),
+            move = (delta: number) =>
+              action(() =>
+                mutate((d) => {
+                  const arr = entries(d, kind, sectionName),
+                    i = arr.findIndex((x) => x.id === p.id),
+                    j = i + delta;
+                  if (j >= 0 && j < arr.length) [arr[i], arr[j]] = [arr[j], arr[i]];
+                }),
+              );
+          return (
+            <article className="admin-row" key={p.id}>
+              <div className="admin-row-content">
+                <h3>{'name' in p ? p.name : p.title}</h3>
+                <p className="muted">{('text' in p ? p.text : p.description).slice(0, 140)}</p>
+                <span className="badge">{status(p)}</span>
+                {'displayAt' in p && p.displayAt && (
+                  <time dateTime={p.displayAt} className="muted">
+                    {new Date(p.displayAt).toLocaleString(language)}
+                  </time>
+                )}
+              </div>
+              <div className="actions">
+                <button
+                  className="btn neutral"
+                  aria-label={t('Di chuyển lên', 'Move up')}
+                  disabled={pending || index === 0}
+                  onClick={() => void move(-1)}
+                >
+                  ↑
+                </button>
+                <button
+                  className="btn neutral"
+                  aria-label={t('Di chuyển xuống', 'Move down')}
+                  disabled={pending || index === group.length - 1}
+                  onClick={() => void move(1)}
+                >
+                  ↓
+                </button>
+                <button className="btn neutral" onClick={() => preview(p)}>
+                  {t('Xem', 'Preview')}
+                </button>
+                <button className="btn neutral" onClick={() => edit(kind, p.id, sectionName)}>
+                  {t('Sửa', 'Edit')}
+                </button>
+                <button
+                  className="btn neutral"
+                  disabled={pending}
+                  onClick={() =>
+                    void action(() =>
+                      mutate((d) => {
+                        const item = entries(d, kind, sectionName).find((x) => x.id === p.id)!;
+                        item.visible = !item.visible;
+                      }),
+                    )
+                  }
+                >
+                  {p.visible ? t('Ẩn', 'Hide') : t('Hiện', 'Show')}
+                </button>
+                <button
+                  className="btn neutral danger"
+                  onClick={() => remove(kind, p.id, sectionName)}
+                >
+                  {t('Xóa', 'Delete')}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+        {!list.length && (
+          <div className="empty">{t('Chưa có nội dung phù hợp.', 'No matching content.')}</div>
+        )}
+      </>
+    );
+  }
+  function importData(input: unknown) {
+    const prepared = prepareLegacyImport(input);
+    confirmAction(
+      t('Nhập dữ liệu?', 'Import data?'),
+      t(
+        'Thay thế nội dung hiện tại. Một phiên bản khôi phục sẽ được giữ lại.',
+        'Replace current content. A recovery revision will be retained.',
+      ),
+      async () => {
+        setState(
+          await api<ContentState>('/api/admin/import', 'POST', {
+            data: prepared,
+            version: state!.version,
+          }),
+        );
+        setDirty(false);
+        setToast(t('Đã nhập dữ liệu', 'Data imported'));
+      },
+    );
+  }
+  function revisions() {
+    void action(async () => {
+      const { revisions } = await api<{ revisions: Revision[] }>('/api/admin/revisions');
+      setEditor({
+        title: t('Lịch sử phiên bản', 'Revision history'),
+        body: (
+          <>
+            {revisions.length ? (
+              revisions.map((r) => (
+                <div className="admin-row" key={r.id}>
+                  <time dateTime={r.created_at}>
+                    {new Date(r.created_at).toLocaleString(language)}
+                  </time>
+                  <button
+                    className="btn neutral"
+                    onClick={() =>
+                      confirmAction(
+                        t('Khôi phục phiên bản?', 'Restore revision?'),
+                        t(
+                          'Khôi phục toàn bộ nội dung và giao diện. Phiên bản hiện tại cũng được giữ lại.',
+                          'Restore all content and appearance. The current version will also be retained.',
+                        ),
+                        async () => {
+                          setState(
+                            await api<ContentState>('/api/admin/restore', 'POST', {
+                              id: r.id,
+                              version: state!.version,
+                            }),
+                          );
+                          setToast(t('Đã khôi phục', 'Revision restored'));
+                        },
+                      )
+                    }
+                  >
+                    {t('Khôi phục', 'Restore')}
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p>{t('Chưa có phiên bản cũ.', 'No previous revisions.')}</p>
+            )}
+          </>
+        ),
+      });
+    });
+  }
+  let body: ReactNode = null;
+  if (state) {
+    const d = state.data;
+    if (tab === 'profile') {
+      const fields: Field[] = [
+        field('name', t('Tên hiển thị', 'Display name'), 'text', true),
+        field('headline', t('Chuyên môn', 'Headline')),
+        field('summary', t('Giới thiệu ngắn', 'Short introduction')),
+        field('location', t('Địa điểm', 'Location')),
+        field('about', t('Giới thiệu', 'About'), 'textarea'),
+        field('avatar', t('Ảnh đại diện', 'Avatar'), 'image'),
+        field('cover', t('Ảnh bìa', 'Cover image'), 'image'),
+        ...['email', 'github', 'linkedin', 'website', 'facebook', 'instagram'].map((key) =>
+          field(
+            'link_' + key,
+            key === 'email' ? 'Email' : key[0].toUpperCase() + key.slice(1),
+            key === 'email' ? 'email' : 'url',
+          ),
+        ),
+        field('cv', t('CV tải xuống', 'Downloadable CV'), 'pdf'),
+      ];
+      const initial: Values = {
+        ...d.profile,
+        cv: d.cv?.url || '',
+        ...Object.fromEntries(
+          ['email', 'github', 'linkedin', 'website', 'facebook', 'instagram'].map((k) => [
+            'link_' + k,
+            d.links[k] || '',
+          ]),
+        ),
+      };
+      body = (
+        <>
+          <p className="admin-help">
+            {t(
+              'Chỉ thêm thông tin bạn muốn công khai. Ảnh có thể bổ sung sau.',
+              'Only add information you want to share publicly. You can upload images later.',
+            )}
+          </p>
+          <FieldsForm
+            key={tab + ':' + state.version}
+            fields={fields}
+            initial={initial}
+            csrf={csrfToken}
+            onDirty={setDirty}
+            submit={(v) =>
+              mutate((d) => {
+                for (const key of [
+                  'name',
+                  'headline',
+                  'summary',
+                  'location',
+                  'about',
+                  'avatar',
+                  'cover',
+                ] as const)
+                  d.profile[key] = String(v[key] || '');
+                for (const key of [
+                  'email',
+                  'github',
+                  'linkedin',
+                  'website',
+                  'facebook',
+                  'instagram',
+                ])
+                  d.links[key] = String(v['link_' + key] || '');
+                d.cv = v.cv ? { name: 'CV.pdf', url: String(v.cv) } : undefined;
+              })
+            }
+          />
+        </>
+      );
+    }
+    if (tab === 'projects' || tab === 'posts') body = rows(tab);
+    if (tab === 'sections')
+      body = section ? (
+        <>
+          <div className="admin-title">
+            <button className="btn neutral" onClick={() => setSection('')}>
+              ← {t('Các mục hồ sơ', 'Profile sections')}
+            </button>
+            <button className="btn primary" onClick={() => edit('items')}>
+              {t('＋ Thêm nội dung', '＋ Add entry')}
+            </button>
+          </div>
+          <h3>{d.sectionTitles[section] || section}</h3>
+          {rows('items', section)}
+        </>
+      ) : (
+        <>
+          <p className="admin-help">
+            {t(
+              'Đổi tên, sắp xếp và ẩn từng mục. Ẩn mục chỉ ảnh hưởng trang hồ sơ; dự án và bài viết vẫn có trang riêng.',
+              'Rename, reorder and hide sections. Hiding a section affects the profile; projects and posts keep their own pages.',
+            )}
+          </p>
+          <button
+            className="btn primary"
+            onClick={() =>
+              setEditor({
+                title: t('Tạo mục hồ sơ', 'Create profile section'),
+                fields: [field('title', t('Tên mục', 'Section name'), 'text', true)],
+                submit: async (v) =>
+                  mutate((d) => {
+                    const name = String(v.title).trim();
+                    if (d.sections.includes(name))
+                      throw Error(t('Tên mục đã tồn tại', 'Section already exists'));
+                    d.sections.push(name);
+                    d.sectionTitles[name] = name;
+                    d.items[name] = [];
+                  }),
+              })
+            }
+          >
+            {t('＋ Tạo mục', '＋ Create section')}
+          </button>
+          {d.sections.map((s, i) => (
+            <article className="admin-row" key={s}>
+              <div>
+                <h3>{d.sectionTitles[s] || s}</h3>
+                <span className="badge">
+                  {d.hidden.includes(s) ? t('Đã ẩn', 'Hidden') : t('Đang hiển thị', 'Visible')}
+                </span>
+              </div>
+              <div className="actions">
+                {[-1, 1].map((delta) => (
+                  <button
+                    className="btn neutral"
+                    key={delta}
+                    aria-label={
+                      delta === -1
+                        ? t('Di chuyển lên', 'Move up')
+                        : t('Di chuyển xuống', 'Move down')
+                    }
+                    disabled={pending || i + delta < 0 || i + delta >= d.sections.length}
+                    onClick={() =>
+                      void action(() =>
+                        mutate((d) => {
+                          [d.sections[i], d.sections[i + delta]] = [
+                            d.sections[i + delta],
+                            d.sections[i],
+                          ];
+                        }),
+                      )
+                    }
+                  >
+                    {delta === -1 ? '↑' : '↓'}
+                  </button>
+                ))}
+                <button
+                  className="btn neutral"
+                  onClick={() =>
+                    setEditor({
+                      title: t('Đổi tiêu đề mục', 'Rename section'),
+                      fields: [
+                        field('title', t('Tiêu đề hiển thị', 'Display title'), 'text', true),
+                      ],
+                      values: { title: d.sectionTitles[s] || s },
+                      submit: (v) =>
+                        mutate((d) => {
+                          d.sectionTitles[s] = String(v.title);
+                        }),
+                    })
+                  }
+                >
+                  {t('Đổi tên', 'Rename')}
+                </button>
+                <button
+                  className="btn neutral"
+                  disabled={pending}
+                  onClick={() =>
+                    void action(() =>
+                      mutate((d) => {
+                        d.hidden = d.hidden.includes(s)
+                          ? d.hidden.filter((x) => x !== s)
+                          : [...d.hidden, s];
+                      }),
+                    )
+                  }
+                >
+                  {d.hidden.includes(s) ? t('Hiện', 'Show') : t('Ẩn', 'Hide')}
+                </button>
+                {!['Giới thiệu', 'Nổi bật', 'Dự án', 'Kỹ năng', 'Hoạt động'].includes(s) && (
+                  <>
+                    <button
+                      className="btn neutral"
+                      onClick={() => {
+                        setSection(s);
+                        setQuery('');
+                        setFilter('all');
+                      }}
+                    >
+                      {t('Nội dung', 'Entries')}
+                    </button>
+                    <button
+                      className="btn neutral danger"
+                      onClick={() =>
+                        confirmAction(
+                          t('Xóa mục?', 'Delete section?'),
+                          t(
+                            'Xóa mục và nội dung bên trong. Có thể khôi phục toàn bộ từ lịch sử phiên bản.',
+                            'Remove this section and its entries. Restore the full revision from history if needed.',
+                          ),
+                          () =>
+                            mutate((d) => {
+                              d.sections = d.sections.filter((x) => x !== s);
+                              d.hidden = d.hidden.filter((x) => x !== s);
+                              delete d.items[s];
+                              delete d.sectionTitles[s];
+                            }),
+                        )
+                      }
+                    >
+                      {t('Xóa mục', 'Delete section')}
+                    </button>
+                  </>
+                )}
+              </div>
+            </article>
+          ))}
+        </>
+      );
+    if (tab === 'skills')
+      body = (
+        <FieldsForm
+          key={tab + ':' + state.version}
+          csrf={csrfToken}
+          onDirty={setDirty}
+          fields={[
+            {
+              ...field(
+                'skills',
+                t('Kỹ năng (mỗi dòng một kỹ năng)', 'Skills (one per line)'),
+                'textarea',
+              ),
+              help: t(
+                'Thứ tự dòng cũng là thứ tự hiển thị.',
+                'Line order determines display order.',
+              ),
+            },
+          ]}
+          initial={{ skills: d.skills.join('\n') }}
+          submit={(v) =>
+            mutate((d) => {
+              d.skills = [
+                ...new Set(
+                  String(v.skills)
+                    .split('\n')
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                ),
+              ];
+            })
+          }
+        />
+      );
+    if (tab === 'settings')
+      body = (
+        <>
+          <FieldsForm
+            key={tab + ':' + state.version}
+            csrf={csrfToken}
+            onDirty={setDirty}
+            fields={[
+              field('accent', t('Màu chủ đạo', 'Accent color'), 'color'),
+              select('theme', t('Giao diện', 'Theme'), [
+                ['light', t('Sáng', 'Light')],
+                ['dark', t('Tối', 'Dark')],
+              ]),
+              select('density', t('Khoảng cách', 'Density'), [
+                ['comfortable', t('Thoáng', 'Comfortable')],
+                ['compact', t('Gọn', 'Compact')],
+              ]),
+              select('layout', t('Bố cục', 'Layout'), [
+                ['standard', t('Tiêu chuẩn', 'Standard')],
+                ['wide', t('Rộng', 'Wide')],
+              ]),
+            ]}
+            initial={{ accent: d.accent, theme: d.theme, density: d.density, layout: d.layout }}
+            submit={(v) =>
+              mutate((d) => {
+                d.accent = String(v.accent);
+                d.theme = v.theme === 'dark' ? 'dark' : 'light';
+                d.density = v.density === 'compact' ? 'compact' : 'comfortable';
+                d.layout = v.layout === 'wide' ? 'wide' : 'standard';
+              })
+            }
+          />
+          <hr />
+          <h3>{t('Dữ liệu & khôi phục', 'Data & recovery')}</h3>
+          <p className="admin-help">
+            {t(
+              'Giữ 30 phiên bản gần nhất. Bản xuất chứa cả nội dung nháp; hãy giữ riêng tư.',
+              'Retains the latest 30 revisions. Exports contain drafts; keep them private.',
+            )}
+          </p>
+          <div className="actions">
+            <button
+              className="btn neutral"
+              onClick={() => {
+                const url = URL.createObjectURL(
+                    new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' }),
+                  ),
+                  a = document.createElement('a');
+                a.href = url;
+                a.download = 'profile-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }}
+            >
+              {t('Xuất JSON', 'Export JSON')}
+            </button>
+            <button
+              className="btn neutral"
+              onClick={() => {
+                try {
+                  const raw = localStorage.getItem('eric-profile-mock');
+                  if (!raw)
+                    throw Error(
+                      t(
+                        'Không có dữ liệu demo ở origin này. Nhập file JSON đã xuất.',
+                        'No demo data at this origin. Import an exported JSON file.',
+                      ),
+                    );
+                  importData(JSON.parse(raw));
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : 'Invalid file');
+                }
+              }}
+            >
+              {t('Nhập bản demo cũ', 'Import previous demo')}
+            </button>
+            <button className="btn neutral" onClick={revisions}>
+              {t('Lịch sử phiên bản', 'Revision history')}
+            </button>
+          </div>
+          <label>
+            {t('Nhập dữ liệu JSON', 'Import JSON')}
+            <input
+              type="file"
+              accept="application/json"
+              onChange={async (e) => {
+                try {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 8 * 1024 * 1024) throw Error(t('File quá lớn', 'File too large'));
+                  importData(JSON.parse(await file.text()));
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : 'Invalid file');
+                }
+              }}
+            />
+          </label>
+          <p className="admin-help">
+            {t(
+              'Ảnh và cơ sở dữ liệu nằm trong DATA_DIR. Sao lưu toàn bộ thư mục; JSON không chứa file ảnh đã tải lên.',
+              'Images and the database live in DATA_DIR. Back up the entire directory; JSON excludes uploaded image files.',
+            )}
+          </p>
+        </>
+      );
+    if (tab === 'trash')
+      body = (
+        <>
+          <p className="admin-help">
+            {t(
+              'Giữ tối đa 100 nội dung đã xóa. Khôi phục về dạng nháp để bạn kiểm tra.',
+              'Retains up to 100 deleted entries. Restored entries become drafts for review.',
+            )}
+          </p>
+          {d.trash.length ? (
+            d.trash.map((r) => (
+              <article className="admin-row" key={r.id}>
+                <div>
+                  <h3>{'name' in r.value ? r.value.name : r.value.title}</h3>
+                  <p className="muted">
+                    {r.section || r.kind} · {new Date(r.deletedAt).toLocaleString(language)}
+                  </p>
+                </div>
+                <button
+                  className="btn neutral"
+                  disabled={pending}
+                  onClick={() =>
+                    void action(() =>
+                      mutate((d) => {
+                        if (entries(d, r.kind, r.section).some((e) => e.id === r.value.id))
+                          throw Error('Entry ID already exists');
+                        if (r.kind === 'projects')
+                          d.projects.push({ ...r.value, visibility: 'draft' });
+                        else if (r.kind === 'posts')
+                          d.posts.push({ ...r.value, visibility: 'draft' });
+                        else {
+                          if (!d.sections.includes(r.section)) d.sections.push(r.section);
+                          (d.items[r.section] ??= []).push({ ...r.value, visibility: 'draft' });
+                        }
+                        d.trash = d.trash.filter((x) => x.id !== r.id);
+                      }),
+                    )
+                  }
+                >
+                  {t('Khôi phục', 'Restore')}
+                </button>
+              </article>
+            ))
+          ) : (
+            <div className="empty">{t('Thùng rác trống.', 'Trash is empty.')}</div>
+          )}
+        </>
+      );
+    if (tab === 'inbox')
+      body = (
+        <>
+          <p className="admin-help">
+            {t(
+              'Lời nhắn được lưu trực tiếp từ biểu mẫu liên hệ. Bấm email để trả lời bằng ứng dụng thư của bạn.',
+              'Messages are stored from the contact form. Click an email to reply in your mail app.',
+            )}
+          </p>
+          {messages.length ? (
+            messages.map((m) => (
+              <article className="admin-row" key={m.id}>
+                <div>
+                  <h3>{m.subject}</h3>
+                  <p>
+                    {m.name} · <a href={'mailto:' + m.email}>{m.email}</a> ·{' '}
+                    {new Date(m.created_at).toLocaleString(language)}
+                  </p>
+                  <p className="inbox-message">{m.message}</p>
+                </div>
+                <button
+                  className="btn neutral danger"
+                  onClick={() =>
+                    confirmAction(
+                      t('Xóa lời nhắn?', 'Delete message?'),
+                      t(
+                        'Lời nhắn sẽ bị xóa vĩnh viễn.',
+                        'This message will be permanently deleted.',
+                      ),
+                      async () => {
+                        await api('/api/admin/messages', 'DELETE', { id: m.id });
+                        setMessages((prev) => prev.filter((x) => x.id !== m.id));
+                      },
+                    )
+                  }
+                >
+                  {t('Xóa', 'Delete')}
+                </button>
+              </article>
+            ))
+          ) : (
+            <div className="empty">{t('Chưa có lời nhắn.', 'No messages yet.')}</div>
+          )}
+        </>
+      );
+  }
+  return (
+    <div className="admin-page">
+      {loading ? (
+        <main className="card admin-login" role="status">
+          {t('Đang tải…', 'Loading…')}
+        </main>
+      ) : !state ? (
+        <main className="card admin-login">
+          <h1>{t('Quản trị hồ sơ', 'Manage your profile')}</h1>
+          <p className="admin-help">
+            {t(
+              'Đăng nhập để quản lý nội dung và giao diện.',
+              'Sign in to manage your content and appearance.',
+            )}
+          </p>
+          <FieldsForm
+            csrf=""
+            submitLabel={t('Đăng nhập', 'Sign in')}
+            fields={[
+              field('username', t('Tên đăng nhập', 'Username'), 'text', true),
+              field('password', t('Mật khẩu', 'Password'), 'password', true),
+            ]}
+            initial={{ username: '', password: '' }}
+            submit={async (v) => {
+              const session = await api<{ csrf: string }>('/api/login', 'POST', v);
+              csrf.current = session.csrf;
+              setCsrfToken(session.csrf);
+              setState(await api<ContentState>('/api/admin/content'));
+              setError('');
+            }}
+          />
+          <p>
+            <Link href="/">{t('← Xem trang công khai', '← View public site')}</Link>
+          </p>
+          <button className="btn neutral" onClick={toggle}>
+            {language === 'vi' ? 'English' : 'Tiếng Việt'}
+          </button>
+          {error && (
+            <>
+              <p className="form-error" role="alert">
+                {error}
+              </p>
+              <button className="btn neutral" onClick={() => void reload()}>
+                {t('Thử lại', 'Retry')}
+              </button>
+            </>
+          )}
+        </main>
+      ) : (
+        <>
+          <a className="skip-link" href="#admin-main">
+            {t('Đến nội dung', 'Skip to content')}
+          </a>
+          <div className="admin-header">
+            <h1>{t('Quản trị hồ sơ', 'Profile admin')}</h1>
+            <div className="actions">
+              <Link className="btn neutral" href="/" target="_blank" rel="noopener noreferrer">
+                {t('Xem website ↗', 'View website ↗')}
+              </Link>
+              <button className="btn neutral" onClick={toggle}>
+                {language === 'vi' ? 'English' : 'Tiếng Việt'}
+              </button>
+              <button
+                className="btn neutral"
+                onClick={() =>
+                  void action(async () => {
+                    if (
+                      dirty &&
+                      !confirm(t('Bỏ các thay đổi chưa lưu?', 'Discard unsaved changes?'))
+                    )
+                      return;
+                    await api('/api/admin/logout', 'POST', {});
+                    setState(null);
+                    setDirty(false);
+                  })
+                }
+              >
+                {t('Đăng xuất', 'Sign out')}
+              </button>
+            </div>
+          </div>
+          <div className="admin-shell">
+            <nav className="admin-nav" aria-label={t('Quản trị', 'Administration')}>
+              {Object.entries(labels).map(([key, label]) => (
+                <button
+                  key={key}
+                  aria-current={key === tab ? 'page' : undefined}
+                  onClick={() => navigate(key as Tab)}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+            <main className="admin-content" id="admin-main">
+              <div className="admin-title">
+                <h2>{labels[tab]}</h2>
+                {(tab === 'projects' || tab === 'posts') && (
+                  <button className="btn primary" onClick={() => edit(tab)}>
+                    {t('＋ Thêm mới', '＋ Add new')}
+                  </button>
+                )}
+              </div>
+              {error && (
+                <div role="alert" className="admin-intro">
+                  <p className="form-error">{error}</p>
+                  <button
+                    className="btn neutral"
+                    onClick={() => {
+                      if (
+                        !dirty ||
+                        confirm(
+                          t(
+                            'Tải lại sẽ bỏ thay đổi chưa lưu. Tiếp tục?',
+                            'Reloading discards unsaved changes. Continue?',
+                          ),
+                        )
+                      )
+                        void reload();
+                    }}
+                  >
+                    {t('Tải lại dữ liệu', 'Reload data')}
+                  </button>
+                </div>
+              )}
+              {pending && <p role="status">{t('Đang lưu…', 'Saving…')}</p>}
+              <section className="card pad">{body}</section>
+            </main>
+          </div>
+        </>
+      )}
+      {editor && (
+        <EditorDialog
+          key={editor.title + JSON.stringify(editor.values)}
+          editor={editor}
+          close={() => setEditor(null)}
+          csrf={csrfToken}
+        />
+      )}
+      {toast && (
+        <div className="toast" role="status">
+          {toast}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,9 @@
+node_modules
+.next
+.data
+.chrome-preview
+package-lock.json
+src
+backend
+qa*.mjs
+scripts/qa*.mjs

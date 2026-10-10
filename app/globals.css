@@ -1,0 +1,176 @@
+.nav-item {
+  text-decoration: none;
+}
+.nav-item svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+.boot-state {
+  max-width: 600px;
+  margin: 80px auto;
+}
+.layout.layout-wide {
+  max-width: 1380px;
+}
+.project > a.project-art {
+  display: flex;
+  text-decoration: none;
+}
+.project-content > .text-action {
+  display: inline-block;
+  margin-top: 14px;
+}
+.profile-body > .profile-avatar {
+  position: relative;
+}
+.filters button {
+  flex-shrink: 0;
+}
+.admin-page {
+  min-height: 100dvh;
+}
+.admin-shell > * {
+  min-width: 0;
+}
+.admin-nav {
+  min-width: 0;
+  max-width: 100%;
+}
+.admin-page .editor-fields {
+  max-height: 64dvh;
+  overflow: auto;
+}
+.admin-page dialog {
+  overflow: auto;
+}
+.admin-page .toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #172b4d;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 10px;
+  z-index: 1000;
+  max-width: calc(100vw - 32px);
+}
+.site-menu {
+  position: absolute;
+  right: 20px;
+  top: 70px;
+  min-width: 200px;
+  background: var(--card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 8px 24px #172b4d22;
+  z-index: 100;
+}
+.site-menu > * {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  color: var(--text);
+  text-decoration: none;
+}
+.site-menu > *:hover {
+  background: var(--soft);
+}
+.site-toast {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--card);
+  z-index: 100;
+  max-width: calc(100vw - 32px);
+  overflow-wrap: anywhere;
+}
+.admin-title .actions {
+  margin: 0;
+}
+.admin-sticky-note {
+  margin: 0 0 16px;
+}
+.admin-page .form-error:empty {
+  display: none;
+}
+.filters > select {
+  min-width: 0;
+}
+.public-error {
+  margin: 32px auto;
+  max-width: 700px;
+}
+.admin-page .editor-head h2 {
+  overflow-wrap: anywhere;
+}
+.admin-page .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.admin-page .button-link {
+  text-decoration: none;
+}
+.admin-row img {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.admin-page button[aria-current='page'] {
+  background: #e5ecff;
+  color: #2345ad;
+  font-weight: 700;
+}
+@media (max-width: 768px) {
+  .filters {
+    display: flex !important;
+    flex-wrap: wrap;
+  }
+  .filters input {
+    flex: 1 1 100%;
+  }
+  .filters select {
+    flex: 1 1 140px;
+  }
+  .boot-state {
+    margin: 32px 16px;
+  }
+  .admin-page .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-header h1 {
+    font-size: 19px;
+  }
+  .admin-row .actions {
+    gap: 8px;
+  }
+  .admin-header .actions .btn {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  .profile-body .actions > a {
+    flex-grow: 1;
+    justify-content: center;
+  }
+  .admin-page .editor-fields {
+    max-height: 65dvh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    transition: none !important;
+  }
+}

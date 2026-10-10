@@ -1,0 +1,845 @@
+'use client';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import type { Content, Project, Post } from '../lib/schema';
+import { applyTheme } from '../lib/theme';
+import { Icon } from './icon';
+import { LanguageProvider, useLanguage } from './language';
+
+export function ProfileSite(props: {
+  content: Content;
+  page: string;
+  id?: string;
+  query: Record<string, string>;
+}) {
+  return (
+    <LanguageProvider>
+      <Site {...props} />
+    </LanguageProvider>
+  );
+}
+function Site({
+  content: data,
+  page,
+  id,
+  query,
+}: {
+  content: Content;
+  page: string;
+  id?: string;
+  query: Record<string, string>;
+}) {
+  const { language, t, toggle } = useLanguage(),
+    router = useRouter(),
+    [menu, setMenu] = useState(false),
+    [toast, setToast] = useState(''),
+    [filter, setFilter] = useState('all'),
+    [expanded, setExpanded] = useState<Set<string>>(new Set()),
+    menuButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    applyTheme(data.accent, data.theme);
+    document.body.classList.toggle('compact', data.density === 'compact');
+    return () => {
+      document.body.classList.remove('compact');
+    };
+  }, [data.accent, data.theme, data.density]);
+  useEffect(() => {
+    const legacy = () => {
+      const hash = location.hash.slice(1);
+      if (!hash || hash.startsWith('section-') || hash === 'view') return;
+      const [route, q] = hash.split('?'),
+        parts = route.split('/');
+      if (
+        ['profile', 'projects', 'feed', 'posts', 'contact', 'github', 'search'].includes(parts[0])
+      )
+        router.replace(
+          (route === 'profile' ? '/' : '/' + route.replace(/^feed/, 'activity')) +
+            (q ? '?' + q : ''),
+        );
+    };
+    legacy();
+    window.addEventListener('hashchange', legacy);
+    return () => window.removeEventListener('hashchange', legacy);
+  }, [router]);
+  useEffect(() => {
+    setMenu(false);
+  }, [page, id]);
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(''), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && menu) {
+        setMenu(false);
+        menuButton.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', key);
+    return () => document.removeEventListener('keydown', key);
+  }, [menu]);
+  const profile = data.profile;
+  const names: Record<string, string> = {
+    'Giới thiệu': t('Giới thiệu', 'About'),
+    'Nổi bật': t('Nổi bật', 'Featured'),
+    'Dự án': t('Dự án', 'Projects'),
+    'Kỹ năng': t('Kỹ năng', 'Skills'),
+    'Kinh nghiệm': t('Kinh nghiệm', 'Experience'),
+    'Học vấn': t('Học vấn', 'Education'),
+    'Chứng chỉ': t('Chứng chỉ', 'Certifications'),
+    'Hoạt động': t('Hoạt động', 'Activity'),
+  };
+  const title = (s: string) =>
+    data.sectionTitles[s] && data.sectionTitles[s] !== s ? data.sectionTitles[s] : names[s] || s;
+  const avatar = (size = 'small') => (
+    <div className={'avatar ' + size}>
+      {profile.avatar ? (
+        <img src={profile.avatar} alt={t('Ảnh đại diện', 'Avatar') + ' ' + profile.name} />
+      ) : (
+        Array.from(profile.name)[0]
+      )}
+    </div>
+  );
+  const card = (heading: string, body: ReactNode) => (
+    <section className="card pad">
+      <div className="section-heading">
+        <h2>{heading}</h2>
+      </div>
+      {body}
+    </section>
+  );
+  const empty = (message: string) => (
+    <div className="empty">
+      <strong>{message}</strong>
+    </div>
+  );
+  const shell = (main: ReactNode, side: ReactNode = aside()) => (
+    <div className={'layout ' + (data.layout === 'wide' ? 'layout-wide' : '')}>
+      <div className="main">{main}</div>
+      <aside className="sidebar">{side}</aside>
+    </div>
+  );
+  const links = () =>
+    Object.entries(data.links)
+      .filter(([, value]) => value)
+      .map(([key, value]) => (
+        <a
+          className="side-link"
+          key={key}
+          href={key === 'email' ? 'mailto:' + value : value}
+          target={key === 'email' ? undefined : '_blank'}
+          rel="noopener noreferrer"
+        >
+          {key === 'email' ? 'Email' : key[0].toUpperCase() + key.slice(1)} ↗
+        </a>
+      ));
+  function aside() {
+    return card(
+      profile.name,
+      <>
+        <p className="muted">{profile.headline}</p>
+        <Link className="side-link" href="/">
+          {t('Xem hồ sơ →', 'View profile →')}
+        </Link>
+        <Link className="side-link" href="/github">
+          GitHub →
+        </Link>
+      </>,
+    );
+  }
+  const nav = () =>
+    [
+      ['/', 'profile', t('Hồ sơ', 'Profile')],
+      ['/projects', 'projects', t('Dự án', 'Projects')],
+      ['/activity', 'feed', t('Hoạt động', 'Activity')],
+      ['/contact', 'contact', t('Liên hệ', 'Contact')],
+    ].map(([href, icon, label]) => (
+      <Link
+        className={
+          'nav-item ' +
+          ((page === 'feed' ? 'activity' : page) === (href === '/' ? 'profile' : href.slice(1))
+            ? 'active'
+            : '')
+        }
+        aria-current={
+          (page === 'feed' ? 'activity' : page) === (href === '/' ? 'profile' : href.slice(1))
+            ? 'page'
+            : undefined
+        }
+        href={href}
+        key={href}
+      >
+        <Icon name={icon} />
+        <span>{label}</span>
+      </Link>
+    ));
+  async function share(path?: string) {
+    const url = path ? new URL(path, location.origin).href : location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      setToast(t('Đã sao chép liên kết', 'Link copied'));
+    } catch {
+      setToast(url);
+    }
+  }
+  function projectCard(p: Project) {
+    const index = data.projects.indexOf(p);
+    return (
+      <article
+        className="project"
+        key={p.id}
+        data-tone={['blue', 'lavender', 'mint', 'peach'][index % 4]}
+      >
+        <Link className="project-art" href={'/projects/' + encodeURIComponent(p.id)}>
+          {p.thumbnail ? (
+            <img src={p.thumbnail} alt={p.name} />
+          ) : (
+            <>
+              <span className="project-monogram">{p.name.slice(0, 2).toUpperCase()}</span>
+              <span className="project-art-label">{p.tech}</span>
+            </>
+          )}
+        </Link>
+        <div className="project-content">
+          <h3>
+            <Link href={'/projects/' + encodeURIComponent(p.id)}>{p.name}</Link>
+          </h3>
+          <p className="project-description">{p.description}</p>
+          <div className="tags">
+            <span className="tag">{p.tech}</span>
+            <span className="badge">{p.status}</span>
+          </div>
+          <Link className="text-action" href={'/projects/' + encodeURIComponent(p.id)}>
+            {t('Xem chi tiết →', 'View details →')}
+          </Link>
+        </div>
+      </article>
+    );
+  }
+  function tabs() {
+    return (
+      <div className="tabs" aria-label={t('Loại bài viết', 'Post type')}>
+        {[
+          ['all', t('Tất cả', 'All')],
+          ['Bài viết', t('Bài viết', 'Articles')],
+          ['Cập nhật dự án', t('Cập nhật dự án', 'Project updates')],
+          ['Media', 'Media'],
+          ['Liên kết', t('Liên kết', 'Links')],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            className={filter === value ? 'active' : ''}
+            aria-pressed={filter === value}
+            onClick={() => setFilter(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    );
+  }
+  function date(p: Post) {
+    return p.displayAt || p.createdAt;
+  }
+  function post(p: Post, detail = false) {
+    const long = p.text.length > 360 && !expanded.has(p.id) && !detail;
+    return (
+      <article className={detail ? 'card post' : 'activity'} key={p.id}>
+        {detail && <Link href="/activity">← {t('Hoạt động', 'Activity')}</Link>}
+        <div className="row">
+          {avatar()}
+          <div>
+            <strong>{profile.name}</strong>
+            <div className="muted">
+              {date(p) ? (
+                <time dateTime={date(p)}>{new Date(date(p)!).toLocaleDateString(language)}</time>
+              ) : null}
+            </div>
+          </div>
+        </div>
+        {detail ? (
+          <h1>{p.title}</h1>
+        ) : (
+          <h3>
+            <Link href={'/posts/' + encodeURIComponent(p.id)}>{p.title}</Link>
+          </h3>
+        )}
+        <p className="preserve">{long ? p.text.slice(0, 360) + '…' : p.text}</p>
+        {p.text.length > 360 && !detail && (
+          <button
+            className="text-action"
+            onClick={() =>
+              setExpanded((prev) => {
+                const next = new Set(prev);
+                if (next.has(p.id)) next.delete(p.id);
+                else next.add(p.id);
+                return next;
+              })
+            }
+          >
+            {long ? t('Xem thêm', 'Read more') : t('Thu gọn', 'Show less')}
+          </button>
+        )}
+        {p.image && (
+          <img
+            className="post-image"
+            src={p.image}
+            alt={t('Ảnh đính kèm bài viết', 'Post image')}
+          />
+        )}
+        {p.link && (
+          <a className="link-preview" href={p.link} target="_blank" rel="noopener noreferrer">
+            ↗ {p.link}
+          </a>
+        )}
+        <div className="post-footer">
+          <button
+            className="btn neutral"
+            onClick={() => share('/posts/' + encodeURIComponent(p.id))}
+          >
+            {t('Chia sẻ', 'Share')}
+          </button>
+        </div>
+      </article>
+    );
+  }
+  function activities() {
+    const entries = data.posts.filter((p) => filter === 'all' || p.type === filter);
+    return entries.length
+      ? entries.map((p) => post(p))
+      : empty(t('Chưa có bài viết', 'No posts yet'));
+  }
+  function profilePage() {
+    const featured = data.projects.filter((p) => p.pinned).slice(0, 2),
+      sections: { name: string; body: ReactNode }[] = [];
+    for (const name of data.sections) {
+      if (data.hidden.includes(name)) continue;
+      let body: ReactNode = null;
+      if (name === 'Giới thiệu' && profile.about)
+        body = <p className="preserve">{profile.about}</p>;
+      else if (name === 'Nổi bật' && featured.length)
+        body = <div className="project-grid featured-grid">{featured.map(projectCard)}</div>;
+      else if (name === 'Dự án' && data.projects.length)
+        body = (
+          <div className="project-overview">
+            <p className="muted">
+              {data.projects.length} {t('dự án trong hồ sơ', 'projects in this profile')}
+            </p>
+            {data.projects
+              .filter((p) => !featured.includes(p))
+              .map((p) => (
+                <Link
+                  className="project-summary-link"
+                  key={p.id}
+                  href={'/projects/' + encodeURIComponent(p.id)}
+                >
+                  <span>
+                    <strong>{p.name}</strong>
+                    <small>{p.tech}</small>
+                  </span>
+                  <span aria-hidden="true">↗</span>
+                </Link>
+              ))}
+            <Link className="btn neutral all-projects" href="/projects">
+              {t('Xem tất cả dự án →', 'View all projects →')}
+            </Link>
+          </div>
+        );
+      else if (name === 'Kỹ năng' && data.skills.length)
+        body = (
+          <div className="tags">
+            {data.skills.map((s) => (
+              <span className="tag" key={s}>
+                {s}
+              </span>
+            ))}
+          </div>
+        );
+      else if (name === 'Hoạt động' && data.posts.length)
+        body = (
+          <>
+            {tabs()}
+            {activities()}
+          </>
+        );
+      else if (data.items[name]?.length)
+        body = data.items[name].map((item) => (
+          <article className="entry" key={item.id}>
+            <div className="entry-icon">
+              <Icon name="projects" />
+            </div>
+            <div className="entry-body">
+              <h3>{item.title}</h3>
+              <p>{item.organization}</p>
+              <p className="muted">{item.period}</p>
+              <p className="preserve">{item.description}</p>
+            </div>
+          </article>
+        ));
+      if (body) sections.push({ name, body });
+    }
+    return shell(
+      <>
+        <section className="card profile-intro">
+          <div
+            className="cover"
+            data-label={profile.name.toUpperCase() + ' / ' + profile.headline.toUpperCase()}
+          >
+            {profile.cover && <img src={profile.cover} alt={t('Ảnh bìa', 'Cover image')} />}
+          </div>
+          <div className="profile-body">
+            {avatar('profile-avatar')}
+            <div className="profile-identity">
+              <h1>{profile.name}</h1>
+              <div className="headline">{profile.headline}</div>
+              {profile.summary && <p className="profile-summary">{profile.summary}</p>}
+              <div className="muted">
+                {profile.location && profile.location + ' · '}
+                <Link href="/contact">{t('Thông tin liên hệ', 'Contact information')}</Link>
+              </div>
+            </div>
+            <div className="actions">
+              <Link className="btn primary" href="/projects">
+                {t('Xem dự án', 'View projects')}
+              </Link>
+              <Link className="btn neutral" href="/contact">
+                {t('Liên hệ', 'Contact')}
+              </Link>
+              {data.cv && (
+                <a className="btn neutral" href={data.cv.url} download={data.cv.name}>
+                  {t('Tải CV', 'Download CV')}
+                </a>
+              )}
+              <button className="btn neutral" onClick={() => share()}>
+                {t('Chia sẻ', 'Share')}
+              </button>
+            </div>
+          </div>
+        </section>
+        {sections.map((s, i) => (
+          <section className="card pad" id={'section-' + i} key={s.name}>
+            <div className="section-heading">
+              <h2>{title(s.name)}</h2>
+            </div>
+            {s.body}
+          </section>
+        ))}
+      </>,
+      <>
+        {card(t('Liên kết', 'Links'), links())}
+        {card(
+          t('Ngôn ngữ giao diện', 'Interface language'),
+          <>
+            <button className="btn neutral" onClick={toggle}>
+              {language === 'vi' ? 'English' : 'Tiếng Việt'}
+            </button>
+            <p className="muted">
+              {t('Nội dung do chủ hồ sơ biên soạn.', 'Content is written by the profile owner.')}
+            </p>
+          </>,
+        )}
+        {card(
+          t('Trong hồ sơ này', 'On this profile'),
+          sections.map((s, i) => (
+            <a className="toc-link" href={'#section-' + i} key={s.name}>
+              {title(s.name)}
+            </a>
+          )),
+        )}
+        <div className="footer">
+          {t('Thông tin do chủ hồ sơ cung cấp', 'Information provided by the profile owner')}
+          <br />
+          <Link href="/admin">{t('Quản trị', 'Administration')}</Link>
+        </div>
+      </>,
+    );
+  }
+  function projectsPage() {
+    const { q = '', tech = '', status = '', sort = '', view = '' } = query;
+    let list = data.projects.filter(
+      (p) =>
+        `${p.name} ${p.description} ${p.tech}`
+          .toLocaleLowerCase()
+          .includes(q.toLocaleLowerCase()) &&
+        (!tech || p.tech === tech) &&
+        (!status || p.status === status),
+    );
+    if (sort === 'name') list = [...list].sort((a, b) => a.name.localeCompare(b.name, language));
+    if (sort === 'reverse') list = [...list].reverse();
+    const update = (form: HTMLFormElement) => {
+      const params = new URLSearchParams();
+      for (const [k, v] of new FormData(form)) if (v) params.set(k, String(v));
+      if (view) params.set('view', view);
+      router.push('/projects?' + params);
+    };
+    return shell(
+      <section className="card pad">
+        <div className="section-heading">
+          <h1>{t('Dự án', 'Projects')}</h1>
+          <button
+            className="btn neutral"
+            onClick={() => {
+              const p = new URLSearchParams(query);
+              if (view === 'list') p.delete('view');
+              else p.set('view', 'list');
+              router.push('/projects?' + p);
+            }}
+          >
+            {view === 'list' ? t('Dạng lưới', 'Grid view') : t('Dạng danh sách', 'List view')}
+          </button>
+        </div>
+        <form
+          className="filters"
+          key={JSON.stringify(query)}
+          onSubmit={(e) => {
+            e.preventDefault();
+            update(e.currentTarget);
+          }}
+        >
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder={t('Tìm dự án…', 'Search projects…')}
+            aria-label={t('Tìm dự án', 'Search projects')}
+          />
+          <select
+            name="tech"
+            defaultValue={tech}
+            aria-label={t('Công nghệ', 'Technology')}
+            onChange={(e) => update(e.currentTarget.form!)}
+          >
+            <option value="">{t('Tất cả công nghệ', 'All technologies')}</option>
+            {[...new Set(data.projects.map((p) => p.tech))].map((v) => (
+              <option key={v}>{v}</option>
+            ))}
+          </select>
+          <select
+            name="status"
+            defaultValue={status}
+            aria-label={t('Trạng thái', 'Status')}
+            onChange={(e) => update(e.currentTarget.form!)}
+          >
+            <option value="">{t('Tất cả trạng thái', 'All statuses')}</option>
+            {[...new Set(data.projects.map((p) => p.status))].map((v) => (
+              <option key={v}>{v}</option>
+            ))}
+          </select>
+          <select
+            name="sort"
+            defaultValue={sort}
+            aria-label={t('Sắp xếp', 'Sort')}
+            onChange={(e) => update(e.currentTarget.form!)}
+          >
+            <option value="">{t('Thứ tự đã chọn', 'Curated order')}</option>
+            <option value="name">A–Z</option>
+            <option value="reverse">{t('Đảo thứ tự', 'Reverse order')}</option>
+          </select>
+          <button className="btn neutral">{t('Tìm', 'Search')}</button>
+        </form>
+        <p className="results-line">
+          {list.length} {t('dự án hiển thị', 'projects shown')}
+        </p>
+        <div className={'project-grid ' + (view === 'list' ? 'list' : '')}>
+          {list.map(projectCard)}
+        </div>
+        {!list.length && empty(t('Không tìm thấy dự án', 'No projects found'))}
+      </section>,
+    );
+  }
+  function projectDetail() {
+    const p = data.projects.find((p) => p.id === id);
+    if (!p)
+      return shell(
+        card(
+          t('Không tìm thấy dự án', 'Project not found'),
+          <Link href="/projects">{t('Tất cả dự án', 'All projects')}</Link>,
+        ),
+      );
+    return shell(
+      <section className="card">
+        <div className="project-art" style={{ height: 220 }}>
+          {p.thumbnail ? <img src={p.thumbnail} alt={p.name} /> : p.name}
+        </div>
+        <div className="pad">
+          <Link href="/projects">← {t('Tất cả dự án', 'All projects')}</Link>
+          <h1>{p.name}</h1>
+          <span className="badge">{p.status}</span>
+          <p>{p.description}</p>
+          <h3>{t('Công nghệ', 'Technologies')}</h3>
+          <div className="tags">
+            {(p.technologies.length ? p.technologies : [p.tech]).map((v) => (
+              <span className="tag" key={v}>
+                {v}
+              </span>
+            ))}
+          </div>
+          {(
+            [
+              ['role', t('Vai trò', 'Role')],
+              ['problem', t('Vấn đề', 'Problem')],
+              ['contribution', t('Đóng góp', 'Contribution')],
+              ['outcome', t('Kết quả', 'Outcome')],
+              ['details', t('Chi tiết', 'Details')],
+            ] as const
+          )
+            .filter(([k]) => p[k])
+            .map(([k, label]) => (
+              <div key={k}>
+                <h3>{label}</h3>
+                <p className="preserve">{p[k]}</p>
+              </div>
+            ))}
+          <div className="actions">
+            {(
+              [
+                ['github', 'GitHub ↗'],
+                ['demo', t('Xem demo ↗', 'View demo ↗')],
+                ['source', t('Nguồn tham khảo ↗', 'Reference ↗')],
+              ] as const
+            )
+              .filter(([k]) => p[k])
+              .map(([k, label]) => (
+                <a
+                  className="btn neutral"
+                  href={p[k]}
+                  key={k}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {label}
+                </a>
+              ))}
+          </div>
+        </div>
+      </section>,
+    );
+  }
+  function searchPage() {
+    const q = query.q || '',
+      key = q.toLocaleLowerCase(),
+      projects = data.projects.filter((p) =>
+        `${p.name} ${p.description} ${p.tech}`.toLocaleLowerCase().includes(key),
+      ),
+      posts = data.posts.filter((p) => `${p.title} ${p.text}`.toLocaleLowerCase().includes(key)),
+      skills = data.skills.filter((s) => s.toLocaleLowerCase().includes(key));
+    return shell(
+      card(
+        t('Kết quả tìm kiếm', 'Search results'),
+        q.trim() ? (
+          <>
+            <p>“{q}”</p>
+            <h3>{t('Dự án', 'Projects')}</h3>
+            <div className="project-grid">{projects.map(projectCard)}</div>
+            <h3>{t('Bài viết', 'Posts')}</h3>
+            {posts.map((p) => (
+              <Link className="side-link" href={'/posts/' + encodeURIComponent(p.id)} key={p.id}>
+                {p.title}
+              </Link>
+            ))}
+            <h3>{t('Kỹ năng', 'Skills')}</h3>
+            <div className="tags">
+              {skills.map((s) => (
+                <span className="tag" key={s}>
+                  {s}
+                </span>
+              ))}
+            </div>
+            {projects.length + posts.length + skills.length === 0 &&
+              empty(t('Không có kết quả', 'No results found'))}
+          </>
+        ) : (
+          empty(t('Nhập từ khóa để bắt đầu', 'Enter a search term to begin'))
+        ),
+      ),
+    );
+  }
+  const detailPost = data.posts.find((p) => p.id === id);
+  const body =
+    page === 'profile'
+      ? profilePage()
+      : page === 'projects'
+        ? id
+          ? projectDetail()
+          : projectsPage()
+        : ['feed', 'activity'].includes(page)
+          ? shell(
+              card(
+                t('Hoạt động', 'Activity'),
+                <>
+                  {tabs()}
+                  {activities()}
+                </>,
+              ),
+            )
+          : page === 'posts'
+            ? shell(
+                detailPost
+                  ? post(detailPost, true)
+                  : card(t('Không tìm thấy bài viết', 'Post not found'), null),
+              )
+            : page === 'search'
+              ? searchPage()
+              : page === 'github'
+                ? shell(
+                    card(
+                      'GitHub',
+                      <>
+                        <p>@{data.githubUsername}</p>
+                        <p className="muted">
+                          {t(
+                            'Xem kho mã và hoạt động trực tiếp trên GitHub.',
+                            'View repositories and activity directly on GitHub.',
+                          )}
+                        </p>
+                        <a
+                          className="btn primary"
+                          href={'https://github.com/' + encodeURIComponent(data.githubUsername)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {t('Mở GitHub ↗', 'Open GitHub ↗')}
+                        </a>
+                      </>,
+                    ),
+                  )
+                : shell(
+                    card(
+                      t('Liên hệ', 'Contact'),
+                      <>
+                        <p>
+                          {t(
+                            'Trao đổi về một ý tưởng hoặc cơ hội hợp tác.',
+                            'Get in touch about an idea or collaboration.',
+                          )}
+                        </p>
+                        {links()}
+                        <ContactForm />
+                      </>,
+                    ),
+                  );
+  return (
+    <>
+      <a className="skip-link" href="#view">
+        {t('Đến nội dung chính', 'Skip to main content')}
+      </a>
+      <header>
+        <div className="header-inner">
+          <Link className="logo" href="/" aria-label={profile.name}>
+            {Array.from(profile.name)[0]}
+          </Link>
+          <form
+            className="search"
+            action="/search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              router.push(
+                '/search?q=' +
+                  encodeURIComponent(String(new FormData(e.currentTarget).get('q') || '')),
+              );
+            }}
+          >
+            <Icon name="search" />
+            <input
+              name="q"
+              id="global-search"
+              placeholder={t('Tìm kiếm', 'Search')}
+              aria-label={t('Tìm kiếm', 'Search')}
+            />
+          </form>
+          <nav aria-label={t('Điều hướng chính', 'Main navigation')}>
+            {nav()}
+            {avatar('tiny')}
+          </nav>
+          <button
+            className="icon-btn"
+            aria-label={t('Tùy chọn', 'Options')}
+            aria-expanded={menu}
+            aria-controls="site-menu"
+            ref={menuButton}
+            onClick={() => setMenu(!menu)}
+          >
+            <Icon name="more" />
+          </button>
+          {menu && (
+            <div className="site-menu" id="site-menu">
+              <button onClick={toggle}>{language === 'vi' ? 'English' : 'Tiếng Việt'}</button>
+              <Link href="/github">GitHub ↗</Link>
+              <Link href="/admin">{t('Quản trị', 'Administration')}</Link>
+              <button onClick={() => window.print()}>{t('In hồ sơ', 'Print profile')}</button>
+            </div>
+          )}
+        </div>
+      </header>
+      <main id="view" tabIndex={-1}>
+        {body}
+      </main>
+      <nav className="bottom-nav" aria-label={t('Điều hướng trên điện thoại', 'Mobile navigation')}>
+        {nav()}
+      </nav>
+      {toast && (
+        <div className="site-toast" role="status">
+          {toast}
+        </div>
+      )}
+    </>
+  );
+}
+function ContactForm() {
+  const { t } = useLanguage(),
+    [busy, setBusy] = useState(false),
+    [result, setResult] = useState('');
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    setBusy(true);
+    setResult('');
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(new FormData(form))),
+      });
+      const json = (await response.json()) as { error?: string };
+      if (!response.ok) throw Error(json.error);
+      setResult(t('Đã gửi lời nhắn. Cảm ơn bạn!', 'Message sent. Thank you!'));
+      form.reset();
+    } catch (e) {
+      setResult(
+        e instanceof Error ? e.message : t('Không thể gửi lời nhắn', 'Unable to send message'),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <form className="contact-form" onSubmit={submit}>
+      <div className="form-grid">
+        <label>
+          {t('Họ tên', 'Name')} *<input name="name" required maxLength={200} autoComplete="name" />
+        </label>
+        <label>
+          Email *<input name="email" required type="email" maxLength={254} autoComplete="email" />
+        </label>
+      </div>
+      <label>
+        {t('Chủ đề', 'Subject')} *<input name="subject" required maxLength={200} />
+      </label>
+      <label>
+        {t('Nội dung', 'Message')} *
+        <textarea name="message" required minLength={10} maxLength={10000} />
+      </label>
+      <p className="muted">
+        {t(
+          'Lời nhắn và email được lưu trong hộp thư riêng của chủ hồ sơ để phản hồi.',
+          'Your message and email are stored in the profile owner’s private inbox for a reply.',
+        )}
+      </p>
+      <button className="btn primary" disabled={busy}>
+        {busy ? t('Đang gửi…', 'Sending…') : t('Gửi lời nhắn', 'Send message')}
+      </button>
+      <p role="status">{result}</p>
+    </form>
+  );
+}
