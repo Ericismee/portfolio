@@ -2,10 +2,13 @@
 import { useId, useState } from 'react';
 import type { GithubSkills } from '../lib/github-skills';
 import { useLanguage } from './language';
+import { TechnologyChips } from './tech-logo';
+import Link from 'next/link';
 
 export function GithubSkillsCard({ stats }: { stats: GithubSkills }) {
   const { t, language } = useLanguage();
   const [query, setQuery] = useState('');
+  const [allTechnologies, setAllTechnologies] = useState(false);
   const searchId = useId();
   const url = 'https://github.com/' + encodeURIComponent(stats.username);
   const repos = stats.repos.filter((repo) =>
@@ -61,14 +64,25 @@ export function GithubSkillsCard({ stats }: { stats: GithubSkills }) {
           {stats.languages.length > 0 && (
             <div className="github-tech-block">
               <h3>{t('Công nghệ nổi bật', 'Top technologies')}</h3>
-              <ul className="github-tech-chips">
-                {stats.languages.map((item, index) => (
-                  <li key={item.name}>
-                    <span className={'github-tech-dot tone-' + index} aria-hidden="true" />
-                    {item.name}
-                  </li>
-                ))}
-              </ul>
+              <TechnologyChips
+                names={stats.languages
+                  .slice(0, allTechnologies ? undefined : 10)
+                  .map((item) => item.name)}
+              />
+              {stats.languages.length > 10 && (
+                <button
+                  className="text-action github-tech-toggle"
+                  aria-expanded={allTechnologies}
+                  onClick={() => setAllTechnologies(!allTechnologies)}
+                >
+                  {allTechnologies
+                    ? t('Thu gọn', 'Show less')
+                    : t(
+                        'Xem tất cả ' + stats.languages.length + ' công nghệ',
+                        'All ' + stats.languages.length + ' technologies',
+                      )}
+                </button>
+              )}
             </div>
           )}
           <details className="github-details">
@@ -109,8 +123,8 @@ export function GithubSkillsCard({ stats }: { stats: GithubSkills }) {
               </dl>
               <p className="github-skills-note">
                 {t(
-                  'Top 5 theo lượng mã nguồn, không tính fork; không phải điểm thành thạo.',
-                  'Top 5 by code size, excluding forks; not a proficiency score.',
+                  'Ngôn ngữ theo lượng mã nguồn, không tính fork; không phải điểm thành thạo.',
+                  'Languages by code size, excluding forks; not a proficiency score.',
                 )}
               </p>
               <label htmlFor={searchId}>
@@ -179,6 +193,9 @@ export function GithubSkillsCard({ stats }: { stats: GithubSkills }) {
             : t('Chưa có dữ liệu GitHub công khai.', 'No public GitHub data yet.')}
         </p>
       )}
+      <Link className="side-link" href="/github">
+        {t('Hồ sơ & hoạt động GitHub →', 'GitHub profile & activity →')}
+      </Link>
     </section>
   );
 }

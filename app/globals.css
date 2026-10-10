@@ -698,3 +698,503 @@
     display: none;
   }
 }
+
+.tech-logo {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  object-fit: contain;
+}
+.tech-logo-fallback {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 4px;
+  background: var(--bg);
+  font-size: 9px;
+  font-weight: 750;
+}
+.github-tech-toggle {
+  margin-top: 10px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.gh-profile-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 24px;
+  max-width: 1240px;
+  margin: 24px auto;
+  padding: 0 12px;
+  align-items: start;
+}
+.gh-identity {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.gh-identity h1 {
+  font-size: 27px;
+  margin: 18px 0 4px;
+}
+.gh-profile-avatar {
+  width: 120px;
+  height: 120px;
+  margin: 0;
+}
+.gh-username {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  font-size: 15px;
+  color: var(--muted);
+}
+.gh-identity > p {
+  font-size: 14px;
+}
+.gh-identity > .btn {
+  width: 100%;
+}
+.gh-identity-facts {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+  font-size: 12px;
+}
+.gh-identity-facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.gh-identity-facts dt {
+  color: var(--muted);
+}
+.gh-identity-facts dd {
+  margin: 0;
+  text-align: right;
+}
+.gh-stack {
+  padding-top: 18px;
+  border-top: 1px solid var(--border-subtle);
+}
+.gh-stack h2 {
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+.gh-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.gh-main > .card {
+  margin: 0;
+}
+.gh-page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+}
+.gh-page-heading h2 {
+  margin: 8px 0;
+  font-size: 25px;
+  line-height: 1.3;
+}
+.gh-page-heading p {
+  margin: 0;
+  font-size: 13px;
+}
+.gh-eyebrow {
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 1.3px;
+  color: var(--muted);
+}
+.gh-refresh {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  flex: 0 0 155px;
+}
+.gh-refresh small {
+  text-align: right;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.gh-tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.gh-tabs button {
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  box-shadow: none;
+  min-height: 48px;
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 0;
+}
+.gh-tabs button.active {
+  color: var(--ink);
+  font-weight: 750;
+  border-bottom-color: var(--accent);
+}
+.gh-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.gh-stats .card {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gh-stats strong {
+  font-size: 28px;
+}
+.gh-stats span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.gh-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.gh-section-heading h2,
+.gh-history h2,
+.gh-main > section > h2 {
+  margin: 0;
+  font-size: 19px;
+}
+.gh-section-heading label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.gh-section-heading select {
+  min-height: 40px;
+  max-width: 90px;
+}
+.gh-calendar-total {
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+.gh-calendar-total strong {
+  font-size: 20px;
+}
+.gh-calendar-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  padding: 6px 2px;
+  scrollbar-width: thin;
+}
+.gh-calendar-grid {
+  display: grid;
+  grid-template-rows: repeat(7, 12px);
+  grid-auto-flow: column;
+  grid-auto-columns: 12px;
+  gap: 3px;
+  width: max-content;
+}
+.gh-calendar-months {
+  display: grid;
+  grid-template-columns: repeat(54, 12px);
+  gap: 3px;
+  width: max-content;
+  margin-bottom: 8px;
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.gh-day {
+  display: block;
+  width: 12px;
+  height: 12px;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 3px;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+  background: #e5eaf0;
+}
+button.gh-day:hover {
+  outline: 1px solid var(--ink);
+  outline-offset: 1px;
+}
+.gh-day.level-1 {
+  background: #b8dfbb;
+}
+.gh-day.level-2 {
+  background: #64b87b;
+}
+.gh-day.level-3 {
+  background: #288a57;
+}
+.gh-day.level-4 {
+  background: #11643b;
+}
+.gh-day.future {
+  opacity: 0.25;
+}
+.gh-calendar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 12px;
+}
+.gh-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.gh-legend .gh-day {
+  width: 10px;
+  height: 10px;
+}
+.gh-repo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.gh-repo-card {
+  padding: 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  display: flex;
+  flex-direction: column;
+}
+.gh-repo-title {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gh-repo-title a {
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 32px;
+}
+.gh-repo-title .badge {
+  flex-shrink: 0;
+  font-size: 9px;
+}
+.gh-repo-card > p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 10px 0 14px;
+  flex: 1;
+}
+.gh-repo-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+.gh-repo-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.gh-repo-meta .tech-logo {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
+}
+.gh-repo-card small {
+  font-size: 10px;
+}
+.gh-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+.gh-topics > span {
+  border-radius: 5px;
+  background: var(--bg);
+  padding: 3px 6px;
+  font-size: 10px;
+}
+.gh-repo-filters {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+}
+.gh-repo-filters label:first-child {
+  flex: 1;
+}
+.gh-repo-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  min-width: 0;
+}
+.gh-repo-filters input,
+.gh-repo-filters select {
+  width: 100%;
+  min-height: 44px;
+  min-width: 0;
+}
+.gh-history-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+.gh-history-filter select {
+  width: 100%;
+  min-height: 44px;
+}
+.gh-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.gh-timeline > li {
+  display: flex;
+  gap: 12px;
+  border-top: 1px solid var(--border-subtle);
+  padding: 14px 0;
+}
+.gh-timeline > li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.gh-timeline a {
+  display: inline-block;
+  min-height: 28px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.gh-timeline small {
+  display: block;
+  font-size: 10px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.gh-timeline-marker {
+  display: grid;
+  place-items: center;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  background: var(--bg);
+  border-radius: 50%;
+}
+.gh-update-note {
+  padding: 0 4px;
+  margin: 0;
+}
+@media (max-width: 1000px) {
+  .gh-profile-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .gh-page-heading {
+    flex-direction: column;
+  }
+  .gh-refresh {
+    flex-basis: auto;
+    align-items: start;
+  }
+  .gh-refresh small {
+    text-align: left;
+  }
+}
+@media (max-width: 700px) {
+  .gh-profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+    margin: 16px auto;
+  }
+  .gh-profile-avatar {
+    width: 88px;
+    height: 88px;
+  }
+  .gh-identity {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    column-gap: 16px;
+    align-items: start;
+  }
+  .gh-identity > .avatar {
+    grid-row: 1 / 4;
+  }
+  .gh-identity > h1 {
+    margin-top: 0;
+  }
+  .gh-identity > p {
+    margin: 6px 0 14px;
+  }
+  .gh-identity > .btn,
+  .gh-identity-facts,
+  .gh-stack,
+  .gh-identity > .side-link {
+    grid-column: 1 / -1;
+  }
+  .gh-identity-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .gh-identity-facts > div {
+    flex-direction: column;
+    gap: 3px;
+  }
+  .gh-identity-facts dd {
+    text-align: left;
+  }
+  .gh-stack .github-tech-chips {
+    gap: 6px;
+  }
+  .gh-stack .github-tech-chips li {
+    font-size: 11px;
+  }
+  .gh-tabs button {
+    flex: 1;
+    padding: 8px 5px;
+    font-size: 12px;
+  }
+  .gh-stats {
+    gap: 8px;
+  }
+  .gh-stats .pad {
+    padding: 14px 10px;
+  }
+  .gh-stats strong {
+    font-size: 24px;
+  }
+  .gh-repo-grid {
+    grid-template-columns: 1fr;
+  }
+  .gh-repo-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .gh-section-heading h2 {
+    font-size: 17px;
+  }
+}

@@ -44,7 +44,6 @@ export function rankLanguages(groups: Record<string, number>[]): GithubLanguage[
   const total = [...totals.values()].reduce((sum, bytes) => sum + bytes, 0);
   return [...totals]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, 5)
     .map(([name, bytes]) => ({ name, bytes, percent: (bytes / total) * 100 }));
 }
 
@@ -63,6 +62,7 @@ type Repository = {
 };
 const cache = new Map<string, { expires: number; value: Promise<GithubSkills> }>();
 const cachedSkills = z.object({
+  format: z.literal(2),
   profile: profileSchema.nullable(),
   repos: z.array(repoSchema),
   username: z.string(),
@@ -75,7 +75,7 @@ const cachedSkills = z.object({
         percent: z.number().min(0).max(100),
       }),
     )
-    .max(5),
+    .max(100),
   repositories: z.number().int().nonnegative(),
   partial: z.boolean(),
   updatedAt: z.iso.datetime(),
@@ -117,7 +117,7 @@ async function loadCachedSkills(username: string): Promise<GithubSkills> {
   const result = await loadSkills(username);
   try {
     await mkdir(folder, { recursive: true });
-    await writeFile(filename, JSON.stringify(result));
+    await writeFile(filename, JSON.stringify({ ...result, format: 2 }));
   } catch {
     /* Read-only deployments still work with the in-memory cache. */
   }

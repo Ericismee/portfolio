@@ -9,6 +9,7 @@ import { LanguageProvider, useLanguage } from './language';
 import { useInlineEdit } from './inline-edit';
 import type { GithubSkills } from '../lib/github-skills';
 import { GithubSkillsCard } from './github-skills';
+import { GithubProfile } from './github-profile';
 
 export function ProfileSite(props: {
   content: Content;
@@ -706,68 +707,51 @@ function Site({
   }
   const detailPost = data.posts.find((p) => p.id === id);
   const body =
-    page === 'profile'
-      ? profilePage()
-      : page === 'projects'
-        ? id
-          ? projectDetail()
-          : projectsPage()
-        : ['feed', 'activity'].includes(page)
-          ? shell(
-              card(
-                t('Hoạt động', 'Activity'),
-                <>
-                  {tabs()}
-                  {activities()}
-                </>,
-              ),
-            )
-          : page === 'posts'
-            ? shell(
-                detailPost
-                  ? post(detailPost, true)
-                  : card(t('Không tìm thấy bài viết', 'Post not found'), null),
-              )
-            : page === 'search'
-              ? searchPage()
-              : page === 'github'
-                ? shell(
-                    card(
-                      'GitHub',
-                      <>
-                        <p>@{data.githubUsername}</p>
-                        <p className="muted">
-                          {t(
-                            'Xem kho mã và hoạt động trực tiếp trên GitHub.',
-                            'View repositories and activity directly on GitHub.',
-                          )}
-                        </p>
-                        <a
-                          className="btn primary"
-                          href={'https://github.com/' + encodeURIComponent(data.githubUsername)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {t('Mở GitHub ↗', 'Open GitHub ↗')}
-                        </a>
-                      </>,
-                    ),
-                  )
-                : shell(
-                    card(
-                      t('Liên hệ', 'Contact'),
-                      <>
-                        <p>
-                          {t(
-                            'Trao đổi về một ý tưởng hoặc cơ hội hợp tác.',
-                            'Get in touch about an idea or collaboration.',
-                          )}
-                        </p>
-                        {links()}
-                        <ContactForm />
-                      </>,
-                    ),
-                  );
+    page === 'profile' ? (
+      profilePage()
+    ) : page === 'projects' ? (
+      id ? (
+        projectDetail()
+      ) : (
+        projectsPage()
+      )
+    ) : ['feed', 'activity'].includes(page) ? (
+      shell(
+        card(
+          t('Hoạt động', 'Activity'),
+          <>
+            {tabs()}
+            {activities()}
+          </>,
+        ),
+      )
+    ) : page === 'posts' ? (
+      shell(
+        detailPost
+          ? post(detailPost, true)
+          : card(t('Không tìm thấy bài viết', 'Post not found'), null),
+      )
+    ) : page === 'search' ? (
+      searchPage()
+    ) : page === 'github' ? (
+      <GithubProfile initial={githubSkills} owner={profile} />
+    ) : (
+      shell(
+        card(
+          t('Liên hệ', 'Contact'),
+          <>
+            <p>
+              {t(
+                'Trao đổi về một ý tưởng hoặc cơ hội hợp tác.',
+                'Get in touch about an idea or collaboration.',
+              )}
+            </p>
+            {links()}
+            <ContactForm />
+          </>,
+        ),
+      )
+    );
   return (
     <>
       <a className="skip-link" href="#view">
