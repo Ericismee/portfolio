@@ -1404,3 +1404,31 @@ button.gh-day:hover {
   white-space: nowrap;
   font-size: 12px;
 }
+
+/* Blend only the cover into the card; keep the avatar and edit controls crisp. */
+.profile-intro .cover:has(> img) {
+  background: var(--card);
+  border-bottom: 0;
+}
+.profile-intro .cover:has(> img)::before {
+  display: none;
+}
+.profile-intro .cover > img {
+  display: block;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 28%,
+    rgb(0 0 0 / 92%) 40%,
+    rgb(0 0 0 / 55%) 62%,
+    rgb(0 0 0 / 12%) 84%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 28%,
+    rgb(0 0 0 / 92%) 40%,
+    rgb(0 0 0 / 55%) 62%,
+    rgb(0 0 0 / 12%) 84%,
+    transparent 100%
+  );
+}

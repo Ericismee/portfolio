@@ -94,3 +94,10 @@ The older `QA.md` describes the historical mock. This document records the Next.
 - Browser viewport checks on the GitHub page, inline configuration dialog and home profile at 360, 390, 768, 1024, 1063 and 1440 px found no document or dialog horizontal overflow. Visually inspected desktop/mobile screenshots and fixed vertically stacked checkboxes. Local logos and GitHub avatars loaded without broken images in the final page checks; checked keyboard focus in the dialog. No console errors were reported on the inspected preview tab.
 - Fourteen automated tests passed, along with lint, strict types, formatting and the production build. New tests cover persistent settings, source filtering, case-insensitive names, fork exclusion, manual order/empty selection, disabled history and validated account lookup.
 - These are desktop browser viewport checks. No physical-device, screen-reader, private GitHub/OAuth, background-worker or production deployment verification is claimed. GitHub source data can be delayed or stale; the app retains the existing source-status labels.
+
+
+## Cover fade — 10 October 2026
+
+Added a static alpha gradient to the profile cover image, blending its lower edge into the card background. The avatar and edit controls are outside the mask. The cover-only geometric backdrop and bottom border are removed when a photo is present; the empty-cover design remains unchanged.
+
+Production build passed. In the running preview on port 3001, checked 360, 390, 768, 1024 and 1440 px: the image mask was active, the avatar had no mask and there was no document-level horizontal overflow. Visually reviewed desktop and 390 px screenshots. The background uses the card theme token; a dark-theme visual check was not performed in this pass.
