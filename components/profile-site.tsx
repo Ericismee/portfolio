@@ -253,7 +253,9 @@ function Site({
             href={'/projects/' + encodeURIComponent(p.id)}
           >
             {p.thumbnail ? (
-              <img src={p.thumbnail} alt={p.name} />
+              <span className="project-image">
+                <img src={p.thumbnail} alt={p.name} />
+              </span>
             ) : (
               <>
                 <span className="project-monogram">{p.name.slice(0, 2).toUpperCase()}</span>
@@ -263,6 +265,7 @@ function Site({
           </Link>
         )}
         <div className="project-content">
+          <p className="project-category">{p.technologies[0] || p.tech.split(',')[0]}</p>
           <h3>
             <Link href={'/projects/' + encodeURIComponent(p.id)}>{p.name}</Link>
           </h3>
@@ -280,7 +283,10 @@ function Site({
           <div className="project-card-actions">
             <span className="badge">{p.status}</span>
             <Link className="text-action" href={'/projects/' + encodeURIComponent(p.id)}>
-              {t('Xem chi tiết →', 'View details →')}
+              <span>{t('Xem chi tiết', 'View details')}</span>
+              <span className="project-open-icon" aria-hidden="true">
+                ↗
+              </span>
             </Link>
           </div>
         </div>

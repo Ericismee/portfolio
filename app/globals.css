@@ -1876,6 +1876,23 @@ button.gh-day:hover {
 }
 
 /* Shared card geometry keeps original images uncropped and rows aligned. */
+.project-grid {
+  gap: 24px;
+}
+.project-grid .project {
+  padding: 16px;
+  border-radius: 28px;
+  background: var(--card);
+  box-shadow: 0 2px 0 var(--border-subtle);
+  overflow: hidden;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+.project-grid .project:hover {
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px #172b4d0d;
+}
 .project-grid:not(.list) {
   grid-auto-rows: 1fr;
 }
@@ -1884,11 +1901,36 @@ button.gh-day:hover {
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--bg);
 }
-.project-grid .project-art[data-frame] img {
+.project-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
+  padding: 18px;
+}
+.project-grid .project-art[data-frame] img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
+  border-radius: 12px;
+}
+.project-grid .project-content {
+  padding: 20px 2px 0;
+}
+.project-category {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 750;
+  color: var(--muted);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 .project-grid .project-content h3 {
   flex: 0 0 auto;
@@ -1931,9 +1973,54 @@ button.gh-day:hover {
   padding: 4px 7px;
 }
 .project-card-actions .text-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-ui);
   font-size: 12px;
   white-space: nowrap;
+  text-decoration: none;
+}
+.project-open-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  background: var(--bg);
+  font-size: 19px;
+  transition:
+    background 180ms ease,
+    color 180ms ease;
+}
+.project-card-actions .text-action:hover .project-open-icon,
+.project-card-actions .text-action:focus-visible .project-open-icon {
+  background: var(--accent);
+  color: var(--primary-ink);
+}
+.project-grid.list .project-content {
+  padding: 2px 0 2px 20px;
+}
+@media (max-width: 600px) {
+  .project-grid {
+    gap: 18px;
+  }
+  .project-grid .project {
+    padding: 12px;
+    border-radius: 24px;
+  }
+  .project-grid.list .project-content {
+    padding: 18px 2px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .project-grid .project,
+  .project-open-icon {
+    transition: none;
+  }
 }
 .content-editor .editor-fields {
   padding: 28px 32px;
