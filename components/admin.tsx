@@ -591,6 +591,7 @@ function AdminDashboard() {
       const initial: Values = {
         ...d.profile,
         cv: d.cv?.url || '',
+        cvName: d.cv?.name || 'CV.pdf',
         ...Object.fromEntries(
           ['email', 'github', 'linkedin', 'website', 'facebook', 'instagram'].map((k) => [
             'link_' + k,
@@ -634,7 +635,7 @@ function AdminDashboard() {
                   'instagram',
                 ])
                   d.links[key] = String(v['link_' + key] || '');
-                d.cv = v.cv ? { name: 'CV.pdf', url: String(v.cv) } : undefined;
+                d.cv = v.cv ? { name: String(v.cvName || 'CV.pdf'), url: String(v.cv) } : undefined;
               })
             }
           />

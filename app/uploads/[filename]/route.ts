@@ -25,7 +25,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ file
         'Content-Type': mime,
         'Cache-Control': 'private, no-store',
         ...(mime === 'application/pdf'
-          ? { 'Content-Disposition': 'attachment; filename="CV.pdf"' }
+          ? {
+              'Content-Disposition': `${new URL(request.url).searchParams.get('download') === '1' ? 'attachment' : 'inline'}; filename="CV.pdf"; filename*=UTF-8''${encodeURIComponent(content.cv?.url === url ? content.cv.name : 'CV.pdf')}`,
+            }
           : {}),
       },
     });

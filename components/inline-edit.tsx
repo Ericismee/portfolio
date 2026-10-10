@@ -130,6 +130,7 @@ export function useInlineEdit(publicData: Content) {
       values: {
         ...d.profile,
         cv: d.cv?.url || '',
+        cvName: d.cv?.name || 'CV.pdf',
         ...Object.fromEntries(
           Object.entries(d.links).map(([key, value]) => ['link_' + key, value]),
         ),
@@ -139,7 +140,7 @@ export function useInlineEdit(publicData: Content) {
           if (part === 'links') {
             for (const f of fields.filter((f) => f.key.startsWith('link_')))
               d.links[f.key.slice(5)] = String(v[f.key] || '');
-            d.cv = v.cv ? { name: 'CV.pdf', url: String(v.cv) } : undefined;
+            d.cv = v.cv ? { name: String(v.cvName || 'CV.pdf'), url: String(v.cv) } : undefined;
           } else {
             for (const f of fields)
               d.profile[f.key as keyof Content['profile']] = String(v[f.key] || '');
@@ -147,7 +148,7 @@ export function useInlineEdit(publicData: Content) {
         }),
     });
   }
-  function editItem(kind: Kind, section: string, id?: string) {
+  function editItem(kind: Kind, section: string, id?: string, postType?: string) {
     if (!state) return;
     const existing = entries(state.data, kind, section).find((e) => e.id === id);
     const values: Values = {
@@ -204,7 +205,7 @@ export function useInlineEdit(publicData: Content) {
       values.displayAt = new Date(date.valueOf() - date.getTimezoneOffset() * 60000)
         .toISOString()
         .slice(0, 16);
-      values.type ||= 'Bài viết';
+      values.type ||= postType || 'Bài viết';
       values.richText = JSON.stringify(
         readRichText(
           (existing as Post | undefined)?.richText || '',

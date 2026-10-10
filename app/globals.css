@@ -2143,3 +2143,179 @@ button.gh-day:hover {
     gap: 6px;
   }
 }
+
+/* Keep cards consistent with the site's moderately rounded panels. */
+.project-grid .project {
+  border-radius: 12px;
+}
+.project-grid .project[data-tone] > .project-art[data-frame] {
+  border-radius: 10px;
+}
+.project-grid .project-art[data-frame] img {
+  border-radius: 8px;
+}
+.social-link {
+  position: relative;
+}
+.social-link .social-link-detail {
+  position: absolute;
+  top: calc(100% - 4px);
+  right: 0;
+  z-index: 20;
+  width: max-content;
+  max-width: min(330px, 80vw);
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 6px 18px #172b4d22;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+}
+.social-link:hover .social-link-detail,
+.social-link:focus-visible .social-link-detail {
+  visibility: visible;
+  opacity: 1;
+}
+.post-body {
+  position: relative;
+}
+.post-body.is-collapsed {
+  max-height: 320px;
+  overflow: hidden;
+}
+.post-body.is-collapsed.has-overflow::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  pointer-events: none;
+  background: linear-gradient(transparent, var(--card));
+}
+.post-body .rich-content > :first-child,
+.post-body .preserve {
+  margin-top: 0;
+}
+.post-body .rich-content > :last-child,
+.post-body .preserve {
+  margin-bottom: 0;
+}
+.post-expand {
+  margin-top: 10px;
+}
+.tab-count {
+  display: inline-block;
+  margin-left: 4px;
+  opacity: 0.75;
+  font-size: 11px;
+}
+.cv-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cv-viewer {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  padding: 0;
+  width: min(1100px, calc(100vw - 32px));
+  height: 90dvh;
+  max-height: 94dvh;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  overflow: hidden;
+}
+.cv-viewer[open] {
+  display: flex;
+  flex-direction: column;
+}
+.cv-viewer::backdrop {
+  background: #172b4d99;
+}
+.cv-viewer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.cv-viewer-head > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cv-viewer-head small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.cv-viewer iframe {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  border: 0;
+  background: #e8edf3;
+}
+.cv-viewer-help {
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (max-width: 600px) {
+  .cv-viewer-head {
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+  .cv-viewer .btn {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+}
+.pdf-preview {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pdf-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.pdf-toolbar select {
+  width: auto;
+}
+.pdf-pages {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+  background: #525966;
+  text-align: center;
+}
+.pdf-pages canvas {
+  display: block;
+  margin: 0 auto;
+  max-width: none;
+  height: auto !important;
+  background: white;
+  box-shadow: 0 2px 12px #0004;
+}
+.pdf-pages p {
+  color: white;
+}

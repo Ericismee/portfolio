@@ -11,7 +11,10 @@ import { useInlineEdit } from './inline-edit';
 import type { GithubSkills } from '../lib/github-skills';
 import { GithubSkillsCard } from './github-skills';
 import { GithubProfile } from './github-profile';
-import { RichContent } from './rich-content';
+import { PostBody } from './post-body';
+import { CvDocument } from './cv-document';
+import { postMatches } from '../lib/activity';
+import { searchContent } from '../lib/search';
 
 export function ProfileSite(props: {
   content: Content;
@@ -46,7 +49,6 @@ function Site({
     [menu, setMenu] = useState(false),
     [toast, setToast] = useState(''),
     [filter, setFilter] = useState('all'),
-    [expanded, setExpanded] = useState<Set<string>>(new Set()),
     menuButton = useRef<HTMLButtonElement>(null),
     menuPanel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -141,7 +143,11 @@ function Site({
         {heading === t('Liên kết', 'Links') &&
           editing.button(t('Sửa liên kết', 'Edit links'), () => editing.profile('links'))}
         {heading === t('Hoạt động', 'Activity') &&
-          editing.button(t('Viết bài', 'Write post'), () => editing.item('posts', ''), true)}
+          editing.button(
+            t('Viết bài', 'Write post'),
+            () => editing.item('posts', '', undefined, filter === 'all' ? 'Bài viết' : filter),
+            true,
+          )}
       </div>
       {body}
     </section>
@@ -171,12 +177,14 @@ function Site({
           }
           target="_blank"
           rel="noopener noreferrer"
+          title={value}
         >
           <SocialLogo name={key.toLowerCase()} />
           <span>{socialLabels[key.toLowerCase()] || key[0].toUpperCase() + key.slice(1)}</span>
           <span className="social-link-arrow" aria-hidden="true">
             ↗
           </span>
+          <span className="social-link-detail">{value}</span>
         </a>
       ));
   function aside() {
@@ -309,7 +317,10 @@ function Site({
             aria-pressed={filter === value}
             onClick={() => setFilter(value)}
           >
-            {label}
+            {label}{' '}
+            <span className="tab-count">
+              {data.posts.filter((p) => postMatches(p, value)).length}
+            </span>
           </button>
         ))}
       </div>
@@ -319,7 +330,6 @@ function Site({
     return p.displayAt || p.createdAt;
   }
   function post(p: Post, detail = false) {
-    const long = p.text.length > 360 && !expanded.has(p.id) && !detail;
     return (
       <article className={detail ? 'card post' : 'activity'} key={p.id}>
         {detail && <Link href="/activity">← {t('Hoạt động', 'Activity')}</Link>}
@@ -341,26 +351,7 @@ function Site({
             <Link href={'/posts/' + encodeURIComponent(p.id)}>{p.title}</Link>
           </h3>
         )}
-        {p.richText && !long ? (
-          <RichContent value={p.richText} fallback={p.text} />
-        ) : (
-          <p className="preserve">{long ? p.text.slice(0, 360) + '…' : p.text}</p>
-        )}
-        {p.text.length > 360 && !detail && (
-          <button
-            className="text-action"
-            onClick={() =>
-              setExpanded((prev) => {
-                const next = new Set(prev);
-                if (next.has(p.id)) next.delete(p.id);
-                else next.add(p.id);
-                return next;
-              })
-            }
-          >
-            {long ? t('Xem thêm', 'Read more') : t('Thu gọn', 'Show less')}
-          </button>
-        )}
+        <PostBody value={p.richText} text={p.text} detail={detail} />
         {p.image && (
           <img
             className="post-image"
@@ -391,10 +382,14 @@ function Site({
     );
   }
   function activities() {
-    const entries = data.posts.filter((p) => filter === 'all' || p.type === filter);
+    const entries = data.posts.filter((p) => postMatches(p, filter));
     return entries.length
       ? entries.map((p) => post(p))
-      : empty(t('Chưa có bài viết', 'No posts yet'));
+      : empty(
+          filter === 'all'
+            ? t('Chưa có bài viết', 'No posts yet')
+            : t('Chưa có nội dung trong mục này.', 'No content in this category yet.'),
+        );
   }
   function profilePage() {
     const featured = data.projects.filter((p) => p.pinned).slice(0, 2),
@@ -523,11 +518,7 @@ function Site({
                   {t('Liên hệ', 'Contact')}
                 </Link>
               )}
-              {data.cv && (
-                <a className="btn neutral" href={data.cv.url} download={data.cv.name}>
-                  {t('Tải CV', 'Download CV')}
-                </a>
-              )}
+              {data.cv && <CvDocument url={data.cv.url} name={data.cv.name} />}
               {!editing.enabled && (
                 <button className="btn neutral" onClick={() => share()}>
                   {t('Chia sẻ', 'Share')}
@@ -769,28 +760,36 @@ function Site({
     );
   }
   function searchPage() {
-    const q = query.q || '',
-      key = q.toLocaleLowerCase(),
-      projects = data.projects.filter((p) =>
-        `${p.name} ${p.description} ${p.tech}`.toLocaleLowerCase().includes(key),
-      ),
-      posts = data.posts.filter((p) => `${p.title} ${p.text}`.toLocaleLowerCase().includes(key)),
-      skills = data.skills.filter((s) => s.toLocaleLowerCase().includes(key));
+    const q = query.q || '';
+    const {
+      projects,
+      posts,
+      skills,
+      profile: profileMatch,
+      items,
+      links: channelMatches,
+      cv,
+    } = searchContent(data, q);
     return shell(
       card(
         t('Kết quả tìm kiếm', 'Search results'),
         q.trim() ? (
           <>
             <p>“{q}”</p>
-            <h3>{t('Dự án', 'Projects')}</h3>
-            <div className="project-grid">{projects.map(projectCard)}</div>
-            <h3>{t('Bài viết', 'Posts')}</h3>
+            {profileMatch && (
+              <Link className="side-link" href="/">
+                {t('Hồ sơ', 'Profile')} · {profile.name} — {profile.headline}
+              </Link>
+            )}
+            {projects.length > 0 && <><h3>{t('Dự án', 'Projects')}</h3>
+            <div className="project-grid">{projects.map(projectCard)}</div></>}
+            {posts.length > 0 && <h3>{t('Bài viết', 'Posts')}</h3>}
             {posts.map((p) => (
               <Link className="side-link" href={'/posts/' + encodeURIComponent(p.id)} key={p.id}>
                 {p.title}
               </Link>
             ))}
-            <h3>{t('Kỹ năng', 'Skills')}</h3>
+            {skills.length > 0 && <h3>{t('Kỹ năng', 'Skills')}</h3>}
             <div className="tags">
               {skills.map((s) => (
                 <span className="tag" key={s}>
@@ -798,8 +797,36 @@ function Site({
                 </span>
               ))}
             </div>
-            {projects.length + posts.length + skills.length === 0 &&
-              empty(t('Không có kết quả', 'No results found'))}
+            {items.length > 0 && (
+              <>
+                <h3>{t('Các mục hồ sơ', 'Profile sections')}</h3>
+                {items.map(({ section, item }) => (
+                  <Link key={section + item.id} className="side-link" href="/">
+                    {data.sectionTitles[section] || section} · {item.title}
+                    {item.organization && ' — ' + item.organization}
+                  </Link>
+                ))}
+              </>
+            )}
+            {channelMatches.length > 0 && (
+              <>
+                <h3>{t('Thông tin liên hệ', 'Contact information')}</h3>
+                {channelMatches.map(([key, value]) => (
+                  <Link key={key} className="side-link" href="/contact">
+                    {socialLabels[key.toLowerCase()] || key} · {value}
+                  </Link>
+                ))}
+              </>
+            )}
+            {cv && data.cv && <CvDocument url={data.cv.url} name={data.cv.name} />}
+            {projects.length +
+              posts.length +
+              skills.length +
+              items.length +
+              channelMatches.length +
+              Number(profileMatch) +
+              Number(cv) ===
+              0 && empty(t('Không có kết quả', 'No results found'))}
           </>
         ) : (
           empty(t('Nhập từ khóa để bắt đầu', 'Enter a search term to begin'))

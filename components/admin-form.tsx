@@ -5,6 +5,8 @@ import { ImageFramePicker } from './image-frame-picker';
 import { RichTextEditor } from './rich-text-editor';
 import { GithubProjectPicker } from './github-project-picker';
 import { applyGithubFields } from '../lib/github-project-fields';
+import { uploadMime } from '../lib/upload-client';
+import { CvDocument } from './cv-document';
 export type Field = {
   key: string;
   label: string;
@@ -72,10 +74,12 @@ export function FieldsForm({
     setUploading((n) => n + 1);
     setError('');
     try {
+      const mime = await uploadMime(file);
       const response = await fetch('/api/admin/upload', {
         method: 'POST',
-        headers: { 'Content-Type': file.type, 'x-csrf-token': csrf },
+        headers: { 'Content-Type': mime, 'x-csrf-token': csrf },
         body: file,
+        signal: AbortSignal.timeout(60000),
       });
       const result = (await response.json()) as { url: string; error?: string };
       if (!response.ok) throw Error(result.error);
@@ -85,10 +89,21 @@ export function FieldsForm({
           ...v,
           [key]: result.url,
           ...(key === 'thumbnail' ? { imageFrame: 'original' } : {}),
+          ...(mime === 'application/pdf' ? { [key + 'Name']: file.name.slice(0, 200) } : {}),
         }));
       return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('Không tải được file', 'Unable to upload'));
+      setError(
+        e instanceof TypeError ||
+          (e instanceof Error && ['TimeoutError', 'AbortError'].includes(e.name))
+          ? t(
+              'Kết nối tải file bị gián đoạn. Dữ liệu biểu mẫu vẫn được giữ; hãy chọn lại file để thử lại.',
+              'Upload connection interrupted. Your form is preserved; select the file again to retry.',
+            )
+          : e instanceof Error
+            ? e.message
+            : t('Không tải được file', 'Unable to upload'),
+      );
       return false;
     } finally {
       setUploading((n) => n - 1);
@@ -216,7 +231,7 @@ export function FieldsForm({
                   <input
                     type="file"
                     name={field.key + '-upload'}
-                    accept="application/pdf"
+                    accept=".pdf,application/pdf"
                     disabled={busy || uploading > 0}
                     onChange={(e) => {
                       if (e.target.files?.[0]) void upload(field.key, e.target.files[0]);
@@ -248,6 +263,12 @@ export function FieldsForm({
               )}
               {field.help && <small className="admin-help">{field.help}</small>}
             </label>
+            {field.type === 'pdf' && value && (
+              <CvDocument
+                url={String(value)}
+                name={String(values[field.key + 'Name'] || 'CV.pdf')}
+              />
+            )}
             {['image', 'pdf'].includes(field.type || '') && value && (
               <button type="button" className="btn neutral" onClick={() => update('')}>
                 {t('Gỡ file', 'Remove file')}
