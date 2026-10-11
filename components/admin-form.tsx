@@ -34,12 +34,13 @@ export type Field = {
 export type Values = Record<string, string | boolean>;
 export type Editor = {
   githubUsername?: string;
+  knownRepositories?: string[];
   title: string;
   fields?: Field[];
   values?: Values;
   body?: ReactNode;
   renderBody?: (onDirty: (dirty: boolean) => void) => ReactNode;
-  submit?: (values: Values) => Promise<void>;
+  submit?: (values: Values) => Promise<unknown>;
   submitLabel?: string;
 };
 export function FieldsForm({
@@ -52,16 +53,18 @@ export function FieldsForm({
   submitLabel,
   formId,
   githubUsername,
+  knownRepositories,
 }: {
   fields: Field[];
   initial: Values;
-  submit: (values: Values) => Promise<void>;
+  submit: (values: Values) => Promise<unknown>;
   csrf: string;
   onDirty?: (dirty: boolean) => void;
   footer?: boolean;
   submitLabel?: string;
   formId?: string;
   githubUsername?: string;
+  knownRepositories?: string[];
 }) {
   const { t, language } = useLanguage(),
     [values, setValues] = useState<Values>(initial),
@@ -143,6 +146,7 @@ export function FieldsForm({
         <GithubProjectPicker
           kind={fields.some((f) => f.key === 'richText') ? 'posts' : 'projects'}
           username={githubUsername}
+          knownRepositories={knownRepositories}
           disabled={busy || uploading > 0}
           apply={(incoming, replace) =>
             setValues((current) =>
@@ -469,6 +473,7 @@ export function EditorDialog({
           <FieldsForm
             formId="editor-content-form"
             githubUsername={editor.githubUsername}
+            knownRepositories={editor.knownRepositories}
             fields={editor.fields || []}
             initial={editor.values || {}}
             csrf={csrf}

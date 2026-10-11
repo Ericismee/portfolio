@@ -271,6 +271,9 @@ export function useInlineEdit(publicData: Content) {
     );
     open({
       title: id ? t('Sửa nội dung', 'Edit content') : t('Thêm nội dung', 'Add content'),
+      knownRepositories: (kind === 'projects' ? current.data.projects : current.data.posts)
+        .filter((item) => item.id !== id)
+        .map((item) => ('github' in item ? item.github : item.link)),
       githubUsername:
         kind === 'projects' || kind === 'posts' ? current.data.githubUsername : undefined,
       fields,
@@ -474,30 +477,91 @@ export function useInlineEdit(publicData: Content) {
         }),
     });
   }
-  function addSection() {
-    if (!state) return;
+  function addSection(current = state) {
+    if (!current) return;
     open({
       title: t('Các mục hồ sơ', 'Profile sections'),
       body: (
         <div className="inline-entry-list">
-          {state.data.sections.map((name) => (
+          {current.data.sections.map((name) => (
             <div
               className="inline-entry-row"
-              data-publication={state.data.hidden.includes(name) ? 'hidden' : 'public'}
+              data-publication={current.data.hidden.includes(name) ? 'hidden' : 'public'}
               key={name}
             >
               <div>
-                <strong>{sectionLabel(name, state.data.sectionTitles[name], language)}</strong>
-                {state.data.hidden.includes(name) && <small>{t('Đã ẩn', 'Hidden')}</small>}
+                <strong>{sectionLabel(name, current.data.sectionTitles[name], language)}</strong>
+                {current.data.hidden.includes(name) && <small>{t('Đã ẩn', 'Hidden')}</small>}
               </div>
               <div className="inline-section-actions">
                 <button
                   type="button"
                   className="icon-btn"
                   aria-label={t('Sửa ', 'Edit ') + name}
-                  onClick={() => section(name)}
+                  onClick={() => section(name, current)}
                 >
                   <Icon name="edit" />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label={
+                    current.data.hidden.includes(name)
+                      ? t('Hiện mục', 'Show section')
+                      : t('Ẩn mục', 'Hide section')
+                  }
+                  title={t('Ẩn / Hiện', 'Hide / Show')}
+                  onClick={async () => {
+                    try {
+                      const next = await save((d) => {
+                        d.hidden = d.hidden.includes(name)
+                          ? d.hidden.filter((v) => v !== name)
+                          : [...d.hidden, name];
+                      }, current);
+                      addSection(next);
+                    } catch (error) {
+                      setNotice(
+                        error instanceof Error
+                          ? error.message
+                          : t('Không lưu được.', 'Unable to save.'),
+                      );
+                    }
+                  }}
+                >
+                  <Icon name={current.data.hidden.includes(name) ? 'eye' : 'lock'} />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn danger"
+                  aria-label={t('Xóa mục', 'Delete section')}
+                  title={t('Xóa', 'Delete')}
+                  onClick={() =>
+                    open({
+                      title: t('Xóa mục khỏi hồ sơ?', 'Remove profile section?'),
+                      body: (
+                        <p>
+                          {t(
+                            'Nội dung tùy chỉnh chuyển vào thùng rác. Dự án và bài viết vẫn có danh sách riêng; khôi phục mục từ lịch sử phiên bản.',
+                            'Custom entries move to trash. Projects and posts keep their own lists; restore the section from revision history.',
+                          )}
+                        </p>
+                      ),
+                      fields: [],
+                      values: {},
+                      submitLabel: t('Xóa mục', 'Remove section'),
+                      submit: () =>
+                        save((d) => {
+                          for (const item of [...(d.items[name] || [])])
+                            trashEntry(d, 'items', name, item.id, crypto.randomUUID());
+                          d.sections = d.sections.filter((v) => v !== name);
+                          d.hidden = d.hidden.filter((v) => v !== name);
+                          delete d.items[name];
+                          delete d.sectionTitles[name];
+                        }, current),
+                    })
+                  }
+                >
+                  <Icon name="trash" />
                 </button>
                 <button
                   type="button"
@@ -512,6 +576,7 @@ export function useInlineEdit(publicData: Content) {
           ))}
         </div>
       ),
+      submitLabel: t('Thêm mục', 'Add section'),
       fields: [field('title', t('Tên mục', 'Section name'), 'text', true)],
       values: {},
       submit: (v) =>
@@ -521,7 +586,7 @@ export function useInlineEdit(publicData: Content) {
             throw Error(t('Mục này đã tồn tại.', 'This section already exists.'));
           d.sections.push(name);
           d.items[name] = [];
-        }),
+        }, current),
     });
   }
   function appearance() {

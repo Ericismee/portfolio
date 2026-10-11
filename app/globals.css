@@ -2881,3 +2881,118 @@ button.gh-day:hover {
   padding: 16px;
   border-radius: var(--radius);
 }
+
+/* Shared editor and resource controls. */
+.markdown-editor {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--card);
+}
+.markdown-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface);
+}
+.markdown-view-tabs {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  gap: 4px;
+}
+.markdown-view-tabs button {
+  min-height: 36px;
+  padding: 8px 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+}
+.markdown-view-tabs button[aria-selected='true'] {
+  color: var(--ink);
+  background: var(--card);
+  border-color: var(--border-subtle);
+  font-weight: 700;
+}
+.markdown-editor-panel {
+  padding: 16px;
+  min-width: 0;
+}
+.markdown-editor-panel .markdown-live-preview {
+  border: 0;
+  padding: 0;
+  min-height: 280px;
+  background: transparent;
+}
+.markdown-editor-panel textarea {
+  min-height: 300px;
+  width: 100%;
+  resize: vertical;
+  font-family: var(--font-code);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.markdown-editor > .admin-help,
+.markdown-editor > .form-error {
+  margin: 0;
+  padding: 10px 16px;
+}
+.markdown-file-import {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.markdown-file-import input {
+  max-width: 220px;
+  font-size: 12px;
+}
+.resource-add {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.resource-add label {
+  flex: 1 1 220px;
+}
+.resource-manager label {
+  display: grid;
+  gap: 6px;
+}
+.resource-manager .inline-entry-list {
+  max-height: 440px;
+  overflow: auto;
+}
+.inline-entry-row > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.inline-section-actions {
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.duplicate-note {
+  color: var(--private-ink);
+  font-weight: 600;
+}
+@media (max-width: 600px) {
+  .markdown-editor-header,
+  .markdown-editor-panel {
+    padding: 12px;
+  }
+  .inline-entry-row {
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .inline-section-actions {
+    max-width: 140px;
+  }
+}

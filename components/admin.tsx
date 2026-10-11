@@ -295,6 +295,9 @@ function AdminDashboard() {
     );
     setEditor({
       title: id ? t('Chỉnh sửa nội dung', 'Edit content') : t('Thêm nội dung', 'Add content'),
+      knownRepositories: (kind === 'projects' ? state!.data.projects : state!.data.posts)
+        .filter((item) => item.id !== id)
+        .map((item) => ('github' in item ? item.github : item.link)),
       githubUsername:
         kind === 'projects' || kind === 'posts' ? state.data.githubUsername : undefined,
       fields,

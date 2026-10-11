@@ -2,7 +2,7 @@ import type { Content, Kind } from './schema.ts';
 import { projectSchema, postSchema, itemSchema } from './schema.ts';
 export const normalizedName = (value: string) =>
   value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en');
-function repoKey(value: string) {
+export function repositoryIdentity(value: string) {
   try {
     const url = new URL(value);
     return url.hostname.toLowerCase() === 'github.com'
@@ -43,8 +43,8 @@ export function duplicateContent(next: Content, previous: Content): string | nul
       previous.projects.map((p) => normalizedName(p.name)),
     ) ||
     increased(
-      next.projects.map((p) => repoKey(p.github)),
-      previous.projects.map((p) => repoKey(p.github)),
+      next.projects.map((p) => repositoryIdentity(p.github)),
+      previous.projects.map((p) => repositoryIdentity(p.github)),
     )
   )
     return 'project';

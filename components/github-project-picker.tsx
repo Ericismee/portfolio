@@ -1,4 +1,5 @@
 'use client';
+import { repositoryIdentity } from '../lib/content-management';
 import { localizedError } from '../lib/i18n';
 import { useId, useState } from 'react';
 import { request } from '../lib/client';
@@ -15,11 +16,13 @@ export function GithubProjectPicker({
   apply,
   disabled,
   kind = 'projects',
+  knownRepositories = [],
 }: {
   username: string;
   apply: (fields: Record<string, string>, replace: boolean) => void;
   disabled: boolean;
   kind?: 'projects' | 'posts';
+  knownRepositories?: string[];
 }) {
   const { t, language } = useLanguage();
   const [repos, setRepos] = useState<
@@ -34,6 +37,7 @@ export function GithubProjectPicker({
   const [replace, setReplace] = useState(false);
   const [notice, setNotice] = useState('');
   const choiceName = useId();
+  const known = new Set(knownRepositories.map(repositoryIdentity));
   const matches = searchRepositories(repos || [], query, visibility);
   const labels: Record<string, string> = {
     name: t('Tên dự án', 'Project name'),
@@ -234,6 +238,13 @@ export function GithubProjectPicker({
                   />
                   <Icon name="projects" />
                   <span className="repo-choice-text">
+                    {known.has('/' + value.toLowerCase()) && (
+                      <small className="duplicate-note">
+                        {kind === 'projects'
+                          ? t('Đã thêm dự án', 'Project already added')
+                          : t('Đã có bài viết', 'Referenced in a post')}
+                      </small>
+                    )}
                     <strong>{repo.name}</strong>
                     <small>
                       {owner}
@@ -299,6 +310,19 @@ export function GithubProjectPicker({
           data-visibility={preview.private ? 'private' : 'public'}
         >
           <h4>{t('Thông tin từ kho mã', 'Repository information')}</h4>
+          {known.has(repositoryIdentity(preview.fields.github || '')) && (
+            <p className="duplicate-note" role="status">
+              {kind === 'projects'
+                ? t(
+                    'Kho mã này đã có trong danh sách dự án. Sửa dự án hiện có để tránh trùng.',
+                    'This repository is already in your projects. Edit the existing project to avoid duplicates.',
+                  )
+                : t(
+                    'Đã có bài viết tham chiếu kho mã này. Bạn vẫn có thể tạo cập nhật mới.',
+                    'A post already references this repository. You can still write a new update.',
+                  )}
+            </p>
+          )}
           <span className={'repository-visibility ' + (preview.private ? 'private' : 'public')}>
             {preview.private
               ? t('Kho mã riêng tư', 'Private repository')
