@@ -2157,13 +2157,25 @@ button.gh-day:hover {
 .social-link {
   position: relative;
 }
+.card:has(.social-link) {
+  position: relative;
+  overflow: visible;
+}
+.card:has(.social-link:hover, .social-link:focus-visible) {
+  z-index: 5;
+}
+.social-link:hover,
+.social-link:focus-visible {
+  z-index: 1;
+}
 .social-link .social-link-detail {
   position: absolute;
   top: calc(100% - 4px);
   right: 0;
   z-index: 20;
   width: max-content;
-  max-width: min(330px, 80vw);
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 10px 12px;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
