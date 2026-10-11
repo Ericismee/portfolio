@@ -85,8 +85,8 @@ const cachedSkills = z.object({
 
 // Public GitHub data only. Deduplicate page requests and keep anonymous API
 // traffic bounded: paginated public repositories and four language requests at a time.
-export function getGithubSkills(username: string): Promise<GithubSkills> {
-  const key = username.toLowerCase() + '-' + githubIdentity(githubCredential().token);
+export async function getGithubSkills(username: string): Promise<GithubSkills> {
+  const key = username.toLowerCase() + '-' + githubIdentity((await githubCredential()).token);
   const existing = cache.get(key);
   if (existing && existing.expires > Date.now()) return existing.value;
   const value = loadCachedSkills(username);
@@ -106,7 +106,7 @@ async function loadCachedSkills(username: string): Promise<GithubSkills> {
   const folder = path.resolve(process.env.DATA_DIR || '.data', 'github-cache');
   const filename = path.join(
     folder,
-    username.toLowerCase() + '-' + githubIdentity(githubCredential().token) + '.json',
+    username.toLowerCase() + '-' + githubIdentity((await githubCredential()).token) + '.json',
   );
   try {
     const saved = cachedSkills.parse(JSON.parse(await readFile(filename, 'utf8')));
@@ -144,7 +144,7 @@ async function loadSkills(username: string): Promise<GithubSkills> {
   // One deadline covers all requests, so an unreachable service cannot hold a
   // page open indefinitely. Never trust an API-supplied URL for outbound fetches.
   const signal = AbortSignal.timeout(12000);
-  const token = githubCredential().token;
+  const token = (await githubCredential()).token;
   let rateLimited = false;
   async function read(path: string) {
     if (rateLimited) throw Error('GitHub rate limit reached');

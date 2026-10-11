@@ -1,5 +1,3 @@
-import { unlink } from 'node:fs/promises';
-import path from 'node:path';
 import { digest } from './auth.ts';
 import { MAX_UPLOAD_BYTES } from './upload-limits.ts';
 import { getGithubSkills } from './github-skills.ts';
@@ -15,7 +13,8 @@ import { z, ZodError } from 'zod';
 import { getDatabase, HttpError, isHttpError, type Database } from './database.ts';
 import { authService, passwordHash, verifyPassword } from './auth.ts';
 import { publicContent } from './schema.ts';
-import { migrateAssets, storeUpload } from './uploads.ts';
+import { migrateAssets, storeUpload, removeUpload } from './uploads.ts';
+import { startCloudUpload, consumeCloudUpload } from './cloud-uploads.ts';
 const envelope = z.object({ version: z.number().int().positive(), data: z.unknown() });
 const restoreInput = z.object({
   id: z.number().int().positive(),
@@ -57,14 +56,14 @@ const send = (body: unknown, status = 200, headers: HeadersInit = {}) =>
 export function createApi(database: Database, production = false, origin?: string) {
   const { db } = database,
     auth = authService(database, production);
-  db.exec(
+  const ready = db.exec(
     'CREATE TABLE IF NOT EXISTS rate_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,until INTEGER NOT NULL)',
   );
   let dummy: Promise<string>;
-  const rate = (key: string, max: number) => {
+  const rate = async (key: string, max: number) => {
     const now = Date.now();
-    db.prepare('DELETE FROM rate_limits WHERE until<=?').run(now);
-    const result = db
+    await db.prepare('DELETE FROM rate_limits WHERE until<=?').run(now);
+    const result = await db
       .prepare(
         `INSERT INTO rate_limits(key,count,until) VALUES(?,1,?)
       ON CONFLICT(key) DO UPDATE SET count=count+1 RETURNING count`,
@@ -75,9 +74,10 @@ export function createApi(database: Database, production = false, origin?: strin
   };
   return async function handle(request: Request): Promise<Response> {
     try {
+      await ready;
       const pathname = new URL(request.url).pathname,
         method = request.method,
-        session = auth.session(request);
+        session = await auth.session(request);
       if (!['GET', 'HEAD'].includes(method)) {
         if (production && !origin) throw new HttpError(503, 'PUBLIC_ORIGIN is not configured');
         if (request.headers.get('origin') !== (origin || new URL(request.url).origin))
@@ -89,16 +89,16 @@ export function createApi(database: Database, production = false, origin?: strin
           throw new HttpError(403, 'Invalid session or CSRF token');
       }
       if (pathname === '/api/content' && method === 'GET')
-        return send({ data: publicContent(database.read().data) });
+        return send({ data: publicContent((await database.read()).data) });
       if (pathname === '/api/session' && method === 'GET')
         return send({ authenticated: !!session, csrf: session?.csrf });
       if (pathname === '/api/login' && method === 'POST') {
-        rate('login-global', 300);
+        await rate('login-global', 300);
         const input = z
           .object({ username: z.string().min(1).max(40), password: z.string().max(256) })
           .parse(await json(request, 16 * 1024));
-        rate('login-account:' + digest(input.username.toLowerCase()), 30);
-        const user = db.prepare('SELECT * FROM admins WHERE username=?').get(input.username) as
+        await rate('login-account:' + digest(input.username.toLowerCase()), 30);
+        const user = await db.prepare('SELECT * FROM admins WHERE username=?').get(input.username) as
           { username: string; password_hash: string } | undefined;
         const valid = await verifyPassword(
           input.password,
@@ -110,22 +110,44 @@ export function createApi(database: Database, production = false, origin?: strin
             401,
             'Incorrect username or password / Tên đăng nhập hoặc mật khẩu không đúng',
           );
-        const login = auth.create(user.username);
+        const login = await auth.create(user.username);
         return send({ authenticated: true, csrf: login.csrf }, 200, { 'Set-Cookie': login.cookie });
       }
       if (pathname === '/api/contact' && method === 'POST') {
-        rate('contact', 30);
+        await rate('contact', 30);
         const b = messageInput.parse(await json(request));
-        db.prepare(
+        await db.prepare(
           'INSERT INTO messages(name,email,subject,message,created_at) VALUES(?,?,?,?,?)',
         ).run(b.name, b.email, b.subject, b.message, new Date().toISOString());
         return send({ saved: true }, 201);
       }
       if (pathname.startsWith('/api/admin/')) {
         if (!session) throw new HttpError(401, 'Please sign in / Vui lòng đăng nhập');
+        if (pathname === '/api/admin/upload-init' && method === 'POST') {
+          await rate('upload-init', 60);
+          if (database.directory !== 'cloud') return send({ mode:'local' });
+          return send(await startCloudUpload(database, session.username, await json(request,4096)));
+        }
+        if (pathname === '/api/admin/upload-finish' && method === 'POST') {
+          if (database.directory !== 'cloud') throw new HttpError(404,'Not found');
+          const {id} = z.object({id:z.string().max(50)}).parse(await json(request,4096));
+          const {bytes,mime} = await consumeCloudUpload(database,session.username,id);
+          return send({url:await storeUpload(database.directory,bytes,mime)},201);
+        }
+        if (pathname === '/api/admin/import-blob' && method === 'POST') {
+          if (database.directory !== 'cloud') throw new HttpError(404,'Not found');
+          const {id,version} = z.object({id:z.string().max(50),version:z.number().int().positive()}).parse(await json(request,4096));
+          const {bytes,mime} = await consumeCloudUpload(database,session.username,id);
+          if (mime !== 'application/json') throw new HttpError(400,'Expected JSON import');
+          let input:unknown;
+          try { input=JSON.parse(bytes.toString()); } catch { throw new HttpError(400,'Invalid JSON'); }
+          const created:string[]=[];
+          try { return send(await database.write(await migrateAssets(input,database.directory,created),version)); }
+          catch(error) { await Promise.allSettled(created.map(url=>removeUpload(database.directory,url))); throw error; }
+        }
         if (pathname === '/api/admin/github-connection') {
           if (method === 'GET') {
-            const credential = githubCredential(database);
+            const credential = await githubCredential(database);
             return send({
               connected: !!credential.token,
               login: credential.login,
@@ -133,7 +155,7 @@ export function createApi(database: Database, production = false, origin?: strin
             });
           }
           if (method === 'POST') {
-            rate('github-connect', 10);
+            await rate('github-connect', 10);
             const { token } = z
               .object({
                 token: z
@@ -145,12 +167,12 @@ export function createApi(database: Database, production = false, origin?: strin
               })
               .parse(await json(request));
             const account = await inspectGithub(token);
-            saveGithubCredential(database, token, account.login);
+            await saveGithubCredential(database, token, account.login);
             return send({ connected: true, source: 'account', ...account });
           }
           if (method === 'DELETE') {
-            disconnectGithub(database);
-            const credential = githubCredential(database);
+            await disconnectGithub(database);
+            const credential = await githubCredential(database);
             return send({
               connected: !!credential.token,
               login: credential.login,
@@ -159,13 +181,13 @@ export function createApi(database: Database, production = false, origin?: strin
           }
         }
         if (pathname === '/api/admin/github-repositories' && method === 'GET') {
-          const credential = githubCredential(database);
+          const credential = await githubCredential(database);
           if (!credential.token)
             throw new HttpError(400, 'Hãy kết nối tài khoản GitHub trước. / Connect GitHub first.');
           return send(await accountRepositories(credential.token));
         }
         if (pathname === '/api/admin/logout' && method === 'POST') {
-          db.prepare('DELETE FROM sessions WHERE token_hash=?').run(session.token_hash);
+          await db.prepare('DELETE FROM sessions WHERE token_hash=?').run(session.token_hash);
           return send({ ok: true }, 200, { 'Set-Cookie': auth.cookie('', 0) });
         }
         if (pathname === '/api/admin/github' && method === 'GET') {
@@ -175,7 +197,7 @@ export function createApi(database: Database, production = false, origin?: strin
             .regex(/^[a-zA-Z0-9-]*$/)
             .parse(
               new URL(request.url).searchParams.get('username') ??
-                database.read().data.githubUsername,
+                (await database.read()).data.githubUsername,
             );
           return send(await getGithubSkills(username));
         }
@@ -186,7 +208,7 @@ export function createApi(database: Database, production = false, origin?: strin
             repo: query.get('repo'),
           });
           try {
-            const credential = githubCredential(database);
+            const credential = await githubCredential(database);
             const project = await getGithubProject(
               input.username,
               input.repo,
@@ -208,23 +230,21 @@ export function createApi(database: Database, production = false, origin?: strin
             );
           }
         }
-        if (pathname === '/api/admin/content' && method === 'GET') return send(database.read());
+        if (pathname === '/api/admin/content' && method === 'GET') return send(await database.read());
         if (pathname === '/api/admin/content' && method === 'PUT') {
           const b = envelope.parse(await json(request));
-          return send(database.write(b.data, b.version));
+          return send(await database.write(b.data, b.version));
         }
         if (pathname === '/api/admin/import' && method === 'POST') {
           const b = envelope.parse(await json(request, MAX_UPLOAD_BYTES + 1024));
           const created: string[] = [];
           try {
             const migrated = await migrateAssets(b.data, database.directory, created);
-            return send(database.write(migrated, b.version));
+            return send(await database.write(migrated, b.version));
           } catch (error) {
             // Only generated files from this rejected import are eligible for cleanup.
             await Promise.allSettled(
-              created.map((url) =>
-                unlink(path.join(database.directory, 'uploads', path.basename(url))),
-              ),
+              created.map((url) => removeUpload(database.directory,url)),
             );
             throw error;
           }
@@ -239,22 +259,22 @@ export function createApi(database: Database, production = false, origin?: strin
         }
         if (pathname === '/api/admin/revisions' && method === 'GET')
           return send({
-            revisions: db.prepare('SELECT id,created_at FROM revisions ORDER BY id DESC').all(),
+            revisions: await db.prepare('SELECT id,created_at FROM revisions ORDER BY id DESC').all(),
           });
         if (pathname === '/api/admin/restore' && method === 'POST') {
           const b = restoreInput.parse(await json(request)),
-            r = db.prepare('SELECT body FROM revisions WHERE id=?').get(b.id) as
+            r = await db.prepare('SELECT body FROM revisions WHERE id=?').get(b.id) as
               { body: string } | undefined;
           if (!r) throw new HttpError(404, 'Revision not found');
-          return send(database.write(JSON.parse(r.body), b.version));
+          return send(await database.write(JSON.parse(r.body), b.version));
         }
         if (pathname === '/api/admin/messages' && method === 'GET')
           return send({
-            messages: db.prepare('SELECT * FROM messages ORDER BY id DESC LIMIT 500').all(),
+            messages: await db.prepare('SELECT * FROM messages ORDER BY id DESC LIMIT 500').all(),
           });
         if (pathname === '/api/admin/messages' && method === 'DELETE') {
           const b = z.object({ id: z.number().int().positive() }).parse(await json(request));
-          db.prepare('DELETE FROM messages WHERE id=?').run(b.id);
+          await db.prepare('DELETE FROM messages WHERE id=?').run(b.id);
           return send({ ok: true });
         }
       }
@@ -280,13 +300,13 @@ const apiGlobal = globalThis as typeof globalThis & {
   profileAPI?: ReturnType<typeof createApi>;
   profileAPIFactory?: typeof createApi;
 };
-export const handleApi = (request: Request) => {
+export const handleApi = async (request: Request) => {
   if (apiGlobal.profileAPIFactory !== createApi) {
     apiGlobal.profileAPI = undefined;
     apiGlobal.profileAPIFactory = createApi;
   }
   return (apiGlobal.profileAPI ??= createApi(
-    getDatabase(),
+    await getDatabase(),
     process.env.NODE_ENV === 'production',
     process.env.PUBLIC_ORIGIN,
   ))(request);

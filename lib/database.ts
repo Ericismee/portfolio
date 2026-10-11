@@ -97,12 +97,34 @@ export function openDatabase(
   }
   return { db, read, write, directory };
 }
-export type Database = ReturnType<typeof openDatabase>;
+export type LocalDatabase = ReturnType<typeof openDatabase>;
+export type SqlValue = string | number | bigint | null | Uint8Array;
+export type Connection = {
+  exec(sql: string): void | Promise<void>;
+  prepare(sql: string): {
+    get(...values: SqlValue[]): unknown | Promise<unknown>;
+    all(...values: SqlValue[]): unknown[] | Promise<unknown[]>;
+    run(...values: SqlValue[]): unknown | Promise<unknown>;
+  };
+};
+export type Database = {
+  db: Connection;
+  read(): ContentState | Promise<ContentState>;
+  write(input: unknown, version: number): ContentState | Promise<ContentState>;
+  directory: string;
+};
 const globalDB = globalThis as typeof globalThis & {
-  profileDB?: Database;
+  profileDB?: LocalDatabase;
+  cloudDB?: Promise<Database>;
   profileDBSchema?: typeof contentSchema;
 };
 export const getDatabase = () => {
+  if (process.env.DATABASE_URL) {
+    return (globalDB.cloudDB ??= import('./cloud-database.ts').then(({ openCloudDatabase }) =>
+      openCloudDatabase(),
+    ).catch((error) => { globalDB.cloudDB = undefined; throw error; }));
+  }
+  if (process.env.VERCEL) throw new HttpError(503, 'Cloud database is not configured');
   if (globalDB.profileDBSchema !== contentSchema) {
     // Pages and API routes may load separate module generations. Reuse the
     // connection without closing one still used by an in-flight handler.

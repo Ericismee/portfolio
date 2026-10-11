@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const year = raw === null ? new Date().getUTCFullYear() : Number(raw);
   if (!Number.isInteger(year) || year < 2008 || year > new Date().getUTCFullYear())
     return Response.json({ error: 'Invalid year' }, { status: 400 });
-  const { githubUsername, github } = getDatabase().read().data;
+  const { githubUsername, github } = (await (await getDatabase()).read()).data;
   try {
     const stats = await getGithubSkills(githubUsername);
     return Response.json(

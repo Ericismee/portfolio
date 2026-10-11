@@ -133,7 +133,7 @@ let apiRemaining = Infinity;
 async function api(route: string, etag?: string | null) {
   const response = await fetch('https://api.github.com' + route, {
     headers: {
-      ...githubHeaders(githubCredential().token),
+      ...githubHeaders((await githubCredential()).token),
       ...(etag ? { 'If-None-Match': etag } : {}),
     },
     cache: 'no-store',

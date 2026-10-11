@@ -1,6 +1,6 @@
 import { MAX_UPLOAD_BYTES } from './upload-limits.ts';
 import { randomUUID } from 'node:crypto';
-import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { HttpError } from './database.ts';
 export const mimeTypes: Record<string, string> = {
@@ -17,19 +17,43 @@ const signatures: Record<string, (b: Buffer) => boolean> = {
   webp: (b) => b.subarray(0, 4).toString() === 'RIFF' && b.subarray(8, 12).toString() === 'WEBP',
   pdf: (b) => b.subarray(0, 5).toString() === '%PDF-',
 };
-export async function storeUpload(directory: string, bytes: Buffer, mime: string) {
+export function uploadExtension(bytes: Buffer, mime: string) {
   const ext = Object.keys(signatures).find((k) => signatures[k](bytes));
   if (!ext || mimeTypes[ext] !== mime)
     throw new HttpError(400, 'Unsupported or invalid file / File không hợp lệ');
   if (bytes.length > MAX_UPLOAD_BYTES) throw new HttpError(413, 'File too large / File quá lớn');
+  return ext;
+}
+export async function storeUpload(directory: string, bytes: Buffer, mime: string) {
+  const ext = uploadExtension(bytes, mime);
+  const name = randomUUID() + '.' + ext;
+  if (directory === 'cloud') {
+    const { put } = await import('@vercel/blob');
+    await put('uploads/' + name, bytes, { access: 'private', contentType: mime, addRandomSuffix: false });
+    return '/uploads/' + name;
+  }
   const folder = path.join(directory, 'uploads');
   await mkdir(folder, { recursive: true });
-  const name = randomUUID() + '.' + ext;
   await writeFile(path.join(folder, name), bytes, { flag: 'wx', mode: 0o600 });
   return '/uploads/' + name;
 }
-export const readUpload = (directory: string, name: string) =>
-  readFile(path.join(directory, 'uploads', name));
+export async function readUpload(directory: string, name: string): Promise<Buffer> {
+  if (directory !== 'cloud') return readFile(path.join(directory, 'uploads', name));
+  const stream = await uploadBody(directory, name);
+  return Buffer.from(await new Response(stream as BodyInit).arrayBuffer());
+}
+export async function uploadBody(directory: string, name: string): Promise<ReadableStream<Uint8Array> | Uint8Array> {
+  if (directory !== 'cloud') return new Uint8Array(await readUpload(directory, name));
+  const { get } = await import('@vercel/blob');
+  const result = await get('uploads/' + name, { access:'private', useCache:false });
+  if (!result || result.statusCode !== 200) throw new HttpError(404, 'File not found');
+  return result.stream;
+}
+export async function removeUpload(directory: string, url: string) {
+  const name = path.basename(url);
+  if (directory === 'cloud') { const {del} = await import('@vercel/blob'); await del('uploads/' + name); }
+  else await unlink(path.join(directory, 'uploads', name));
+}
 export async function migrateAssets(
   input: unknown,
   directory: string,

@@ -7,8 +7,8 @@ import type { Metadata } from 'next';
 import { getGithubSkills } from '../../lib/github-skills';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export function generateMetadata(): Metadata {
-  const { profile } = getDatabase().read().data;
+export async function generateMetadata(): Promise<Metadata> {
+  const { profile } = (await (await getDatabase()).read()).data;
   return {
     title: profile.name + ' · ' + profile.headline,
     description: profile.summary || profile.headline,
@@ -39,7 +39,7 @@ export default async function PublicPage({
   )
     notFound();
   const query = await searchParams;
-  const source = getDatabase().read().data;
+  const source = (await (await getDatabase()).read()).data;
   const content = publicContent(source);
   if (
     segments[1] &&

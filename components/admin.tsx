@@ -2,6 +2,7 @@
 import { localizedError } from '../lib/i18n';
 import { sectionLabel } from '../lib/i18n';
 import { MAX_UPLOAD_BYTES } from '../lib/upload-limits';
+import { importContent } from '../lib/upload-client';
 import Link from 'next/link';
 import { GithubSettingsForm } from './github-settings';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -540,10 +541,7 @@ function AdminDashboard() {
       ),
       async () => {
         setState(
-          await api<ContentState>('/api/admin/import', 'POST', {
-            data: prepared,
-            version: state!.version,
-          }),
+          await importContent(prepared, state!.version, csrf.current),
         );
         setDirty(false);
         setToast(t('Đã nhập dữ liệu', 'Data imported'));

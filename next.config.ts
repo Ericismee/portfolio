@@ -16,7 +16,7 @@ const config: NextConfig = {
             value:
               "default-src 'self'; script-src 'self' 'unsafe-inline'" +
               (process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : '') +
-              "; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http:; font-src 'self' blob:; connect-src 'self'; worker-src 'self'; frame-src https://www.youtube-nocookie.com; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'self'",
+              "; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http:; font-src 'self' blob:; connect-src 'self' https://blob.vercel-storage.com https://*.blob.vercel-storage.com; worker-src 'self'; frame-src https://www.youtube-nocookie.com; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'self'",
           },
         ],
       },

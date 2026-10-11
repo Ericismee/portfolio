@@ -29,23 +29,23 @@ export function authService(
     cookieName = production ? '__Host-profile_session' : 'profile_session';
   const cookie = (value: string, maxAge: number) =>
     `${cookieName}=${value}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${production ? '; Secure' : ''}`;
-  const session = (request: Request): Session | null => {
+  const session = async (request: Request): Promise<Session | null> => {
     const raw = (request.headers.get('cookie') || '')
       .split(';')
       .map((x) => x.trim())
       .find((x) => x.startsWith(cookieName + '='))
       ?.slice(cookieName.length + 1);
     return raw && /^[a-f0-9]{64}$/.test(raw)
-      ? (db
+      ? (await db
           .prepare('SELECT * FROM sessions WHERE token_hash=? AND expires>?')
           .get(digest(raw), Date.now()) as Session) || null
       : null;
   };
-  function create(username: string) {
-    db.prepare('DELETE FROM sessions WHERE expires<?').run(Date.now());
+  async function create(username: string) {
+    await db.prepare('DELETE FROM sessions WHERE expires<?').run(Date.now());
     const value = token(),
       csrf = token();
-    db.prepare('INSERT INTO sessions VALUES(?,?,?,?)').run(
+    await db.prepare('INSERT INTO sessions VALUES(?,?,?,?)').run(
       digest(value),
       username,
       csrf,

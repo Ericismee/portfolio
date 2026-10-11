@@ -8,14 +8,14 @@ import path from 'node:path';
 import { openDatabase, HttpError } from '../lib/database.ts';
 import { githubCredential, saveGithubCredential } from '../lib/github-connection.ts';
 
-test('GitHub credentials survive process restart with protected keys and authenticated ciphertext', () => {
+test('GitHub credentials survive process restart with protected keys and authenticated ciphertext', async () => {
   const directory = mkdtempSync(path.join(tmpdir(), 'profile-credential-'));
   const database = openDatabase(directory);
   const token = 'github_pat_test_only_never_a_real_token';
   const keyFile = path.join(directory, 'github-credential.key');
   try {
-    saveGithubCredential(database, token, 'test-account');
-    assert.equal(githubCredential(database).token, token);
+    await saveGithubCredential(database, token, 'test-account');
+    assert.equal((await githubCredential(database)).token, token);
     const saved = database.db.prepare('SELECT secret FROM github_connection').get() as {
       secret: string;
     };
@@ -31,7 +31,7 @@ test('GitHub credentials survive process restart with protected keys and authent
       import {githubCredential} from './lib/github-connection.ts';
       import {createHash} from 'node:crypto';
       const db=openDatabase(process.argv[1]);
-      const credential=githubCredential(db);
+      const credential=await githubCredential(db);
       const valid=credential.login==='test-account' && createHash('sha256').update(credential.token).digest('hex')===process.argv[2];
       db.db.close(); process.exit(valid?0:1);`;
     const child = spawnSync(
@@ -48,13 +48,13 @@ test('GitHub credentials survive process restart with protected keys and authent
     assert.equal(child.status, 0, child.error?.message || 'Restart could not unlock credential');
     assert.equal(child.stdout, '');
     database.db.prepare('UPDATE github_connection SET login=?').run('other-account');
-    assert.throws(
+    await assert.rejects(
       () => githubCredential(database),
       (error) => error instanceof HttpError && error.status === 503,
     );
     database.db.prepare('UPDATE github_connection SET login=?').run('test-account');
     unlinkSync(keyFile);
-    assert.throws(
+    await assert.rejects(
       () => githubCredential(database),
       (error) => error instanceof HttpError && error.status === 503,
     );
@@ -70,7 +70,7 @@ test('GitHub credentials survive process restart with protected keys and authent
   }
 });
 
-test('Legacy GitHub keys and tokens migrate without requiring token entry; corruption fails closed', () => {
+test('Legacy GitHub keys and tokens migrate without requiring token entry; corruption fails closed', async () => {
   const directory = mkdtempSync(path.join(tmpdir(), 'profile-credential-legacy-'));
   const database = openDatabase(directory);
   const keyFile = path.join(directory, 'github-credential.key');
@@ -90,7 +90,7 @@ test('Legacy GitHub keys and tokens migrate without requiring token entry; corru
         [iv, cipher.getAuthTag(), body].map((v) => v.toString('base64')).join('.'),
         'legacy-account',
       );
-    assert.equal(githubCredential(database).token, token);
+    assert.equal((await githubCredential(database)).token, token);
     const saved = (
       database.db.prepare('SELECT secret FROM github_connection').get() as { secret: string }
     ).secret;
@@ -101,13 +101,13 @@ test('Legacy GitHub keys and tokens migrate without requiring token entry; corru
     tag[0] ^= 1;
     parts[2] = tag.toString('base64');
     database.db.prepare('UPDATE github_connection SET secret=?').run(parts.join('.'));
-    assert.throws(
+    await assert.rejects(
       () => githubCredential(database),
       (error) => error instanceof HttpError && error.status === 503,
     );
     database.db.prepare('UPDATE github_connection SET secret=?').run(saved);
     writeFileSync(keyFile, 'corrupted-key');
-    assert.throws(
+    await assert.rejects(
       () => githubCredential(database),
       (error) => error instanceof HttpError && error.status === 503,
     );

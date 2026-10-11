@@ -117,7 +117,7 @@ test('Admin GitHub connection validates credentials, encrypts secrets, protects 
     assert.equal(connected.data.login, 'qa-connected');
     assert.equal(connected.data.remaining, 4999);
     assert.ok(!JSON.stringify(connected.data).includes(token));
-    assert.equal(githubCredential(f.database).token, token);
+    assert.equal((await githubCredential(f.database)).token, token);
     const stored = f.database.db.prepare('SELECT secret FROM github_connection').get() as {
       secret: string;
     };
@@ -145,12 +145,12 @@ test('Admin GitHub connection validates credentials, encrypts secrets, protects 
       400,
     );
     assert.equal(
-      githubCredential(f.database).token,
+      (await githubCredential(f.database)).token,
       token,
       'invalid replacement retains working connection',
     );
     await f.call('/api/admin/github-connection', 'DELETE');
-    assert.notEqual(githubCredential(f.database).token, token);
+    assert.notEqual((await githubCredential(f.database)).token, token);
     globalThis.fetch = async () => Response.json({}, { status: 404 });
     assert.equal(
       (await f.call('/api/admin/github-project?username=qa-connected&repo=private-repo')).response

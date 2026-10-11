@@ -5,21 +5,21 @@ import { getDatabase, HttpError, type Database } from './database.ts';
 import { credentialKey } from './credential-key.ts';
 
 // Credentials live outside content, revisions, public responses and backup exports.
-function table(database: Database) {
-  database.db.exec(
+async function table(database: Database) {
+  await database.db.exec(
     'CREATE TABLE IF NOT EXISTS github_connection(id INTEGER PRIMARY KEY CHECK(id=1), secret TEXT NOT NULL, login TEXT NOT NULL)',
   );
 }
-export function githubCredential(database?: Database) {
-  if (!database && !existsSync(path.resolve(process.env.DATA_DIR || '.data', 'profile.sqlite')))
+export async function githubCredential(database?: Database) {
+  if (!database && !process.env.DATABASE_URL && !existsSync(path.resolve(process.env.DATA_DIR || '.data', 'profile.sqlite')))
     return {
       token: process.env.GITHUB_TOKEN || '',
       login: '',
       source: process.env.GITHUB_TOKEN ? ('environment' as const) : ('none' as const),
     };
-  database ??= getDatabase();
-  table(database);
-  const row = database.db.prepare('SELECT secret,login FROM github_connection WHERE id=1').get() as
+  database ??= await getDatabase();
+  await table(database);
+  const row = await database.db.prepare('SELECT secret,login FROM github_connection WHERE id=1').get() as
     { secret: string; login: string } | undefined;
   if (row) {
     try {
@@ -34,7 +34,7 @@ export function githubCredential(database?: Database) {
       if (versioned) decipher.setAAD(Buffer.from('Eric-Profile:GitHub:v2:' + row.login));
       decipher.setAuthTag(tag);
       const token = Buffer.concat([decipher.update(body), decipher.final()]).toString();
-      if (!versioned) saveGithubCredential(database, token, row.login);
+      if (!versioned) await saveGithubCredential(database, token, row.login);
       return { token, login: row.login, source: 'account' as const };
     } catch {
       throw new HttpError(
@@ -49,18 +49,18 @@ export function githubCredential(database?: Database) {
     source: process.env.GITHUB_TOKEN ? ('environment' as const) : ('none' as const),
   };
 }
-export function saveGithubCredential(database: Database, token: string, login: string) {
-  table(database);
+export async function saveGithubCredential(database: Database, token: string, login: string) {
+  await table(database);
   const iv = randomBytes(12),
     cipher = createCipheriv('aes-256-gcm', credentialKey(database.directory, true), iv);
   cipher.setAAD(Buffer.from('Eric-Profile:GitHub:v2:' + login));
   const body = Buffer.concat([cipher.update(token), cipher.final()]);
   const secret = 'v2.' + [iv, cipher.getAuthTag(), body].map((v) => v.toString('base64')).join('.');
-  database.db.prepare('INSERT OR REPLACE INTO github_connection VALUES(1,?,?)').run(secret, login);
+  await database.db.prepare('INSERT INTO github_connection VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET secret=excluded.secret,login=excluded.login').run(secret, login);
 }
-export function disconnectGithub(database: Database) {
-  table(database);
-  database.db.prepare('DELETE FROM github_connection WHERE id=1').run();
+export async function disconnectGithub(database: Database) {
+  await table(database);
+  await database.db.prepare('DELETE FROM github_connection WHERE id=1').run();
 }
 export function githubHeaders(token: string) {
   return {

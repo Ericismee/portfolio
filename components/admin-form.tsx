@@ -8,7 +8,7 @@ import { GithubProjectPicker } from './github-project-picker';
 import { applyGithubFields, applyGithubPostFields } from '../lib/github-project-fields';
 import { projectUsesMarkdown } from '../lib/markdown';
 import { MarkdownEditor } from './markdown-editor';
-import { uploadMime } from '../lib/upload-client';
+import { uploadMime, uploadFile } from '../lib/upload-client';
 import { CvDocument } from './cv-document';
 export type Field = {
   key: string;
@@ -87,14 +87,7 @@ export function FieldsForm({
     setError('');
     try {
       const mime = await uploadMime(file);
-      const response = await fetch('/api/admin/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': mime, 'x-csrf-token': csrf },
-        body: file,
-        signal: AbortSignal.timeout(60000),
-      });
-      const result = (await response.json()) as { url: string; error?: string };
-      if (!response.ok) throw Error(result.error);
+      const result = {url:await uploadFile(file,mime,csrf)};
       if (done) done(result.url);
       else
         setValues((v) => ({

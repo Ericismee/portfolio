@@ -1,12 +1,12 @@
 import type { Database } from './database.ts';
 import { authService } from './auth.ts';
 import { publicContent } from './schema.ts';
-import { readUpload, mimeTypes } from './uploads.ts';
+import { uploadBody, mimeTypes } from './uploads.ts';
 
 export async function uploadResponse(database: Database, request: Request, filename: string) {
   if (!/^[a-f0-9-]+\.(png|jpg|webp|gif|pdf)$/.test(filename))
     return new Response('Not found', { status: 404 });
-  const content = publicContent(database.read().data),
+  const content = publicContent((await database.read()).data),
     url = '/uploads/' + filename;
   const referenced = (v: unknown): boolean =>
     typeof v === 'string'
@@ -16,12 +16,12 @@ export async function uploadResponse(database: Database, request: Request, filen
           ?.some((reference) => reference === url) ??
           false)
       : !!v && typeof v === 'object' && Object.values(v).some(referenced);
-  if (!authService(database).session(request) && !referenced(content))
+  if (!await authService(database).session(request) && !referenced(content))
     return new Response('Not found', { status: 404 });
   try {
-    const body = await readUpload(database.directory, filename),
+    const body = await uploadBody(database.directory, filename),
       mime = mimeTypes[filename.split('.').pop()!];
-    return new Response(new Uint8Array(body), {
+    return new Response(body as BodyInit, {
       headers: {
         'Content-Type': mime,
         'Cache-Control': 'private, no-store',
