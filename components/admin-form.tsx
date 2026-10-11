@@ -6,6 +6,7 @@ import { ImageFramePicker } from './image-frame-picker';
 import { RichTextEditor } from './rich-text-editor';
 import { GithubProjectPicker } from './github-project-picker';
 import { applyGithubFields, applyGithubPostFields } from '../lib/github-project-fields';
+import { projectUsesMarkdown } from '../lib/markdown';
 import { MarkdownEditor } from './markdown-editor';
 import { uploadMime } from '../lib/upload-client';
 import { CvDocument } from './cv-document';
@@ -188,6 +189,25 @@ export function FieldsForm({
                   upload={(file, done) => upload(field.key, file, done)}
                 />
               )}
+            </div>
+          );
+        if (field.key === 'details')
+          return (
+            <div className="field-wide" key={field.key}>
+              <MarkdownEditor
+                value={String(value)}
+                name={field.key}
+                label={field.label}
+                base={String(values.detailsBase || '')}
+                change={update}
+                plain={
+                  !projectUsesMarkdown({
+                    detailsFormat: String(values.detailsFormat || 'auto'),
+                    details: String(value),
+                    source: String(values.source || ''),
+                  })
+                }
+              />
             </div>
           );
         if (field.type === 'image')

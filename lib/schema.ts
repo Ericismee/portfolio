@@ -148,6 +148,7 @@ export const contentSchema = z
     projects: z.array(projectSchema).max(300),
     posts: z.array(postSchema).max(500),
     skills: names.default([]),
+    hiddenSkills: names.default([]),
     links: z
       .record(
         z.string().regex(/^(?!__proto__$|constructor$|prototype$)[a-zA-Z0-9_-]{1,40}$/),
@@ -223,6 +224,8 @@ export function publicContent(content: Content, now = Date.now()): Content {
   d.sectionTitles = Object.fromEntries(
     Object.entries(d.sectionTitles).filter(([key]) => d.sections.includes(key)),
   );
+  d.skills = d.skills.filter((skill) => !d.hiddenSkills.includes(skill));
+  d.hiddenSkills = [];
   d.hidden = [];
   return d;
 }

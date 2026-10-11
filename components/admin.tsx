@@ -19,6 +19,11 @@ import {
   type InboxMessage,
 } from '../lib/schema';
 import { entries, prepareLegacyImport, request, RequestError } from '../lib/client';
+import { SkillManager } from './skill-manager';
+import { trashEntry } from '../lib/content-management';
+import { PostBody } from './post-body';
+import { MarkdownContent } from './markdown-content';
+import { projectUsesMarkdown } from '../lib/markdown';
 import { Icon } from './icon';
 import { readRichText, richPlainText } from '../lib/rich-text';
 import { saveGithubChanges } from '../lib/github-save';
@@ -339,24 +344,7 @@ function AdminDashboard() {
       ),
       () =>
         mutate((d) => {
-          const value = entries(d, kind, sectionName).find((p) => p.id === id);
-          if (!value) return;
-          const record = {
-            id: crypto.randomUUID(),
-            section: sectionName,
-            deletedAt: new Date().toISOString(),
-          };
-          if (kind === 'projects') {
-            d.trash.unshift({ ...record, kind, value: projectSchema.parse(value) });
-            d.projects = d.projects.filter((p) => p.id !== id);
-          } else if (kind === 'posts') {
-            d.trash.unshift({ ...record, kind, value: postSchema.parse(value) });
-            d.posts = d.posts.filter((p) => p.id !== id);
-          } else {
-            d.trash.unshift({ ...record, kind, value: itemSchema.parse(value) });
-            d.items[sectionName] = d.items[sectionName].filter((p) => p.id !== id);
-          }
-          d.trash = d.trash.slice(0, 100);
+          trashEntry(d, kind, sectionName, id, crypto.randomUUID());
         }),
     );
   }
@@ -368,8 +356,23 @@ function AdminDashboard() {
         <>
           <span className="badge">{status(p)}</span>
           {image && <img className="admin-asset" src={image} alt="" />}
-          <p className="preserve">{'text' in p ? p.text : p.description}</p>
-          {'details' in p && <p className="preserve">{p.details}</p>}
+          {'text' in p ? (
+            <PostBody
+              value={p.bodyFormat === 'markdown' ? '' : p.richText}
+              text={p.text}
+              markdown={p.bodyFormat === 'markdown' ? p.markdown : ''}
+              base={p.markdownBase}
+              detail
+            />
+          ) : (
+            <p className="preserve">{p.description}</p>
+          )}
+          {'details' in p &&
+            (projectUsesMarkdown(p) ? (
+              <MarkdownContent value={p.details} base={p.detailsBase} />
+            ) : (
+              <p className="preserve">{p.details}</p>
+            ))}
           <p className="admin-help">
             {t(
               'Xem trước nội dung. Chỉ bản công khai mới xuất hiện trên website.',
@@ -767,12 +770,16 @@ function AdminDashboard() {
                 >
                   {d.hidden.includes(s) ? t('Hiện', 'Show') : t('Ẩn', 'Hide')}
                 </button>
-                {!['Giới thiệu', 'Nổi bật', 'Dự án', 'Kỹ năng', 'Hoạt động'].includes(s) && (
+                {
                   <>
                     <button
                       className="btn neutral"
                       onClick={() => {
-                        setSection(s);
+                        if (['Nổi bật', 'Dự án'].includes(s)) setTab('projects');
+                        else if (s === 'Hoạt động') setTab('posts');
+                        else if (s === 'Kỹ năng') setTab('skills');
+                        else if (s === 'Giới thiệu') setTab('profile');
+                        else setSection(s);
                         setQuery('');
                         setFilter('all');
                       }}
@@ -785,11 +792,13 @@ function AdminDashboard() {
                         confirmAction(
                           t('Xóa mục?', 'Delete section?'),
                           t(
-                            'Xóa mục và nội dung bên trong. Có thể khôi phục toàn bộ từ lịch sử phiên bản.',
-                            'Remove this section and its entries. Restore the full revision from history if needed.',
+                            'Xóa mục khỏi hồ sơ. Nội dung của mục tùy chỉnh chuyển vào thùng rác; dự án và bài viết vẫn được quản lý riêng. Có thể khôi phục mục từ lịch sử phiên bản.',
+                            'Remove the profile section. Custom entries move to trash; projects and posts remain in their own lists. Restore the section from revision history.',
                           ),
                           () =>
                             mutate((d) => {
+                              for (const item of [...(d.items[s] || [])])
+                                trashEntry(d, 'items', s, item.id, crypto.randomUUID());
                               d.sections = d.sections.filter((x) => x !== s);
                               d.hidden = d.hidden.filter((x) => x !== s);
                               delete d.items[s];
@@ -801,7 +810,7 @@ function AdminDashboard() {
                       {t('Xóa mục', 'Delete section')}
                     </button>
                   </>
-                )}
+                }
               </div>
             </article>
           ))}
@@ -809,36 +818,15 @@ function AdminDashboard() {
       );
     if (tab === 'skills')
       body = (
-        <FieldsForm
-          key={tab + ':' + state.version}
-          formId="admin-content-form"
-          csrf={csrfToken}
+        <SkillManager
+          key={tab}
+          skills={d.skills}
+          hidden={d.hiddenSkills}
           onDirty={setDirty}
-          fields={[
-            {
-              ...field(
-                'skills',
-                t('Kỹ năng (mỗi dòng một kỹ năng)', 'Skills (one per line)'),
-                'textarea',
-              ),
-              help: t(
-                'Thứ tự dòng cũng là thứ tự hiển thị.',
-                'Line order determines display order.',
-              ),
-              rows: Math.min(24, Math.max(12, d.skills.length + 2)),
-            },
-          ]}
-          initial={{ skills: d.skills.join('\n') }}
-          submit={(v) =>
+          save={async (skills, hiddenSkills) =>
             mutate((d) => {
-              d.skills = [
-                ...new Set(
-                  String(v.skills)
-                    .split('\n')
-                    .map((s) => s.trim())
-                    .filter(Boolean),
-                ),
-              ];
+              d.skills = skills;
+              d.hiddenSkills = hiddenSkills;
             })
           }
         />

@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { contentSchema, type ContentState } from './schema.ts';
+import { duplicateContent } from './content-management.ts';
 import { initial, skills } from './seed.ts';
 const httpErrorBrand = Symbol.for('profile.httpError');
 export class HttpError extends Error {
@@ -62,6 +63,20 @@ export function openDatabase(
         throw new HttpError(
           409,
           'Content changed in another window. Reload before saving. / Nội dung đã thay đổi ở cửa sổ khác. Tải lại trước khi lưu.',
+        );
+      const duplicate = duplicateContent(next, prev.data);
+      if (duplicate)
+        throw new HttpError(
+          400,
+          {
+            section: 'Tên mục đã tồn tại. / This section name already exists.',
+            skill: 'Kỹ năng đã tồn tại. / This skill already exists.',
+            project:
+              'Dự án hoặc kho mã này đã được thêm. / This project or repository has already been added.',
+            post: 'Bài viết trùng tiêu đề và nội dung đã tồn tại. / A post with this title and content already exists.',
+            entry:
+              'Nội dung cùng tiêu đề, tổ chức và thời gian đã tồn tại. / An entry with this title, organization and period already exists.',
+          }[duplicate as 'section' | 'skill' | 'project' | 'post' | 'entry'],
         );
       db.prepare('INSERT INTO revisions(body,created_at) VALUES(?,?)').run(
         JSON.stringify(prev.data),

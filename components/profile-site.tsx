@@ -1153,7 +1153,7 @@ function Site({
                 }}
               >
                 <Icon name="moon" />
-                {t('Giao diện sáng / tối', 'Light / dark appearance')}
+                {t('Sáng / Tối', 'Dark / Light')}
               </button>
               <span className="settings-label">
                 {t('Ngôn ngữ giao diện', 'Interface language')}

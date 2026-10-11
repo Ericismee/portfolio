@@ -1,4 +1,6 @@
 'use client';
+import { SkillManager } from './skill-manager';
+import { trashEntry } from '../lib/content-management';
 import { sectionLabel } from '../lib/i18n';
 import { GithubSettingsForm } from './github-settings';
 import { useEffect, useState } from 'react';
@@ -78,21 +80,23 @@ export function useInlineEdit(publicData: Content) {
     setEditor(next);
     setNotice('');
   }
-  async function save(change: (data: Content) => void) {
-    if (!state) throw Error(t('Vui lòng đăng nhập quản trị.', 'Please sign in as administrator.'));
-    const data = structuredClone(state.data);
+  async function save(change: (data: Content) => void, current = state) {
+    if (!current)
+      throw Error(t('Vui lòng đăng nhập quản trị.', 'Please sign in as administrator.'));
+    const data = structuredClone(current.data);
     change(data);
     // Use the version that the editor was opened with. Concurrent edits cause a
     // conflict rather than overwriting another tab's newer content.
     const next = await request<ContentState>(
       '/api/admin/content',
       'PUT',
-      { data, version: state.version },
+      { data, version: current.version },
       csrf,
     );
     setState(next);
     setNotice(t('Đã lưu thay đổi.', 'Changes saved.'));
     router.refresh();
+    return next;
   }
   const field = (
     key: string,
@@ -156,9 +160,9 @@ export function useInlineEdit(publicData: Content) {
         }),
     });
   }
-  function editItem(kind: Kind, section: string, id?: string, postType?: string) {
-    if (!state) return;
-    const existing = entries(state.data, kind, section).find((e) => e.id === id);
+  function editItem(kind: Kind, section: string, id?: string, postType?: string, current = state) {
+    if (!current) return;
+    const existing = entries(current.data, kind, section).find((e) => e.id === id);
     const values: Values = {
       visible: true,
       visibility: 'draft',
@@ -268,7 +272,7 @@ export function useInlineEdit(publicData: Content) {
     open({
       title: id ? t('Sửa nội dung', 'Edit content') : t('Thêm nội dung', 'Add content'),
       githubUsername:
-        kind === 'projects' || kind === 'posts' ? state.data.githubUsername : undefined,
+        kind === 'projects' || kind === 'posts' ? current.data.githubUsername : undefined,
       fields,
       values,
       submit: (v) =>
@@ -304,34 +308,31 @@ export function useInlineEdit(publicData: Content) {
               ? (d.items[section] || []).map((e) => (e.id === id ? item : e))
               : [...(d.items[section] || []), item];
           }
-        }),
+        }, current).then(() => {}),
     });
   }
-  function section(name: string) {
-    if (!state) return;
+  function section(name: string, current = state) {
+    if (!current) return;
     if (name === 'Giới thiệu') return profile('about');
-    if (name === 'Kỹ năng')
+    if (name === 'Kỹ năng') {
+      let confirmed = current;
       return open({
-        title: t('Chỉnh sửa kỹ năng', 'Edit skills'),
-        fields: [
-          {
-            ...field('skills', t('Mỗi dòng một kỹ năng', 'One skill per line'), 'textarea'),
-            rows: Math.min(24, Math.max(12, state.data.skills.length + 2)),
-          },
-        ],
-        values: { skills: state.data.skills.join('\n') },
-        submit: (v) =>
-          save((d) => {
-            d.skills = [
-              ...new Set(
-                String(v.skills)
-                  .split('\n')
-                  .map((s) => s.trim())
-                  .filter(Boolean),
-              ),
-            ];
-          }),
+        title: t('Quản lý kỹ năng', 'Manage skills'),
+        renderBody: (onDirty) => (
+          <SkillManager
+            skills={confirmed.data.skills}
+            hidden={confirmed.data.hiddenSkills}
+            onDirty={onDirty}
+            save={async (skills, hiddenSkills) => {
+              confirmed = await save((d) => {
+                d.skills = skills;
+                d.hiddenSkills = hiddenSkills;
+              }, confirmed);
+            }}
+          />
+        ),
       });
+    }
     const kind: Kind = ['Nổi bật', 'Dự án'].includes(name)
       ? 'projects'
       : name === 'Hoạt động'
@@ -339,13 +340,16 @@ export function useInlineEdit(publicData: Content) {
         : 'items';
     open({
       title:
-        t('Chỉnh sửa: ', 'Edit: ') + sectionLabel(name, state.data.sectionTitles[name], language),
+        t('Chỉnh sửa: ', 'Edit: ') + sectionLabel(name, current.data.sectionTitles[name], language),
       body: (
         <div className="inline-entry-list">
-          <button className="btn primary" onClick={() => editItem(kind, name)}>
+          <button
+            className="btn primary"
+            onClick={() => editItem(kind, name, undefined, undefined, current)}
+          >
             {t('Thêm nội dung', 'Add content')}
           </button>
-          {entries(state.data, kind, name).map((item) => (
+          {entries(current.data, kind, name).map((item) => (
             <div
               className="inline-entry-row"
               data-publication={publicationStatus(item)}
@@ -364,18 +368,80 @@ export function useInlineEdit(publicData: Content) {
                   }
                 </small>
               </div>
-              <button className="btn neutral" onClick={() => editItem(kind, name, item.id)}>
-                {t('Sửa', 'Edit')}
-              </button>
+              <div className="inline-section-actions">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label={t('Sửa ', 'Edit ') + ('name' in item ? item.name : item.title)}
+                  title={t('Sửa', 'Edit')}
+                  onClick={() => editItem(kind, name, item.id, undefined, current)}
+                >
+                  <Icon name="edit" />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  aria-label={
+                    item.visible ? t('Ẩn nội dung', 'Hide entry') : t('Hiện nội dung', 'Show entry')
+                  }
+                  title={item.visible ? t('Ẩn', 'Hide') : t('Hiện', 'Show')}
+                  onClick={async () => {
+                    try {
+                      const next = await save((d) => {
+                        const entry = entries(d, kind, name).find((v) => v.id === item.id);
+                        if (entry) entry.visible = !entry.visible;
+                      }, current);
+                      section(name, next);
+                    } catch (error) {
+                      setNotice(
+                        error instanceof Error
+                          ? error.message
+                          : t('Không lưu được.', 'Unable to save.'),
+                      );
+                    }
+                  }}
+                >
+                  <Icon name={item.visible ? 'lock' : 'eye'} />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn danger"
+                  aria-label={t('Xóa nội dung', 'Delete entry')}
+                  title={t('Xóa', 'Delete')}
+                  onClick={() => removeEntry(kind, name, item.id, current)}
+                >
+                  <Icon name="trash" />
+                </button>
+              </div>
             </div>
           ))}
-          {!entries(state.data, kind, name).length && (
+          {!entries(current.data, kind, name).length && (
             <p className="muted">
               {t('Chưa có nội dung. Thêm ngay tại đây.', 'No content yet. Add it here.')}
             </p>
           )}
         </div>
       ),
+    });
+  }
+  function removeEntry(kind: Kind, sectionName: string, id: string, current = state) {
+    if (!current) return;
+    open({
+      title: t('Chuyển nội dung vào thùng rác?', 'Move entry to trash?'),
+      body: (
+        <p>
+          {t(
+            'Bạn có thể khôi phục trong trang quản trị.',
+            'You can restore this entry in administration.',
+          )}
+        </p>
+      ),
+      fields: [],
+      values: {},
+      submitLabel: t('Chuyển vào thùng rác', 'Move to trash'),
+      submit: async () => {
+        await save((d) => trashEntry(d, kind, sectionName, id, crypto.randomUUID()), current);
+      },
     });
   }
   function sectionSettings(name: string) {
@@ -575,37 +641,7 @@ export function useInlineEdit(publicData: Content) {
     githubSettings,
     githubFeatured: () => openGithubSettings(true),
     item: editItem,
-    removePost: (id: string) => {
-      if (!state) return;
-      open({
-        title: t('Chuyển bài viết vào thùng rác?', 'Move post to trash?'),
-        body: (
-          <p>
-            {t(
-              'Bạn có thể khôi phục bài trong trang quản trị.',
-              'You can restore this post in administration.',
-            )}
-          </p>
-        ),
-        submitLabel: t('Chuyển vào thùng rác', 'Move to trash'),
-        fields: [],
-        values: {},
-        submit: () =>
-          save((d) => {
-            const value = d.posts.find((p) => p.id === id);
-            if (value) {
-              d.trash.unshift({
-                id: crypto.randomUUID(),
-                kind: 'posts',
-                section: '',
-                deletedAt: new Date().toISOString(),
-                value,
-              });
-              d.posts = d.posts.filter((p) => p.id !== id);
-            }
-          }),
-      });
-    },
+    removePost: (id: string) => removeEntry('posts', '', id),
     settings: enabled && (
       <>
         <div className="settings-divider" />
