@@ -1,5 +1,19 @@
 # Durable Vercel deployment
 
+## Current deployment — 2026-10-11
+
+- Vercel project: `nhain2508-gmailcoms-projects/eric-profile`; production: `https://eric-profile.vercel.app`.
+- Dedicated Neon database `eric-profile-data` and **private** Blob store `eric-profile-files`, both in Singapore. Resources use free plans and are connected only to production.
+- Migration verified content version 77, one administrator, 30 revisions, no inbox messages and 34 files. Original local data remains intact. Existing administrator password hashes are retained; sessions and GitHub credentials are not copied.
+- Production public JSON matches the local public projection. Six published file responses matched source bytes; 28 unpublished/unreferenced files returned 404. Four administrator read endpoints returned 401 anonymously. A forged-origin mutation returned 403.
+- Custom-domain setup is incomplete. Both domains are attached to the Vercel project, but iNET DNS is unchanged. The attempted individual record edit was rejected by automatic review because the full three-record configuration was not being applied together. Browser automation then became unavailable before batch import could proceed.
+- Required iNET DNS-only records: `@ A 216.198.79.1`, `@ A 64.29.17.1`, and `www CNAME 33662806d70b3314.vercel-dns-017.com.`. Replace the old website placeholder records; preserve email/MX/TXT records. User approved switching website traffic from OneShield to Vercel.
+- `PUBLIC_ORIGIN` currently uses `https://eric-profile.vercel.app`. Change it to `https://ericisme.cloud` and redeploy after DNS and HTTPS validate. Redirect `www` to the canonical domain, so administration consistently uses one origin.
+- Reconnect GitHub after signing into production. The cloud encryption key is configured as a production secret. A verified local recovery copy in ignored `.data/cloud-recovery/github-credential.key` is protected by Windows DPAPI for the current Windows user. Temporary plaintext cloud environment and key files were removed after migration. DPAPI recovery requires the Windows user's protection context; plan an independent secure recovery method before replacing this computer.
+- All 60 automated tests, lint, type checking, formatting and the production build passed. The production dependency audit reported zero known vulnerabilities. A second production deployment retained the migrated public content; profile, projects, activity and administration returned HTTP 200. The configured Vercel origin reached login validation while a forged origin was rejected.
+
+Actual administrator sign-in, browser upload and editing on production still need a check with the owner's session. No new administrator credentials were created for testing.
+
 The application supports PostgreSQL for content, administrators, sessions, revisions, messages, rate limits and encrypted GitHub credentials. Private Vercel Blob stores uploads. PostgreSQL connections require TLS with certificate verification.
 
 ## Required server environment

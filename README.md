@@ -2,7 +2,7 @@
 
 A personal profile and publishing website built with **Next.js, React, strict TypeScript and Node.js**. It combines a familiar professional profile layout with a private administration area for managing content without editing code.
 
-**Production:** Vercel deployment preparation is in progress. The cloud adapter is implemented; provisioning and migration must complete before the site is live.
+**Production:** [eric-profile.vercel.app](https://eric-profile.vercel.app) · [Administration](https://eric-profile.vercel.app/admin). PostgreSQL and private Blob storage are provisioned and the local data has been migrated. Custom-domain DNS for `ericisme.cloud` is pending.
 
 **Local website:** [localhost:3001](http://localhost:3001) · **Administration:** [localhost:3001/admin](http://localhost:3001/admin)
 
@@ -40,6 +40,8 @@ Screenshots are captured from the local production build using an isolated QA da
 - ESLint, Prettier, Node's test runner and a browser QA script.
 
 Local deployments use SQLite on persistent disk. Vercel deployments use the PostgreSQL adapter and private Vercel Blob storage; Vercel refuses to start without `DATABASE_URL` instead of silently writing to ephemeral disk.
+
+See [Vercel deployment and recovery](docs/VERCEL-DEPLOYMENT.md). After migration, production is the authoritative data copy; local SQLite edits do not automatically sync to production.
 
 ## Local setup
 
