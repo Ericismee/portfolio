@@ -17,7 +17,7 @@ A personal profile and publishing website built with **Next.js, React, strict Ty
 - Persistent SQLite content and uploaded files. Redeployments preserve them when `DATA_DIR` is on persistent storage.
 - Deleted entries can be restored from trash as drafts. The last 30 document revisions are available for full recovery.
 - Contact form that saves real messages to the private administration inbox.
-- Vietnamese and English interface, light/dark themes, readable accent colors, density and standard/wide layout settings.
+- English by default with a remembered Vietnamese/English interface choice, light/dark themes, readable accent colors, density and standard/wide layout settings.
 - Explicit import of the previous browser mock or a JSON export, including embedded image/PDF migration.
 
 GitHub links open the actual GitHub account and repositories. The profile sidebar also displays up to five languages from the public GitHub API. The site does not pretend to synchronize contributions or commits. Owner-authored descriptions and custom titles remain in their original language when switching the interface language.
@@ -89,7 +89,7 @@ Next.js loads local environment files in development. `npm start` loads `.env` b
 
 Hiding a profile section affects its placement on the profile page; published projects and posts retain their dedicated pages. Hide or unpublish an individual entry to remove it from all public content.
 
-Open an existing mock at the same browser origin and choose **Import previous demo** to migrate its `eric-profile-mock` localStorage data. For data from a different origin, import the exported JSON file instead. Import replaces the saved document after confirmation, retaining a recovery revision. JSON import is limited to 8 MB; image uploads support PNG/JPEG/WebP/GIF up to 3 MB and PDF CVs up to 2 MB.
+Open an existing mock at the same browser origin and choose **Import previous demo** to migrate its `eric-profile-mock` localStorage data. For data from a different origin, import the exported JSON file instead. Import replaces the saved document after confirmation, retaining a recovery revision. JSON imports, PNG/JPEG/WebP/GIF images and PDF CV uploads support files up to 20 MB. Client and server both enforce the upload limit. Private repositories and unpublished content use a distinct amber palette in light and dark themes.
 
 ## Checks and production build
 
