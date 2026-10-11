@@ -1,5 +1,12 @@
 import { getGithubSkills } from './github-skills.ts';
 import { getGithubProject, githubProjectQuery } from './github-project.ts';
+import {
+  githubCredential,
+  inspectGithub,
+  saveGithubCredential,
+  disconnectGithub,
+  accountRepositories,
+} from './github-connection.ts';
 import { z, ZodError } from 'zod';
 import { getDatabase, HttpError, isHttpError, type Database } from './database.ts';
 import { authService, passwordHash, verifyPassword } from './auth.ts';
@@ -107,6 +114,47 @@ export function createApi(database: Database, production = false, origin?: strin
       }
       if (pathname.startsWith('/api/admin/')) {
         if (!session) throw new HttpError(401, 'Please sign in / Vui lòng đăng nhập');
+        if (pathname === '/api/admin/github-connection') {
+          if (method === 'GET') {
+            const credential = githubCredential(database);
+            return send({
+              connected: !!credential.token,
+              login: credential.login,
+              source: credential.source,
+            });
+          }
+          if (method === 'POST') {
+            rate('github-connect', 10);
+            const { token } = z
+              .object({
+                token: z
+                  .string()
+                  .trim()
+                  .min(20)
+                  .max(255)
+                  .regex(/^[a-zA-Z0-9_]+$/),
+              })
+              .parse(await json(request));
+            const account = await inspectGithub(token);
+            saveGithubCredential(database, token, account.login);
+            return send({ connected: true, source: 'account', ...account });
+          }
+          if (method === 'DELETE') {
+            disconnectGithub(database);
+            const credential = githubCredential(database);
+            return send({
+              connected: !!credential.token,
+              login: credential.login,
+              source: credential.source,
+            });
+          }
+        }
+        if (pathname === '/api/admin/github-repositories' && method === 'GET') {
+          const credential = githubCredential(database);
+          if (!credential.token)
+            throw new HttpError(400, 'Hãy kết nối tài khoản GitHub trước. / Connect GitHub first.');
+          return send(await accountRepositories(credential.token));
+        }
         if (pathname === '/api/admin/logout' && method === 'POST') {
           db.prepare('DELETE FROM sessions WHERE token_hash=?').run(session.token_hash);
           return send({ ok: true }, 200, { 'Set-Cookie': auth.cookie('', 0) });
@@ -129,7 +177,20 @@ export function createApi(database: Database, production = false, origin?: strin
             repo: query.get('repo'),
           });
           try {
-            return send(await getGithubProject(input.username, input.repo));
+            const credential = githubCredential(database);
+            const project = await getGithubProject(
+              input.username,
+              input.repo,
+              credential.token,
+              true,
+            );
+            return send({
+              ...project,
+              ownership:
+                credential.token && credential.login.toLowerCase() !== input.username.toLowerCase()
+                  ? ''
+                  : project.ownership,
+            });
           } catch (error) {
             if (isHttpError(error)) throw error;
             throw new HttpError(

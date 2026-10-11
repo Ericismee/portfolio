@@ -81,7 +81,6 @@ The older `QA.md` describes the historical mock. This document records the Next.
 - Final targeted checks at 390 and 1063 px also verified tab alignment and repository filtering across the commit/event histories. Calendar and timeline screenshots were captured at their actual content positions and visually reviewed.
 - Invalid and future calendar years returned HTTP 400; local Python/Jinja logo requests returned HTTP 200.
 
-
 ## Administrator GitHub curation — 10 October 2026
 
 - Verified the actual administration form and inline dialog in an isolated database on port 3002; the owner's content on port 3001 was not modified.
@@ -95,13 +94,11 @@ The older `QA.md` describes the historical mock. This document records the Next.
 - Fourteen automated tests passed, along with lint, strict types, formatting and the production build. New tests cover persistent settings, source filtering, case-insensitive names, fork exclusion, manual order/empty selection, disabled history and validated account lookup.
 - These are desktop browser viewport checks. No physical-device, screen-reader, private GitHub/OAuth, background-worker or production deployment verification is claimed. GitHub source data can be delayed or stale; the app retains the existing source-status labels.
 
-
 ## Cover fade — 10 October 2026
 
 Added a static alpha gradient to the profile cover image, blending its lower edge into the card background. The avatar and edit controls are outside the mask. The cover-only geometric backdrop and bottom border are removed when a photo is present; the empty-cover design remains unchanged.
 
 Production build passed. In the running preview on port 3001, checked 360, 390, 768, 1024 and 1440 px: the image mask was active, the avatar had no mask and there was no document-level horizontal overflow. Visually reviewed desktop and 390 px screenshots. The background uses the card theme token; a dark-theme visual check was not performed in this pass.
-
 
 ## Link logos and profile jump navigation — 10 October 2026
 
@@ -110,7 +107,6 @@ Production build passed. In the running preview on port 3001, checked 360, 390, 
 - In the actual port-3001 preview, clicking Skills moved to section-3 and focused that section. Pressing Enter on Introduction moved to section-0 with its top at approximately 88 px, clear of the fixed header. Fixed inherited global navigation styling that initially arranged these links horizontally.
 - Checked actual viewport widths 360, 390, 768, 1024 and 1440 px on the active profile tab: no document horizontal overflow. Visually reviewed the desktop link logos and vertical jump navigation. Lint, strict types and the production build passed.
 - The requested TikTok avatar awaits the owner's TikTok URL or username. No account has been inferred from the reference image and the existing GitHub avatar remains in place.
-
 
 ## Cover height and sidebar order — 10 October 2026
 
@@ -189,6 +185,7 @@ Production build passed. In the running preview on port 3001, checked 360, 390, 
 - Browser QA on isolated port 3002 verified Ctrl+B/I/U markup, saving/reopening rich content, an image uploaded within the body, normalized video frames, selected text retained when inserting media, editing and soft-deleting a post, and a saved landscape project frame with contain sizing (351×196 px). Captured no browser errors after allowing the embed source. Video playback itself and physical touch were not exercised.
 - Checked Contact and Projects at 360, 390, 768, 1024 and 1543 px without document horizontal overflow. Checked the editor at 390 px without toolbar overflow and visually reviewed it. Verified the avatar menu toggles light/dark and retains the choice after reload. Read-only checks on port 3001 confirmed the new contact layout, Gmail destination and uncropped project artwork. Owner content was not changed.
 - Lint, strict TypeScript, all 22 tests and production build passed. New tests cover document/plain-text round trips, old content compatibility, frame defaults/options, malformed/deep documents and rejected unsafe media/embed URLs. Tiptap integration follows its official Next.js/React documentation with deferred client initialization.
+
 ## Concurrent GitHub saves and contact/project refinements — 10 October 2026
 
 - GitHub saves now read the latest content and merge only edited settings; per-repository visibility changes merge independently. Other profile sections remain intact. Conflicting edits to the same setting retain the local form and offer an explicit action to apply the owner's choices on the current version. Account switches keep their settings together, and version/CSRF checks remain enforced.
@@ -197,17 +194,20 @@ Production build passed. In the running preview on port 3001, checked 360, 390, 
 - Moved the project back link above artwork and compacted the Projects heading/actions. New project uploads select the original aspect ratio automatically. Both editors offer an option to omit artwork from cards and detail pages. Existing explicit frame choices are preserved.
 - Browser QA verified upload resets the frame to Original, the rendered frame matches the source ratio, and saving No image omits artwork from both list and detail while retaining the detail link. Read-only owner-port checks confirmed the contact controls and top back link. Owner content was not modified.
 - Lint, strict types, all 25 automated tests and production build passed. The checks cover these reported flows; they do not claim every possible input or device combination.
+
 ## Aligned project cards and wider editors — 10 October 2026
 
 - Project cards now use one 16:10 contain frame, preserving the full uploaded image inside equally sized artwork areas. Detail-page frame preferences and the hide-image option remain available. Grid rows share a height, title flex growth was removed, descriptions reserve consistent space, technologies render as individual chips, and status/detail actions align at the bottom.
 - Expanded inline editing dialogs from 720 to 1080 px maximum. Desktop forms place short fields in two columns, with names, titles, descriptions and media spanning the width. Header/footer remain fixed within the dialog, and mobile retains one column with narrower padding.
 - Read-only browser QA on port 3001 measured matching image/title/description/footer positions for adjacent project cards, equal featured cards on the profile, equal list cards with no horizontal overflow, and all three mobile cards at the same height. The dialog measured 1078 px at a 1280 px viewport and 366 px at 390 px, without horizontal overflow. Visually reviewed desktop and mobile dialogs. No content was saved or changed in the owner's database.
 - Lint, strict types, all 25 tests and production build passed. This change is presentation-only; no new implementation-mirroring tests were added.
+
 ## EriHub-inspired project cards — 10 October 2026
 
 - Read EriHub's src/components/product-card.tsx as the user-requested design reference, without modifying that repository. Applied its rounded outer card, inset bordered 16:10 thumbnail frame, padded contain image, category/name hierarchy, bottom divider and circular arrow action to portfolio projects and featured cards. Retained descriptions, technology chips, status, administration controls and detail links.
 - Read-only browser review confirmed full images inside the new frame and equal card heights. Desktop list cards measured 286 px; mobile grid cards measured 512 px with equal 179 px artwork areas and no document horizontal overflow at 390 px. Mobile heading actions now sit below the single-line title. Temporary viewport and tabs were cleaned up; owner data was not changed.
 - Lint, strict types, all 25 automated tests and production build passed. The final CSS-only mobile heading adjustment was followed by another successful build and browser geometry check.
+
 ## Fill project forms from GitHub — 10 October 2026
 
 - Added a GitHub repository picker to project creation/editing in both inline and advanced administration. Owners load the configured account's public repositories, search/select one, read a preview, then apply it to the editable form. Applying fills empty fields by default; replacing existing authored fields requires the explicit checkbox. Enter in repository search does not submit the project form. Import does not publish or save automatically.
@@ -229,3 +229,12 @@ Production build passed. In the running preview on port 3001, checked 360, 390, 
 
 - Renamed the appearance menu action to “Giao diện sáng / tối” with a consistent SVG moon icon. Edit and delete now use explicit pencil/trash icons in the post author row, aligned to the right, with accessible names and hover titles. The footer retains only a compact share action with its own icon. Mobile controls retain 40 px targets.
 - Read-only owner-port browser QA confirmed the appearance label, edit/delete alignment at the right edge of both posts, and 32 px-high share buttons. The edit icon opened the correct existing post form; it was closed without saving. Owner content was not modified. Lint, strict types and production build passed; no new tests were needed for this presentation change.
+
+## Admin GitHub account connection — 11 October 2026
+
+- Added a persistent admin account connection through a GitHub personal access token, available in advanced GitHub settings and both repository import pickers. Credentials are validated through GitHub `/user` before replacement; no OAuth application or actual owner credentials were configured during this task. Connection is shared by profile admins and requires the owner to enter a token in the UI.
+- Credentials are encrypted with AES-256-GCM in a separate SQLite table and a local key file; no credential appears in content, revisions, content export or API responses. Connection mutations require authenticated admin, trusted origin and CSRF. Environment token remains a documented fallback after disconnect.
+- Authenticated import lists authorized owned/collaborator/organization repositories, including private ones, with owner-qualified names. Details permit private metadata only on the authenticated admin path and show a private-content warning. Import still requires explicit apply/save; public GitHub feeds continue filtering private repositories. Ownership labels are suppressed when the connected account is not the repository owner.
+- Repository lists deduplicate for five minutes; details cache keys include credentials and private-access mode. Public stats use the connected credential with public-data filtering, bypass previous anonymous error caches, and stop language batching when rate limited. Cache separation prevents a disconnected user from reusing private detail cache entries.
+- Isolated port-3002 browser QA confirmed the connection panel in advanced administration and the Activity editor, masked token input, disabled empty submission and retention of an authored title while opening connection. No real token was entered and no owner content was changed. The authenticated/private upstream path was exercised using mocked GitHub responses.
+- Production build passed. Final lint, strict types and 36 automated tests passed, including credential encryption, admin/CSRF enforcement, private repository import, public-content exclusion, cached account listing, invalid-token replacement preservation and disconnect.

@@ -2463,3 +2463,27 @@ button.gh-day:hover {
     min-height: 40px;
   }
 }
+.github-account-connection {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.github-account-connection summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.github-account-connection p {
+  margin: 10px 0;
+}
+.github-account-connection label {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+}
+.github-connection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

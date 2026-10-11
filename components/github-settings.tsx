@@ -4,6 +4,7 @@ import type { GithubSettings } from '../lib/schema';
 import type { GithubSkills } from '../lib/github-skills';
 import { request, RequestError } from '../lib/client';
 import { useLanguage } from './language';
+import { GithubConnection } from './github-connection';
 
 export function GithubSettingsForm({
   initial,
@@ -122,6 +123,7 @@ export function GithubSettingsForm({
       </nav>
       <fieldset id={sectionId + '-account'} disabled={busy}>
         <legend>{t('Nội dung & cập nhật', 'Content & updates')}</legend>
+        <GithubConnection onChange={() => setReload((n) => n + 1)} />
         <label>
           {t('Tài khoản GitHub công khai', 'Public GitHub username')}
           <input

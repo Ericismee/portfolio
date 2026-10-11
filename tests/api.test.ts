@@ -6,6 +6,7 @@ import path from 'node:path';
 import { openDatabase, HttpError } from '../lib/database.ts';
 import { createApi } from '../lib/api.ts';
 import { passwordHash } from '../lib/auth.ts';
+import { githubCredential } from '../lib/github-connection.ts';
 import { type ContentState, publicContent, contentSchema } from '../lib/schema.ts';
 
 async function fixture() {
@@ -56,6 +57,110 @@ async function fixture() {
   };
   return { database, handle, origin, call, login, cleanup, directory };
 }
+
+test('Admin GitHub connection validates credentials, encrypts secrets, protects private imports and supports disconnect', async () => {
+  const f = await fixture(),
+    original = globalThis.fetch;
+  const token = 'github_pat_qa_connection_secret_123456789';
+  let repositoryCalls = 0;
+  globalThis.fetch = async (input, init) => {
+    assert.equal(new Headers(init?.headers).get('Authorization'), 'Bearer ' + token);
+    const address = String(input);
+    if (address.endsWith('/user'))
+      return Response.json(
+        { login: 'qa-connected' },
+        { headers: { 'x-ratelimit-limit': '5000', 'x-ratelimit-remaining': '4999' } },
+      );
+    if (address.includes('/user/repos?')) {
+      repositoryCalls++;
+      return Response.json([
+        {
+          name: 'private-repo',
+          full_name: 'qa-connected/private-repo',
+          private: true,
+          language: 'Rust',
+          fork: false,
+        },
+      ]);
+    }
+    if (/\/(languages|readme|contents\/package.json)$/.test(address))
+      return Response.json({}, { status: 404 });
+    return Response.json({
+      name: 'private-repo',
+      description: 'Private description',
+      language: 'Rust',
+      private: true,
+      fork: false,
+      archived: false,
+      owner: { login: 'qa-connected', type: 'User' },
+    });
+  };
+  try {
+    assert.equal((await f.call('/api/admin/github-connection')).response.status, 401);
+    assert.equal((await f.call('/api/admin/github-repositories')).response.status, 401);
+    await f.login();
+    assert.equal(
+      (
+        await f.call(
+          '/api/admin/github-connection',
+          'POST',
+          { token },
+          { 'x-csrf-token': 'invalid' },
+        )
+      ).response.status,
+      403,
+    );
+    const before = f.database.read();
+    const connected = await f.call('/api/admin/github-connection', 'POST', { token });
+    assert.equal(connected.data.login, 'qa-connected');
+    assert.equal(connected.data.remaining, 4999);
+    assert.ok(!JSON.stringify(connected.data).includes(token));
+    assert.equal(githubCredential(f.database).token, token);
+    const stored = f.database.db.prepare('SELECT secret FROM github_connection').get() as {
+      secret: string;
+    };
+    assert.ok(!stored.secret.includes(token));
+    assert.deepEqual(f.database.read(), before, 'connection does not change content or revisions');
+    const listed = await f.call('/api/admin/github-repositories');
+    assert.equal(listed.data.repos[0].private, true);
+    await f.call('/api/admin/github-repositories');
+    assert.equal(repositoryCalls, 1, 'repository list reuses authenticated cache');
+    const detail = await f.call(
+      '/api/admin/github-project?username=qa-connected&repo=private-repo',
+    );
+    assert.equal(detail.response.status, 200);
+    assert.equal(detail.data.private, true);
+    const publicData = await f.call('/api/content');
+    assert.ok(!JSON.stringify(publicData.data).includes('Private description'));
+    assert.ok(!JSON.stringify(publicData.data).includes(token));
+    globalThis.fetch = async () => Response.json({}, { status: 401 });
+    assert.equal(
+      (
+        await f.call('/api/admin/github-connection', 'POST', {
+          token: 'github_pat_invalid_token_123456',
+        })
+      ).response.status,
+      400,
+    );
+    assert.equal(
+      githubCredential(f.database).token,
+      token,
+      'invalid replacement retains working connection',
+    );
+    await f.call('/api/admin/github-connection', 'DELETE');
+    assert.notEqual(githubCredential(f.database).token, token);
+    globalThis.fetch = async () => Response.json({}, { status: 404 });
+    assert.equal(
+      (await f.call('/api/admin/github-project?username=qa-connected&repo=private-repo')).response
+        .status,
+      404,
+      'disconnect cannot reuse private authenticated detail cache',
+    );
+  } finally {
+    globalThis.fetch = original;
+    await f.cleanup();
+  }
+});
 test('Production login requires the configured origin and retains secure session cookies', async () => {
   const f = await fixture();
   try {

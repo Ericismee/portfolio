@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { HttpError } from './database.ts';
 import { url } from './schema.ts';
+import { githubHeaders, githubIdentity } from './github-connection.ts';
 
 export const githubProjectQuery = z.object({
   username: z.string().regex(/^[a-zA-Z0-9-]{1,39}$/),
@@ -15,6 +16,7 @@ export type GithubProject = {
   fields: Record<string, string>;
   ownership: 'owner' | 'fork-owner' | '';
   partial: boolean;
+  private?: boolean;
 };
 const technologies: Record<string, string> = {
   react: 'React',
@@ -35,13 +37,18 @@ const technologies: Record<string, string> = {
 };
 const cache = new Map<string, { until: number; value: Promise<GithubProject> }>();
 
-export function getGithubProject(username: string, repo: string): Promise<GithubProject> {
+export function getGithubProject(
+  username: string,
+  repo: string,
+  token = process.env.GITHUB_TOKEN || '',
+  allowPrivate = false,
+): Promise<GithubProject> {
   githubProjectQuery.parse({ username, repo });
-  const key = `${username}/${repo}`.toLowerCase();
+  const key = `${username}/${repo}/${githubIdentity(token)}/${allowPrivate}`.toLowerCase();
   const found = cache.get(key);
   if (found && found.until > Date.now()) return found.value;
   if (cache.size >= 50) cache.delete(cache.keys().next().value!);
-  const value = load(username, repo);
+  const value = load(username, repo, token, allowPrivate);
   cache.set(key, { until: Date.now() + 10 * 60_000, value });
   void value.catch(() => {
     if (cache.get(key)?.value === value) cache.delete(key);
@@ -49,18 +56,17 @@ export function getGithubProject(username: string, repo: string): Promise<Github
   return value;
 }
 
-async function load(username: string, repo: string): Promise<GithubProject> {
+async function load(
+  username: string,
+  repo: string,
+  token: string,
+  allowPrivate: boolean,
+): Promise<GithubProject> {
   const root = '/repos/' + encodeURIComponent(username) + '/' + encodeURIComponent(repo);
   const signal = AbortSignal.timeout(12_000);
   async function read(suffix: string): Promise<unknown> {
     const response = await fetch('https://api.github.com' + root + suffix, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        'User-Agent': 'Eric-Profile',
-        ...(process.env.GITHUB_TOKEN
-          ? { Authorization: 'Bearer ' + process.env.GITHUB_TOKEN }
-          : {}),
-      },
+      headers: githubHeaders(token),
       signal,
       redirect: 'error',
       cache: 'no-store',
@@ -68,7 +74,12 @@ async function load(username: string, repo: string): Promise<GithubProject> {
     if (response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0')
       throw new HttpError(
         429,
-        'GitHub đã hết lượt truy cập tạm thời. Hãy thử lại sau. / GitHub rate limit reached. Please retry later.',
+        'GitHub đã hết lượt truy cập tạm thời. Kết nối tài khoản GitHub bên dưới rồi thử lại. / GitHub rate limit reached. Connect GitHub and retry.',
+      );
+    if (response.status === 401)
+      throw new HttpError(
+        400,
+        'Token GitHub đã hết hạn hoặc không hợp lệ. Hãy kết nối lại tài khoản. / Reconnect GitHub with a valid token.',
       );
     if (!response.ok)
       throw new HttpError(
@@ -96,7 +107,7 @@ async function load(username: string, repo: string): Promise<GithubProject> {
       name: z.string().max(200),
       description: z.string().nullable(),
       language: z.string().nullable(),
-      private: z.literal(false),
+      private: z.boolean().refine((value) => !value || (allowPrivate && !!token)),
       fork: z.boolean(),
       archived: z.boolean(),
       default_branch: z.string().optional(),
@@ -168,6 +179,7 @@ async function load(username: string, repo: string): Promise<GithubProject> {
       .map((p) => p.replace(/\s+/g, ' ').trim())
       .find((p) => p.length > 40 && !/^[|#>!*]/.test(p) && !p.startsWith('[')) || '';
   return {
+    private: meta.private,
     fields: {
       name: meta.name,
       description: (meta.description || summary.slice(0, 600)).slice(0, 30000),

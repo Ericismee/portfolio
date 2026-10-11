@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
+import { githubCredential, githubHeaders, githubIdentity } from './github-connection.ts';
 
 export type GithubLanguage = { name: string; bytes: number; percent: number };
 const repoSchema = z.object({
@@ -85,7 +86,7 @@ const cachedSkills = z.object({
 // Public GitHub data only. Deduplicate page requests and keep anonymous API
 // traffic bounded: paginated public repositories and four language requests at a time.
 export function getGithubSkills(username: string): Promise<GithubSkills> {
-  const key = username.toLowerCase();
+  const key = username.toLowerCase() + '-' + githubIdentity(githubCredential().token);
   const existing = cache.get(key);
   if (existing && existing.expires > Date.now()) return existing.value;
   const value = loadCachedSkills(username);
@@ -103,7 +104,10 @@ export function getGithubSkills(username: string): Promise<GithubSkills> {
 async function loadCachedSkills(username: string): Promise<GithubSkills> {
   if (!/^[a-zA-Z0-9-]{1,39}$/.test(username)) return loadSkills(username);
   const folder = path.resolve(process.env.DATA_DIR || '.data', 'github-cache');
-  const filename = path.join(folder, username.toLowerCase() + '.json');
+  const filename = path.join(
+    folder,
+    username.toLowerCase() + '-' + githubIdentity(githubCredential().token) + '.json',
+  );
   try {
     const saved = cachedSkills.parse(JSON.parse(await readFile(filename, 'utf8')));
     const ttl = saved.status === 'unavailable' ? 5 * 60 * 1000 : 60 * 60 * 1000;
@@ -140,18 +144,18 @@ async function loadSkills(username: string): Promise<GithubSkills> {
   // One deadline covers all requests, so an unreachable service cannot hold a
   // page open indefinitely. Never trust an API-supplied URL for outbound fetches.
   const signal = AbortSignal.timeout(12000);
+  const token = githubCredential().token;
+  let rateLimited = false;
   async function read(path: string) {
+    if (rateLimited) throw Error('GitHub rate limit reached');
     const response = await fetch('https://api.github.com' + path, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        'User-Agent': 'Eric-Profile',
-        ...(process.env.GITHUB_TOKEN
-          ? { Authorization: 'Bearer ' + process.env.GITHUB_TOKEN }
-          : {}),
-      },
+      headers: githubHeaders(token),
       signal,
+      redirect: 'error',
       cache: 'no-store',
     });
+    if (response.status === 429 || response.headers.get('x-ratelimit-remaining') === '0')
+      rateLimited = true;
     if (!response.ok) throw Error('GitHub unavailable');
     return response.json() as Promise<unknown>;
   }
@@ -238,7 +242,7 @@ async function loadSkills(username: string): Promise<GithubSkills> {
           result.repositories++;
         } else result.partial = true;
       }
-      if (signal.aborted) {
+      if (signal.aborted || rateLimited) {
         result.partial = true;
         break;
       }

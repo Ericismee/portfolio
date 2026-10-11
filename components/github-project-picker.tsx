@@ -4,6 +4,7 @@ import { request } from '../lib/client';
 import type { GithubSkills } from '../lib/github-skills';
 import type { GithubProject } from '../lib/github-project';
 import { useLanguage } from './language';
+import { GithubConnection } from './github-connection';
 
 export function GithubProjectPicker({
   username,
@@ -17,7 +18,9 @@ export function GithubProjectPicker({
   kind?: 'projects' | 'posts';
 }) {
   const { t } = useLanguage();
-  const [repos, setRepos] = useState<GithubSkills['repos'] | null>(null);
+  const [repos, setRepos] = useState<
+    (GithubSkills['repos'][number] & { fullName?: string; private?: boolean })[] | null
+  >(null);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState('');
   const [preview, setPreview] = useState<GithubProject | null>(null);
@@ -42,11 +45,12 @@ export function GithubProjectPicker({
     setNotice('');
     try {
       if (detail) {
+        const [owner, repo] = selected.includes('/') ? selected.split('/') : [username, selected];
         const result = await request<GithubProject>(
           '/api/admin/github-project?username=' +
-            encodeURIComponent(username) +
+            encodeURIComponent(owner) +
             '&repo=' +
-            encodeURIComponent(selected),
+            encodeURIComponent(repo),
         );
         const role =
           result.ownership === 'owner'
@@ -56,6 +60,24 @@ export function GithubProjectPicker({
               : '';
         setPreview({ ...result, fields: { ...result.fields, role } });
       } else {
+        const connection = await request<{ connected: boolean }>('/api/admin/github-connection');
+        if (connection.connected) {
+          const result = await request<{
+            repos: (GithubSkills['repos'][number] & { fullName: string; private: boolean })[];
+            partial: boolean;
+          }>('/api/admin/github-repositories');
+          setRepos(result.repos);
+          if (!result.repos.length)
+            setNotice(
+              t(
+                'Không có kho mã được cấp quyền. Kiểm tra quyền của token.',
+                'No authorized repositories. Check token permissions.',
+              ),
+            );
+          else if (result.partial)
+            setNotice(t('Đã tải 1.000 kho mã đầu tiên.', 'Loaded the first 1,000 repositories.'));
+          return;
+        }
         const result = await request<GithubSkills>(
           '/api/admin/github?username=' + encodeURIComponent(username),
         );
@@ -111,6 +133,15 @@ export function GithubProjectPicker({
           {busy ? t('Đang đọc…', 'Loading…') : t('Tải kho mã', 'Load repositories')}
         </button>
       </div>
+      <GithubConnection
+        onChange={() => {
+          setRepos(null);
+          setSelected('');
+          setPreview(null);
+          setError('');
+          void load();
+        }}
+      />
       {repos !== null && repos.length > 0 && (
         <>
           <label>
@@ -142,12 +173,13 @@ export function GithubProjectPicker({
                 {repos
                   .filter(
                     (repo) =>
-                      repo.name === selected ||
-                      repo.name.toLowerCase().includes(query.toLowerCase()),
+                      (repo.fullName || repo.name) === selected ||
+                      (repo.fullName || repo.name).toLowerCase().includes(query.toLowerCase()),
                   )
                   .map((repo) => (
-                    <option key={repo.name} value={repo.name}>
-                      {repo.name}
+                    <option key={repo.fullName || repo.name} value={repo.fullName || repo.name}>
+                      {repo.fullName || repo.name}
+                      {repo.private ? ' · ' + t('Riêng tư', 'Private') : ''}
                       {repo.language ? ' · ' + repo.language : ''}
                       {repo.fork ? ' · Fork' : ''}
                     </option>
@@ -178,6 +210,14 @@ export function GithubProjectPicker({
       {preview && (
         <div className="github-import-preview">
           <h4>{t('Thông tin từ kho mã', 'Repository information')}</h4>
+          {preview.private && (
+            <p className="form-error">
+              {t(
+                'Đây là kho mã riêng tư. Kiểm tra kỹ nội dung trước khi lưu hoặc đăng công khai.',
+                'This repository is private. Review the content before saving or publishing.',
+              )}
+            </p>
+          )}
           <dl>
             {Object.entries(preview.fields)
               .filter(([key, v]) => v && labels[key])

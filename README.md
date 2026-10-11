@@ -166,7 +166,9 @@ The timeline loads up to 30 owner-authored commits on default branches from the 
 
 While visible, the page checks automatically, by default every hour (configurable to 5, 15, 30 or 60 minutes), and supports manual refresh. It pauses checks in hidden tabs and cancels in-flight requests when unmounted or changing years. Events use ETags and respect `X-Poll-Interval`; polling slows when the public API quota is low. Commits cache for five minutes, calendars for fifteen minutes, profile/technologies for one hour. Refresh checks these caches rather than bypassing GitHub’s limits. Snapshots persist under `DATA_DIR/github-cache`; failed updates retain labelled stale snapshots instead of fabricated zero counts. A manual refresh does not guarantee instant upstream delivery.
 
-Optionally configure `GITHUB_TOKEN` on the server for a larger public API budget. It is sent only to `api.github.com`, never to the browser or the public calendar source. No token is required for the verified public integration; the token-authenticated path has not been tested with a real credential. Do not use a `NEXT_PUBLIC_` prefix.
+Admins can connect a GitHub account using a personal access token in **Admin → GitHub → Connect GitHub account**, or directly in a project/post import form. The connected account supplies the authenticated API budget and can import authorized private repositories into admin-only previews. Public feeds still exclude private repositories; applying an import never saves or publishes automatically. See [connection and credential storage instructions](docs/GITHUB-CONNECTION.md). This is token-based authentication, not OAuth. The authenticated path is covered with mocked responses; no real owner token was entered during validation.
+
+Alternatively configure `GITHUB_TOKEN` on the server. It is sent only to `api.github.com`, never returned to the browser or sent to the public calendar source. A UI connection takes precedence; disconnecting returns to the environment token if configured. Do not use a `NEXT_PUBLIC_` prefix.
 
 
 ### Administrator GitHub settings

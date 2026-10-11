@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
+import { githubCredential, githubHeaders } from './github-connection.ts';
 import type { GithubSkills } from './github-skills';
 
 const daySchema = z.object({
@@ -132,12 +133,11 @@ let apiRemaining = Infinity;
 async function api(route: string, etag?: string | null) {
   const response = await fetch('https://api.github.com' + route, {
     headers: {
-      Accept: 'application/vnd.github+json',
-      'User-Agent': 'Eric-Profile',
-      ...(process.env.GITHUB_TOKEN ? { Authorization: 'Bearer ' + process.env.GITHUB_TOKEN } : {}),
+      ...githubHeaders(githubCredential().token),
       ...(etag ? { 'If-None-Match': etag } : {}),
     },
     cache: 'no-store',
+    redirect: 'error',
     signal: AbortSignal.timeout(8000),
   });
   const remaining = response.headers.get('x-ratelimit-remaining');
