@@ -5,7 +5,7 @@ import '../src/app.css';
 import './admin.css';
 import './globals.css';
 export const metadata: Metadata = {
-  title: 'Eric · Professional profile',
+  title: 'Eric | Home',
   description: 'Eric — Software Engineer. Projects, updates and contact information.',
 };
 export default function RootLayout({ children }: { children: React.ReactNode }) {

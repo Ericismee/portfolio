@@ -7,10 +7,34 @@ import type { Metadata } from 'next';
 import { getGithubSkills } from '../../lib/github-skills';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export async function generateMetadata(): Promise<Metadata> {
-  const { profile } = (await (await getDatabase()).read()).data;
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ segments?: string[] }>;
+}): Promise<Metadata> {
+  const { segments = [] } = await params;
+  const content = publicContent((await (await getDatabase()).read()).data);
+  const { profile } = content;
+  const titles: Record<string, string> = {
+    '': 'Home',
+    profile: 'Home',
+    projects: 'Projects',
+    activity: 'Activity',
+    feed: 'Activity',
+    posts: 'Posts',
+    contact: 'Contact',
+    github: 'GitHub',
+    search: 'Search',
+  };
+  const detail =
+    segments[1] &&
+    (segments[0] === 'projects'
+      ? content.projects.find((entry) => entry.id === segments[1])?.name
+      : segments[0] === 'posts'
+        ? content.posts.find((entry) => entry.id === segments[1])?.title
+        : undefined);
   return {
-    title: profile.name + ' · ' + profile.headline,
+    title: 'Eric | ' + (detail || titles[segments[0] || ''] || 'Home'),
     description: profile.summary || profile.headline,
   };
 }

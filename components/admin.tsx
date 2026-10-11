@@ -129,6 +129,21 @@ function AdminDashboard() {
     traffic: t('Thống kê truy cập', 'Traffic statistics'),
     trash: t('Thùng rác', 'Trash'),
   };
+  useEffect(() => {
+    const titles: Record<Tab, string> = {
+      profile: 'Profile',
+      projects: 'Projects',
+      posts: 'Posts',
+      sections: 'Sections',
+      skills: 'Skills',
+      github: 'GitHub',
+      settings: 'Settings',
+      inbox: 'Inbox',
+      traffic: 'Traffic',
+      trash: 'Trash',
+    };
+    document.title = 'Eric | Admin · ' + titles[tab];
+  }, [tab]);
   const field = (
     key: string,
     label: string,
