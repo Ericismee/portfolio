@@ -223,6 +223,24 @@ test('Postgres persistence preserves authorization, atomic versions, rate limits
       () => consumeCloudUpload(database, 'owner', 'https://attacker.example/file', services),
       { status: 400 },
     );
+    const visit = await handle(
+      new Request('https://profile.example/api/traffic', {
+        method: 'POST',
+        headers: {
+          origin: 'https://profile.example',
+          'content-type': 'application/json',
+          'user-agent': 'Firefox/130.0',
+        },
+        body: JSON.stringify({ path: '/' }),
+      }),
+    );
+    assert.equal(visit.status, 200);
+    assert.deepEqual(await visit.json(), { views: 1 });
+    const traffic = await (await call('/api/admin/traffic?q=firefox')).json();
+    assert.equal(traffic.profileViews, 1);
+    assert.equal(traffic.visits, 1);
+    assert.equal(traffic.entries[0].browser, 'Firefox');
+    assert.equal(traffic.total, 1);
     await call('/api/admin/logout', 'POST');
     assert.equal((await call('/api/admin/content')).status, 401);
     assert.equal((await pg.query('SELECT count(*) AS count FROM rate_limits')).rows.length, 1);

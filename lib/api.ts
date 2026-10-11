@@ -15,6 +15,13 @@ import { authService, passwordHash, verifyPassword } from './auth.ts';
 import { publicContent } from './schema.ts';
 import { migrateAssets, storeUpload, removeUpload } from './uploads.ts';
 import { startCloudUpload, consumeCloudUpload } from './cloud-uploads.ts';
+import {
+  trafficSchema,
+  trafficSummary,
+  trafficDetails,
+  recordTraffic,
+  trafficIp,
+} from './traffic.ts';
 const envelope = z.object({ version: z.number().int().positive(), data: z.unknown() });
 const restoreInput = z.object({
   id: z.number().int().positive(),
@@ -56,9 +63,12 @@ const send = (body: unknown, status = 200, headers: HeadersInit = {}) =>
 export function createApi(database: Database, production = false, origin?: string) {
   const { db } = database,
     auth = authService(database, production);
-  const ready = db.exec(
-    'CREATE TABLE IF NOT EXISTS rate_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,until INTEGER NOT NULL)',
-  );
+  const ready = (async () => {
+    await db.exec(
+      'CREATE TABLE IF NOT EXISTS rate_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,until INTEGER NOT NULL)',
+    );
+    await db.exec(trafficSchema);
+  })();
   let dummy: Promise<string>;
   const rate = async (key: string, max: number) => {
     const now = Date.now();
@@ -90,6 +100,34 @@ export function createApi(database: Database, production = false, origin?: strin
       }
       if (pathname === '/api/content' && method === 'GET')
         return send({ data: publicContent((await database.read()).data) });
+      if (pathname === '/api/traffic' && method === 'GET')
+        return send({ views: (await trafficSummary(database)).visits });
+      if (pathname === '/api/traffic' && method === 'POST') {
+        const input = z.object({ path: z.string().max(240) }).parse(await json(request, 1024));
+        const content = publicContent((await database.read()).data);
+        const paths = [
+          '/',
+          '/profile',
+          '/projects',
+          '/activity',
+          '/feed',
+          '/posts',
+          '/search',
+          '/github',
+          '/contact',
+          ...content.projects.map((p) => '/projects/' + encodeURIComponent(p.id)),
+          ...content.posts.map((p) => '/posts/' + encodeURIComponent(p.id)),
+        ];
+        if (!paths.includes(input.path)) throw new HttpError(400, 'Invalid page');
+        if (session) return send({ views: (await trafficSummary(database)).visits });
+        await rate('traffic:' + digest(trafficIp(request) || 'unknown'), 120);
+        const result = await recordTraffic(database, request, input.path, production);
+        return send(
+          { views: result.summary.visits },
+          200,
+          result.cookie ? { 'Set-Cookie': result.cookie } : {},
+        );
+      }
       if (pathname === '/api/session' && method === 'GET')
         return send({ authenticated: !!session, csrf: session?.csrf });
       if (pathname === '/api/login' && method === 'POST') {
@@ -124,6 +162,20 @@ export function createApi(database: Database, production = false, origin?: strin
       }
       if (pathname.startsWith('/api/admin/')) {
         if (!session) throw new HttpError(401, 'Please sign in / Vui lòng đăng nhập');
+        if (pathname === '/api/admin/traffic' && method === 'GET') {
+          const params = new URL(request.url).searchParams;
+          const page = z.coerce
+            .number()
+            .int()
+            .min(1)
+            .max(100000)
+            .parse(params.get('page') || 1);
+          const query = z
+            .string()
+            .max(100)
+            .parse(params.get('q') || '');
+          return send(await trafficDetails(database, page, query));
+        }
         if (pathname === '/api/admin/upload-init' && method === 'POST') {
           await rate('upload-init', 60);
           if (database.directory !== 'cloud') return send({ mode: 'local' });

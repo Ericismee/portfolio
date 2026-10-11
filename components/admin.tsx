@@ -28,6 +28,7 @@ import { matchesSearch, projectMatchesSearch } from '../lib/search';
 import { MarkdownContent } from './markdown-content';
 import { projectUsesMarkdown, markdownSummary } from '../lib/markdown';
 import { Icon } from './icon';
+import { TrafficAdmin } from './traffic';
 import { readRichText, richPlainText } from '../lib/rich-text';
 import { saveGithubChanges } from '../lib/github-save';
 import { applyTheme } from '../lib/theme';
@@ -43,6 +44,7 @@ type Tab =
   | 'github'
   | 'settings'
   | 'inbox'
+  | 'traffic'
   | 'trash';
 type Revision = { id: number; created_at: string };
 export function Admin() {
@@ -124,6 +126,7 @@ function AdminDashboard() {
     github: 'GitHub',
     settings: t('Giao diện & dữ liệu', 'Appearance & data'),
     inbox: t('Hộp thư', 'Inbox'),
+    traffic: t('Thống kê truy cập', 'Traffic statistics'),
     trash: t('Thùng rác', 'Trash'),
   };
   const field = (
@@ -1028,6 +1031,7 @@ function AdminDashboard() {
           )}
         </>
       );
+    if (tab === 'traffic') body = <TrafficAdmin />;
     if (tab === 'inbox')
       body = (
         <>
@@ -1194,6 +1198,7 @@ function AdminDashboard() {
                           github: 'github',
                           settings: 'settings',
                           inbox: 'contact',
+                          traffic: 'eye',
                           trash: 'trash',
                         } as Record<string, string>
                       )[key]

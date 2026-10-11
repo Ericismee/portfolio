@@ -52,7 +52,15 @@ Cloud saves use a database transaction and optimistic version checks. A stale wi
 
 Ordinary document saves larger than 3 MiB automatically use the same private staging transport to avoid Vercel's request body limit, while preserving version conflict checks and normal save semantics. File uploads, JSON imports and large documents support up to 20 MiB. Very large collections may require splitting the document model in a later migration.
 
-## Deployment verification
+## Traffic statistics
+
+The public footer displays only the all-time visit count. A visit is a signed, HttpOnly cookie session lasting 30 minutes; each public path counts once per session. Profile views count `/` and `/profile`. Admin sessions and recognized crawlers are excluded. Counts start when this feature is deployed and are not historical estimates or unique-person counts.
+
+The authenticated **Traffic statistics** admin section shows profile views, visits, page views, the last 24 hours, and searchable, paginated visitor details. Only Vercel's trusted client-IP header is accepted in production. IP addresses use AES-256-GCM with the protected server credential key; IP and browser/device details never appear in the public API. Detail requests require an administrator session. Browser/device classification is approximate and can be spoofed by clients.
+
+IP and user-agent detail is scrubbed after 30 days on the next traffic write or admin detail request. Historical path/session records remain for aggregate counts. The footer includes a bilingual privacy notice. Origin validation, bounded request bodies, signed cookies and per-IP rate limits protect the recording endpoint, but the counter is not an anti-fraud billing metric. Keep the server credential key backed up when rotating or migrating the deployment.
+
+## Deployment verification checklist
 
 - Run `npm run check`, `npm run format:check` and `npm run build`.
 - Confirm anonymous requests cannot read administrator content, revisions, inbox messages, GitHub credentials or unpublished assets.

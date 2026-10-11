@@ -7,6 +7,7 @@ import type { Content, Project, Post } from '../lib/schema';
 import { publicationStatus } from '../lib/schema';
 import { applyTheme } from '../lib/theme';
 import { Icon } from './icon';
+import { PublicTraffic } from './traffic';
 import { SocialLogo, socialLabels } from './social-logo';
 import { LanguageProvider, useLanguage } from './language';
 import { useInlineEdit } from './inline-edit';
@@ -1218,6 +1219,7 @@ function Site({
           </div>
         )}
         {body}
+        <PublicTraffic />
       </main>
       {editing.dialog}
       {editing.notice}

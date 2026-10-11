@@ -17,6 +17,7 @@ A personal profile and publishing website built with **Next.js, React, strict Ty
 - Persistent SQLite and disk uploads locally, or PostgreSQL and private Vercel Blob storage in the cloud. Cloud data survives redeployments.
 - Deleted entries can be restored from trash as drafts. The last 30 document revisions are available for full recovery.
 - Contact form that saves real messages to the private administration inbox.
+- Public eye-icon visit counter and private traffic dashboard with profile/page/session counts, encrypted IP addresses and browser/device details retained for 30 days. Administrator sessions are excluded.
 - English by default with a remembered Vietnamese/English interface choice, light/dark themes, readable accent colors, density and standard/wide layout settings.
 - Explicit import of the previous browser mock or a JSON export, including embedded image/PDF migration.
 
