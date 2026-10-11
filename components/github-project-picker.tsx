@@ -1,4 +1,5 @@
 'use client';
+import { localizedError } from '../lib/i18n';
 import { useId, useState } from 'react';
 import { request } from '../lib/client';
 import type { GithubSkills } from '../lib/github-skills';
@@ -20,7 +21,7 @@ export function GithubProjectPicker({
   disabled: boolean;
   kind?: 'projects' | 'posts';
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [repos, setRepos] = useState<
     (GithubSkills['repos'][number] & { fullName?: string; private?: boolean })[] | null
   >(null);
@@ -216,6 +217,7 @@ export function GithubProjectPicker({
                 <label
                   key={value}
                   className={'repo-choice' + (selected === value ? ' is-selected' : '')}
+                  data-visibility={repo.private ? 'private' : 'public'}
                 >
                   <input
                     type="radio"
@@ -283,7 +285,7 @@ export function GithubProjectPicker({
       )}
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {localizedError(error, language)}
         </p>
       )}
       {notice && (
@@ -292,7 +294,10 @@ export function GithubProjectPicker({
         </p>
       )}
       {preview && (
-        <div className="github-import-preview">
+        <div
+          className="github-import-preview"
+          data-visibility={preview.private ? 'private' : 'public'}
+        >
           <h4>{t('Thông tin từ kho mã', 'Repository information')}</h4>
           <span className={'repository-visibility ' + (preview.private ? 'private' : 'public')}>
             {preview.private
@@ -300,7 +305,7 @@ export function GithubProjectPicker({
               : t('Kho mã công khai', 'Public repository')}
           </span>
           {preview.private && (
-            <p className="form-error">
+            <p className="private-note">
               {t(
                 'Đây là kho mã riêng tư. Kiểm tra kỹ nội dung trước khi lưu hoặc đăng công khai.',
                 'This repository is private. Review the content before saving or publishing.',

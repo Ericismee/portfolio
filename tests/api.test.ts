@@ -4,6 +4,8 @@ import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { openDatabase, HttpError } from '../lib/database.ts';
+import { uploadResponse } from '../lib/upload-response.ts';
+import { storeUpload } from '../lib/uploads.ts';
 import { createApi } from '../lib/api.ts';
 import { passwordHash } from '../lib/auth.ts';
 import { githubCredential } from '../lib/github-connection.ts';
@@ -335,7 +337,7 @@ test('Custom sections, safe input and contact inbox', async () => {
     assert.equal((await f.call('/api/content')).data.data.items.Talks.length, 1);
     state.data.hidden.push('Talks');
     state = (await f.call('/api/admin/content', 'PUT', state)).data;
-    assert.equal((await f.call('/api/content')).data.data.items.Talks.length, 0);
+    assert.equal((await f.call('/api/content')).data.data.items.Talks, undefined);
     const bad = structuredClone(state);
     bad.data.profile.avatar = 'javascript:alert(1)';
     assert.equal((await f.call('/api/admin/content', 'PUT', bad)).response.status, 400);
@@ -542,10 +544,15 @@ test('Original GIF and PDF uploads retain bytes; oversized files are rejected wi
       const { url } = await response.json();
       assert.deepEqual(await readFile(path.join(f.directory, url)), body);
     }
-    const large = Buffer.alloc(3 * 1024 * 1024 + 1);
+    const boundary = Buffer.alloc(20 * 1024 * 1024);
+    boundary.write('%PDF-');
+    assert.equal((await upload(boundary, 'application/pdf')).status, 201);
+    boundary.write('GIF89a');
+    assert.equal((await upload(boundary, 'image/gif')).status, 201);
+    const large = Buffer.alloc(20 * 1024 * 1024 + 1);
     large.write('GIF89a');
     assert.equal((await upload(large, 'image/gif')).status, 413);
-    const pdf = Buffer.alloc(2 * 1024 * 1024 + 1);
+    const pdf = Buffer.alloc(20 * 1024 * 1024 + 1);
     pdf.write('%PDF-');
     assert.equal((await upload(pdf, 'application/pdf')).status, 413);
     assert.deepEqual(f.database.read(), before);
@@ -595,6 +602,149 @@ test('GitHub configuration requires admin authorization and survives saving and 
     assert.deepEqual(publicState.github.featuredRepos, ['LingoraAI']);
     assert.equal(publicState.github.showCalendar, false);
     assert.equal(publicState.github.title, 'Dự án đang xây dựng');
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test('Private section names, drafts, schedules and deleted entries never reach public JSON', async () => {
+  const f = await fixture();
+  try {
+    const state = f.database.read();
+    const marker = 'QA_CONFIDENTIAL_7a01';
+    state.data.sections.push(marker);
+    state.data.hidden.push(marker);
+    state.data.sectionTitles[marker] = marker + '_title';
+    state.data.items[marker] = [
+      {
+        id: 'private-section-item',
+        title: marker,
+        organization: '',
+        period: '',
+        description: marker,
+        visible: true,
+        visibility: 'public',
+      },
+    ];
+    state.data.posts = [
+      { id: 'draft', title: marker + '_draft', text: marker, visibility: 'draft' },
+      {
+        id: 'hidden',
+        title: marker + '_hidden',
+        text: marker,
+        visibility: 'public',
+        visible: false,
+      },
+      {
+        id: 'future',
+        title: marker + '_future',
+        text: marker,
+        visibility: 'public',
+        displayAt: '2099-01-01T00:00:00Z',
+      },
+    ].map((p) => contentSchema.shape.posts.element.parse(p));
+    state.data.trash = [
+      {
+        id: 'deleted',
+        kind: 'posts',
+        section: '',
+        deletedAt: new Date().toISOString(),
+        value: state.data.posts[0],
+      },
+    ];
+    f.database.write(state.data, state.version);
+    const response = await f.call('/api/content');
+    assert.equal(response.response.status, 200);
+    assert(!JSON.stringify(response.data).includes(marker));
+    assert.equal(response.response.headers.get('cache-control'), 'no-store');
+    assert(f.database.read().data.sections.includes(marker));
+    assert(contentSchema.safeParse(response.data.data).success);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test('Every private read endpoint rejects anonymous and forged sessions without exposing data', async () => {
+  const f = await fixture();
+  try {
+    for (const endpoint of [
+      '/api/admin/content',
+      '/api/admin/revisions',
+      '/api/admin/messages',
+      '/api/admin/github',
+      '/api/admin/github-connection',
+      '/api/admin/github-repositories',
+      '/api/admin/github-project?username=qa&repo=test',
+    ]) {
+      for (const cookie of ['', 'profile_session=forged']) {
+        const result = await f.call(endpoint, 'GET', undefined, { cookie });
+        assert.equal(result.response.status, 401, endpoint);
+        assert.deepEqual(Object.keys(result.data), ['error']);
+        assert.equal(result.response.headers.get('cache-control'), 'no-store');
+      }
+    }
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test('Uploads enforce publication and session access, revoke access immediately and reject traversal', async () => {
+  const f = await fixture();
+  try {
+    const url = await storeUpload(
+      f.directory,
+      Buffer.from('%PDF-1.7 QA private document'),
+      'application/pdf',
+    );
+    const filename = url.split('/').pop()!;
+    const get = (cookie = '', suffix = '', name = filename) =>
+      uploadResponse(
+        f.database,
+        new Request(f.origin + url + suffix, { headers: { cookie } }),
+        name,
+      );
+    assert.equal((await get()).status, 404);
+    assert.equal((await get('profile_session=forged')).status, 404);
+    const { cookie } = await f.login();
+    assert.equal((await get(cookie)).status, 200);
+    let state = f.database.read();
+    state.data.posts = [
+      contentSchema.shape.posts.element.parse({
+        id: 'private-file',
+        title: 'QA file',
+        image: url,
+        visibility: 'draft',
+      }),
+    ];
+    f.database.write(state.data, state.version);
+    assert.equal((await get()).status, 404);
+    state = f.database.read();
+    state.data.posts[0].visibility = 'public';
+    state.data.posts[0].image = '';
+    state.data.posts[0].markdown = '[Read document](' + url + ')';
+    state.data.posts[0].bodyFormat = 'markdown';
+    f.database.write(state.data, state.version);
+    const published = await get();
+    assert.equal(published.status, 200);
+    assert.equal(published.headers.get('cache-control'), 'private, no-store');
+    assert.equal(published.headers.get('content-type'), 'application/pdf');
+    assert.match(
+      (await get('', '?download=1')).headers.get('content-disposition')!,
+      /^attachment;/,
+    );
+    state = f.database.read();
+    state.data.posts[0].visible = false;
+    f.database.write(state.data, state.version);
+    assert.equal((await get()).status, 404);
+    assert.equal((await f.call('/api/admin/logout', 'POST')).response.status, 200);
+    assert.equal((await get(cookie)).status, 404);
+    for (const name of [
+      '../profile.sqlite',
+      '..%2fprofile.sqlite',
+      'github-credential.key',
+      'a.pdf.html',
+    ])
+      assert.equal((await get('', '', name)).status, 404);
   } finally {
     await f.cleanup();
   }

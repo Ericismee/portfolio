@@ -1,4 +1,5 @@
 'use client';
+import { localizedError } from '../lib/i18n';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useLanguage } from './language';
 import { ImageFramePicker } from './image-frame-picker';
@@ -61,7 +62,7 @@ export function FieldsForm({
   formId?: string;
   githubUsername?: string;
 }) {
-  const { t } = useLanguage(),
+  const { t, language } = useLanguage(),
     [values, setValues] = useState<Values>(initial),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
@@ -265,7 +266,7 @@ export function FieldsForm({
                       e.target.value = '';
                     }}
                   />
-                  <small className="admin-help">{t('PDF tối đa 2 MB', 'PDF up to 2 MB')}</small>
+                  <small className="admin-help">{t('PDF tối đa 20 MB', 'PDF up to 20 MB')}</small>
                 </>
               ) : (
                 <input
@@ -305,7 +306,7 @@ export function FieldsForm({
         );
       })}
       <p className="form-error" role="alert">
-        {error}
+        {localizedError(error, language)}
       </p>
       {footer && (
         <div className="actions">

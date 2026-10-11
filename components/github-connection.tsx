@@ -1,4 +1,5 @@
 'use client';
+import { localizedError } from '../lib/i18n';
 import { useState } from 'react';
 import { request } from '../lib/client';
 import { useLanguage } from './language';
@@ -11,7 +12,7 @@ type Connection = {
   limit?: number;
 };
 export function GithubConnection({ onChange }: { onChange?: () => void }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [state, setState] = useState<Connection | null>(null);
   const [token, setToken] = useState('');
   const [replaceToken, setReplaceToken] = useState(false);
@@ -139,7 +140,7 @@ export function GithubConnection({ onChange }: { onChange?: () => void }) {
       </div>
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {localizedError(error, language)}
         </p>
       )}
     </details>

@@ -1,4 +1,5 @@
 'use client';
+import { localizedError } from '../lib/i18n';
 import { useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -20,7 +21,7 @@ export function RichTextEditor({
   change: (value: string) => void;
   upload: (file: File, done: (url: string) => void) => Promise<boolean>;
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [insert, setInsert] = useState(''),
     [url, setUrl] = useState(''),
     [error, setError] = useState('');
@@ -155,7 +156,7 @@ export function RichTextEditor({
           >
             {t('Hủy', 'Cancel')}
           </button>
-          {error && <p role="alert">{error}</p>}
+          {error && <p role="alert">{localizedError(error, language)}</p>}
         </div>
       )}
       <EditorContent editor={editor} />

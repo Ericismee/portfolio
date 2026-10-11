@@ -1,4 +1,5 @@
 'use client';
+import { localizedError } from '../lib/i18n';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { GithubSettings } from '../lib/schema';
 import type { GithubSkills } from '../lib/github-skills';
@@ -21,7 +22,7 @@ export function GithubSettingsForm({
   focusRepositories?: boolean;
   formId?: string;
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const sectionId = useId();
   const repositoryFieldset = useRef<HTMLFieldSetElement>(null);
   useEffect(() => {
@@ -400,7 +401,7 @@ export function GithubSettingsForm({
       </fieldset>
       {error && (
         <p className="error" role="alert">
-          {error}
+          {localizedError(error, language)}
         </p>
       )}
       <div className="form-actions">

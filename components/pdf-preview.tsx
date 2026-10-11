@@ -39,7 +39,7 @@ export function PdfPreview({ url }: { url: string }) {
       })
       .catch(() => {
         if (!disposed) {
-          setError('Không thể đọc PDF / Cannot read PDF');
+          setError('read');
           setLoading(false);
         }
       });
@@ -77,7 +77,7 @@ export function PdfPreview({ url }: { url: string }) {
       })
       .catch(() => {
         if (!disposed) {
-          setError('Không thể hiển thị trang PDF / Cannot render PDF page');
+          setError('render');
           setLoading(false);
         }
       });
@@ -121,7 +121,13 @@ export function PdfPreview({ url }: { url: string }) {
       </div>
       <div className="pdf-pages" ref={pages} aria-busy={loading}>
         {loading && !error && <p role="status">{t('Đang đọc PDF…', 'Loading PDF…')}</p>}
-        {error && <p role="alert">{error}</p>}
+        {error && (
+          <p role="alert">
+            {error === 'read'
+              ? t('Không thể đọc PDF', 'Cannot read PDF')
+              : t('Không thể hiển thị trang PDF', 'Cannot render PDF page')}
+          </p>
+        )}
         <canvas
           ref={canvas}
           role="img"

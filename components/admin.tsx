@@ -1,4 +1,7 @@
 'use client';
+import { localizedError } from '../lib/i18n';
+import { sectionLabel } from '../lib/i18n';
+import { MAX_UPLOAD_BYTES } from '../lib/upload-limits';
 import Link from 'next/link';
 import { GithubSettingsForm } from './github-settings';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -429,7 +432,7 @@ function AdminDashboard() {
                 }),
               );
           return (
-            <article className="admin-row" key={p.id}>
+            <article className="admin-row" data-publication={publicationStatus(p)} key={p.id}>
               <div className="admin-row-content">
                 <h3>{'name' in p ? p.name : p.title}</h3>
                 <p className="muted">{('text' in p ? p.text : p.description).slice(0, 140)}</p>
@@ -663,7 +666,7 @@ function AdminDashboard() {
               {t('＋ Thêm nội dung', '＋ Add entry')}
             </button>
           </div>
-          <h3>{d.sectionTitles[section] || section}</h3>
+          <h3>{sectionLabel(section, d.sectionTitles[section], language)}</h3>
           {rows('items', section)}
         </>
       ) : (
@@ -695,9 +698,13 @@ function AdminDashboard() {
             {t('＋ Tạo mục', '＋ Create section')}
           </button>
           {d.sections.map((s, i) => (
-            <article className="admin-row" key={s}>
+            <article
+              className="admin-row"
+              data-publication={d.hidden.includes(s) ? 'hidden' : 'public'}
+              key={s}
+            >
               <div>
-                <h3>{d.sectionTitles[s] || s}</h3>
+                <h3>{sectionLabel(s, d.sectionTitles[s], language)}</h3>
                 <span className="badge">
                   {d.hidden.includes(s) ? t('Đã ẩn', 'Hidden') : t('Đang hiển thị', 'Visible')}
                 </span>
@@ -934,7 +941,8 @@ function AdminDashboard() {
                 try {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  if (file.size > 8 * 1024 * 1024) throw Error(t('File quá lớn', 'File too large'));
+                  if (file.size > MAX_UPLOAD_BYTES)
+                    throw Error(t('File quá lớn', 'File too large'));
                   importData(JSON.parse(await file.text()));
                 } catch (e) {
                   setError(e instanceof Error ? e.message : 'Invalid file');
@@ -965,7 +973,14 @@ function AdminDashboard() {
                 <div>
                   <h3>{'name' in r.value ? r.value.name : r.value.title}</h3>
                   <p className="muted">
-                    {r.section || r.kind} · {new Date(r.deletedAt).toLocaleString(language)}
+                    {r.section
+                      ? sectionLabel(r.section, d.sectionTitles[r.section], language)
+                      : {
+                          projects: t('Dự án', 'Projects'),
+                          posts: t('Bài viết', 'Posts'),
+                          items: t('Nội dung', 'Content'),
+                        }[r.kind]}{' '}
+                    · {new Date(r.deletedAt).toLocaleString(language)}
                   </p>
                 </div>
                 <button
@@ -1084,7 +1099,7 @@ function AdminDashboard() {
           {error && (
             <>
               <p className="form-error" role="alert">
-                {error}
+                {localizedError(error, language)}
               </p>
               <button className="btn neutral" onClick={() => void reload()}>
                 {t('Thử lại', 'Retry')}
@@ -1187,7 +1202,7 @@ function AdminDashboard() {
               </div>
               {error && (
                 <div role="alert" className="admin-intro">
-                  <p className="form-error">{error}</p>
+                  <p className="form-error">{localizedError(error, language)}</p>
                   <button
                     className="btn neutral"
                     onClick={() => {

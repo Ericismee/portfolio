@@ -1,3 +1,4 @@
+import { MAX_UPLOAD_BYTES } from './upload-limits.ts';
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -20,8 +21,7 @@ export async function storeUpload(directory: string, bytes: Buffer, mime: string
   const ext = Object.keys(signatures).find((k) => signatures[k](bytes));
   if (!ext || mimeTypes[ext] !== mime)
     throw new HttpError(400, 'Unsupported or invalid file / File không hợp lệ');
-  if (bytes.length > (ext === 'pdf' ? 2 : 3) * 1024 * 1024)
-    throw new HttpError(413, 'File too large / File quá lớn');
+  if (bytes.length > MAX_UPLOAD_BYTES) throw new HttpError(413, 'File too large / File quá lớn');
   const folder = path.join(directory, 'uploads');
   await mkdir(folder, { recursive: true });
   const name = randomUUID() + '.' + ext;

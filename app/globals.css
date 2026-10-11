@@ -2843,3 +2843,41 @@ button.gh-day:hover {
     gap: 4px;
   }
 }
+
+/* Shared private-state palette across repository selection, feeds and editors. */
+:root {
+  --private-bg: #fff6e6;
+  --private-ink: #874b08;
+  --private-border: #d8ad68;
+  --private-selected: #ffebc5;
+}
+[data-theme='dark'] {
+  --private-bg: #382c20;
+  --private-ink: #ffd08a;
+  --private-border: #987343;
+  --private-selected: #514027;
+}
+.github-project-picker .repo-choice[data-visibility='private'],
+.github-import-preview[data-visibility='private'],
+:is(.admin-row, .inline-entry-row, .activity, .post)[data-publication]:not(
+    [data-publication='public']
+  ) {
+  background: var(--private-bg);
+  border-inline-start: 3px solid var(--private-border);
+}
+.github-project-picker .repo-choice[data-visibility='private']:is(:hover, .is-selected) {
+  background: var(--private-selected);
+}
+.repository-visibility.private,
+:is(.post-status-draft, .post-status-hidden, .post-status-scheduled),
+:is(.admin-row, .inline-entry-row)[data-publication]:not([data-publication='public'])
+  :is(.badge, small),
+.private-note {
+  color: var(--private-ink);
+  background: var(--private-bg);
+  border-color: var(--private-border);
+}
+:is(.activity, .post)[data-publication]:not([data-publication='public']) {
+  padding: 16px;
+  border-radius: var(--radius);
+}

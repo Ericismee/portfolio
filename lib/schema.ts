@@ -213,8 +213,16 @@ export function publicContent(content: Content, now = Date.now()): Content {
     publicationStatus(e, now) === 'public';
   d.projects = d.projects.filter(published);
   d.posts = d.posts.filter(published);
-  for (const key of Object.keys(d.items))
-    d.items[key] = d.hidden.includes(key) ? [] : d.items[key].filter(published);
   if (d.hidden.includes('Giới thiệu')) d.profile.about = '';
+  d.sections = d.sections.filter((key) => !d.hidden.includes(key));
+  d.items = Object.fromEntries(
+    Object.entries(d.items)
+      .filter(([key]) => d.sections.includes(key))
+      .map(([key, entries]) => [key, entries.filter(published)]),
+  );
+  d.sectionTitles = Object.fromEntries(
+    Object.entries(d.sectionTitles).filter(([key]) => d.sections.includes(key)),
+  );
+  d.hidden = [];
   return d;
 }

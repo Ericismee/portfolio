@@ -1,3 +1,4 @@
+import { MAX_UPLOAD_BYTES } from './upload-limits.ts';
 import { getGithubSkills } from './github-skills.ts';
 import { getGithubProject, githubProjectQuery } from './github-project.ts';
 import {
@@ -40,9 +41,9 @@ export async function requestBytes(request: Request, max = 8 * 1024 * 1024) {
     }
   return Buffer.concat(chunks);
 }
-async function json(request: Request) {
+async function json(request: Request, max?: number) {
   try {
-    return JSON.parse((await requestBytes(request)).toString()) as unknown;
+    return JSON.parse((await requestBytes(request, max)).toString()) as unknown;
   } catch (e) {
     if (isHttpError(e)) throw e;
     throw new HttpError(400, 'Invalid JSON');
@@ -205,13 +206,13 @@ export function createApi(database: Database, production = false, origin?: strin
           return send(database.write(b.data, b.version));
         }
         if (pathname === '/api/admin/import' && method === 'POST') {
-          const b = envelope.parse(await json(request));
+          const b = envelope.parse(await json(request, MAX_UPLOAD_BYTES + 1024));
           return send(database.write(await migrateAssets(b.data, database.directory), b.version));
         }
         if (pathname === '/api/admin/upload' && method === 'POST') {
           const url = await storeUpload(
             database.directory,
-            await requestBytes(request, 3 * 1024 * 1024),
+            await requestBytes(request, MAX_UPLOAD_BYTES),
             request.headers.get('content-type') || '',
           );
           return send({ url }, 201);

@@ -103,7 +103,9 @@ export async function githubRead(route: string, token: string) {
         429,
         'GitHub tạm hết lượt truy cập. ' +
           (at ? 'Thử lại sau ' + at + '. ' : '') +
-          'Kết nối tài khoản GitHub để dùng hạn mức riêng.',
+          'Kết nối tài khoản GitHub để dùng hạn mức riêng. / GitHub rate limit reached. ' +
+          (at ? 'Retry after ' + at + '. ' : '') +
+          'Connect GitHub to use your account limit.',
       );
     }
     throw new HttpError(

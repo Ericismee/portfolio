@@ -1,4 +1,5 @@
 'use client';
+import { sectionLabel } from '../lib/i18n';
 import { GithubSettingsForm } from './github-settings';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -25,7 +26,7 @@ import { saveGithubChanges } from '../lib/github-save';
 // Private content is fetched only after the server confirms an admin session.
 // The profile itself still renders the public projection, including after saves.
 export function useInlineEdit(publicData: Content) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const [state, setState] = useState<ContentState | null>(null);
   const [csrf, setCsrf] = useState('');
@@ -337,14 +338,19 @@ export function useInlineEdit(publicData: Content) {
         ? 'posts'
         : 'items';
     open({
-      title: t('Chỉnh sửa: ', 'Edit: ') + (state.data.sectionTitles[name] || name),
+      title:
+        t('Chỉnh sửa: ', 'Edit: ') + sectionLabel(name, state.data.sectionTitles[name], language),
       body: (
         <div className="inline-entry-list">
           <button className="btn primary" onClick={() => editItem(kind, name)}>
             {t('Thêm nội dung', 'Add content')}
           </button>
           {entries(state.data, kind, name).map((item) => (
-            <div className="inline-entry-row" key={item.id}>
+            <div
+              className="inline-entry-row"
+              data-publication={publicationStatus(item)}
+              key={item.id}
+            >
               <div>
                 <strong>{'name' in item ? item.name : item.title}</strong>
                 <small>
@@ -383,7 +389,7 @@ export function useInlineEdit(publicData: Content) {
           ...field('position', t('Vị trí', 'Position'), 'select'),
           options: state.data.sections.map((s, i) => [
             String(i),
-            String(i + 1) + ' · ' + (state.data.sectionTitles[s] || s),
+            String(i + 1) + ' · ' + sectionLabel(s, state.data.sectionTitles[s], language),
           ]),
         },
       ],
@@ -409,9 +415,13 @@ export function useInlineEdit(publicData: Content) {
       body: (
         <div className="inline-entry-list">
           {state.data.sections.map((name) => (
-            <div className="inline-entry-row" key={name}>
+            <div
+              className="inline-entry-row"
+              data-publication={state.data.hidden.includes(name) ? 'hidden' : 'public'}
+              key={name}
+            >
               <div>
-                <strong>{state.data.sectionTitles[name] || name}</strong>
+                <strong>{sectionLabel(name, state.data.sectionTitles[name], language)}</strong>
                 {state.data.hidden.includes(name) && <small>{t('Đã ẩn', 'Hidden')}</small>}
               </div>
               <div className="inline-section-actions">

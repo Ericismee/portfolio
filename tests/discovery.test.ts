@@ -136,7 +136,7 @@ test('CV upload accepts valid PDF with missing MIME and rejects invalid or overs
   assert.equal(await uploadMime(new File(['%PDF-1.7\n'], 'Resume.PDF')), 'application/pdf');
   await assert.rejects(uploadMime(new File(['not a pdf'], 'Resume.pdf')), /Invalid PDF/);
   await assert.rejects(
-    uploadMime(new File([new Uint8Array(2 * 1024 * 1024 + 1)], 'Resume.pdf')),
-    /2 MB/,
+    uploadMime(new File([new Uint8Array(20 * 1024 * 1024 + 1)], 'Resume.pdf')),
+    /20 MB/,
   );
 });

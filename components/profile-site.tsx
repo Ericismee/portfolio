@@ -1,4 +1,5 @@
 'use client';
+import { uiLabel, localizedError } from '../lib/i18n';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
@@ -293,7 +294,7 @@ function Site({
               ))}
           </div>
           <div className="project-card-actions">
-            <span className="badge">{p.status}</span>
+            <span className="badge">{uiLabel(p.status, language)}</span>
             <Link className="text-action" href={'/projects/' + encodeURIComponent(p.id)}>
               <span>{t('Xem chi tiết', 'View details')}</span>
               <span className="project-open-icon" aria-hidden="true">
@@ -406,7 +407,11 @@ function Site({
         })
       : '';
     return (
-      <article className={detail ? 'card post' : 'activity'} key={p.id}>
+      <article
+        className={detail ? 'card post' : 'activity'}
+        data-publication={publicationStatus(p)}
+        key={p.id}
+      >
         {detail && <Link href="/activity">← {t('Hoạt động', 'Activity')}</Link>}
         <div className="row post-heading">
           {avatar()}
@@ -799,7 +804,9 @@ function Site({
           >
             <option value="">{t('Tất cả trạng thái', 'All statuses')}</option>
             {[...new Set(data.projects.map((p) => p.status))].map((v) => (
-              <option key={v}>{v}</option>
+              <option key={v} value={v}>
+                {uiLabel(v, language)}
+              </option>
             ))}
           </select>
           <select
@@ -846,7 +853,7 @@ function Site({
         <div className="pad">
           <h1>{p.name}</h1>
           {editing.button(t('Sửa dự án', 'Edit project'), () => editing.item('projects', '', p.id))}
-          <span className="badge">{p.status}</span>
+          <span className="badge">{uiLabel(p.status, language)}</span>
           <p>{p.description}</p>
           <h3>{t('Công nghệ', 'Technologies')}</h3>
           <div className="tags">
@@ -951,7 +958,7 @@ function Site({
                 <h3>{t('Các mục hồ sơ', 'Profile sections')}</h3>
                 {items.map(({ section, item }) => (
                   <Link key={section + item.id} className="side-link" href="/">
-                    {data.sectionTitles[section] || section} · {item.title}
+                    {title(section)} · {item.title}
                     {item.organization && ' — ' + item.organization}
                   </Link>
                 ))}
@@ -1199,7 +1206,7 @@ function Site({
   );
 }
 function ContactForm() {
-  const { t } = useLanguage(),
+  const { t, language } = useLanguage(),
     [busy, setBusy] = useState(false),
     [result, setResult] = useState('');
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -1219,7 +1226,9 @@ function ContactForm() {
       form.reset();
     } catch (e) {
       setResult(
-        e instanceof Error ? e.message : t('Không thể gửi lời nhắn', 'Unable to send message'),
+        e instanceof Error
+          ? localizedError(e.message, language)
+          : t('Không thể gửi lời nhắn', 'Unable to send message'),
       );
     } finally {
       setBusy(false);

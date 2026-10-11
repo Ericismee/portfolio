@@ -6,14 +6,19 @@ const LanguageContext = createContext<{
   t: (vi: string, en: string) => string;
   toggle: () => void;
 }>({
-  language: 'vi',
-  t: (vi) => vi,
+  language: 'en',
+  t: (_vi, en) => en,
   toggle: () => {},
 });
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>('vi');
+  const [language, setLanguage] = useState<Language>('en');
   useEffect(() => {
-    if (localStorage.getItem('profile-language') === 'en') setLanguage('en');
+    try {
+      const saved = localStorage.getItem('profile-language');
+      if (saved === 'vi' || saved === 'en') setLanguage(saved);
+    } catch {
+      /* English remains available without browser storage. */
+    }
   }, []);
   useEffect(() => {
     document.documentElement.lang = language;
@@ -26,7 +31,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         toggle: () =>
           setLanguage((value) => {
             const next = value === 'vi' ? 'en' : 'vi';
-            localStorage.setItem('profile-language', next);
+            try {
+              localStorage.setItem('profile-language', next);
+            } catch {
+              /* Keep the selection for this visit. */
+            }
             return next;
           }),
       }}

@@ -1,4 +1,6 @@
 'use client';
+import { localizedError } from '../lib/i18n';
+import { MAX_UPLOAD_BYTES } from '../lib/upload-limits';
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { clamp, cropRectangle, type CropPosition } from '../lib/image-crop';
 import { useLanguage } from './language';
@@ -24,7 +26,7 @@ export function ImageFramePicker({
   change: (url: string) => void;
   onEditingChange: (editing: boolean) => void;
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [source, setSource] = useState<Source | null>(null);
   const [crop, setCrop] = useState<CropPosition>(centered);
   const [error, setError] = useState('');
@@ -63,12 +65,12 @@ export function ImageFramePicker({
     if (
       file &&
       (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type) ||
-        file.size > 3 * 1024 * 1024)
+        file.size > MAX_UPLOAD_BYTES)
     ) {
       setError(
         t(
-          'Chọn ảnh PNG, JPG, WebP hoặc GIF tối đa 3 MB.',
-          'Choose a PNG, JPG, WebP or GIF up to 3 MB.',
+          'Chọn ảnh PNG, JPG, WebP hoặc GIF tối đa 20 MB.',
+          'Choose a PNG, JPG, WebP or GIF up to 20 MB.',
         ),
       );
       return;
@@ -358,13 +360,13 @@ export function ImageFramePicker({
       {loading && <p role="status">{t('Đang xử lý ảnh…', 'Processing image…')}</p>}
       {error && (
         <p className="form-error" role="alert">
-          {error}
+          {localizedError(error, language)}
         </p>
       )}
       <small className="admin-help">
         {t(
-          'Ảnh tối đa 3 MB. Tải lên giữ nguyên ảnh gốc và kích thước. Chọn “Chỉnh khung ảnh” nếu muốn cắt, rồi lưu để công khai. Chỉ khi cắt khung, GIF mới thành ảnh tĩnh; tải lại ảnh gốc để chỉnh vùng đã cắt.',
-          'Images up to 3 MB. Uploads retain original dimensions and file contents. Choose “Adjust framing” to crop, then save to publish. Cropping makes GIFs static; upload the original again to recover cropped areas.',
+          'Ảnh tối đa 20 MB. Tải lên giữ nguyên ảnh gốc và kích thước. Chọn “Chỉnh khung ảnh” nếu muốn cắt, rồi lưu để công khai. Chỉ khi cắt khung, GIF mới thành ảnh tĩnh; tải lại ảnh gốc để chỉnh vùng đã cắt.',
+          'Images up to 20 MB. Uploads retain original dimensions and file contents. Choose “Adjust framing” to crop, then save to publish. Cropping makes GIFs static; upload the original again to recover cropped areas.',
         )}
       </small>
     </div>
