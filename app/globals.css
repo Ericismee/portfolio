@@ -2524,22 +2524,82 @@ button.gh-day:hover {
 }
 .post-author strong {
   display: block;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--ink);
 }
 .post-meta {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
-  font-size: 12px;
-  margin-top: 3px;
+  gap: 8px 12px;
+  font-size: 13px;
+  margin-top: 6px;
+  color: var(--muted);
 }
 .post-meta time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1.6;
   font-variant-numeric: tabular-nums;
 }
+.post-meta svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
 .post-status {
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 5px;
+  padding: 2px 7px;
+  line-height: 1.5;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+}
+.post-status-public {
+  color: var(--ink);
+}
+.guest-preview-bar {
+  max-width: 1100px;
+  margin: 16px auto 0;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 13px;
+}
+.guest-preview-bar span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.guest-preview-bar svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.guest-preview-bar button {
+  color: var(--accent);
+  font: inherit;
+  font-weight: 650;
+  padding: 6px;
+  cursor: pointer;
+}
+@media (max-width: 600px) {
+  .guest-preview-bar {
+    margin: 12px 12px 0;
+    flex-wrap: wrap;
+  }
 }
 .post-status-draft,
 .post-status-scheduled,

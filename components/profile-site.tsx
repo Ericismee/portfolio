@@ -389,14 +389,15 @@ function Site({
           {avatar()}
           <div className="post-author">
             <strong>{profile.name}</strong>
-            <div className="post-meta muted">
+            <div className="post-meta">
               {date(p) ? (
                 <time dateTime={timestamp} title={formatted + ' (UTC+7)'}>
+                  <Icon name="clock" />
                   {formatted}
                 </time>
               ) : null}
-              <span aria-hidden="true">·</span>
               <span className={'post-status post-status-' + status}>
+                <Icon name={published ? 'globe' : 'eye'} />
                 {
                   {
                     public: t('Công khai', 'Public'),
@@ -1120,6 +1121,17 @@ function Site({
                 {t('Ngôn ngữ giao diện', 'Interface language')}
               </span>
               <button onClick={toggle}>{language === 'vi' ? 'English' : 'Tiếng Việt'}</button>
+              {editing.isAdmin && (
+                <button
+                  className="theme-menu-action"
+                  onClick={() => editing.setGuestPreview(!editing.guestPreview)}
+                >
+                  <Icon name={editing.guestPreview ? 'edit' : 'eye'} />
+                  {editing.guestPreview
+                    ? t('Quay lại quản trị', 'Return to admin')
+                    : t('Xem như khách', 'View as guest')}
+                </button>
+              )}
               {editing.settings}
               <div className="settings-divider" />
               <Link href="/github">GitHub ↗</Link>
@@ -1129,6 +1141,17 @@ function Site({
         </div>
       </header>
       <main id="view" tabIndex={-1}>
+        {editing.guestPreview && (
+          <div className="guest-preview-bar" role="status">
+            <span>
+              <Icon name="eye" />
+              {t('Đang xem như khách', 'Viewing as a guest')}
+            </span>
+            <button type="button" onClick={() => editing.setGuestPreview(false)}>
+              {t('Quay lại quản trị', 'Return to admin')}
+            </button>
+          </div>
+        )}
         {body}
       </main>
       {editing.dialog}

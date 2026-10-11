@@ -32,6 +32,8 @@ export function useInlineEdit(publicData: Content) {
   const [editor, setEditor] = useState<Editor | null>(null);
   const [editorKey, setEditorKey] = useState(0);
   const [notice, setNotice] = useState('');
+  const [guestPreview, setGuestPreview] = useState(false);
+  const enabled = !!state && !guestPreview;
   useEffect(() => {
     if (!notice) return;
     const timer = setTimeout(() => setNotice(''), 4000);
@@ -39,6 +41,11 @@ export function useInlineEdit(publicData: Content) {
   }, [notice]);
   useEffect(() => {
     let active = true;
+    try {
+      setGuestPreview(sessionStorage.getItem('profile-guest-preview') === 'true');
+    } catch {
+      /* Preview still works when optional tab storage is unavailable. */
+    }
     async function sync() {
       try {
         const session = await request<{ authenticated: boolean; csrf?: string }>('/api/session');
@@ -509,7 +516,7 @@ export function useInlineEdit(publicData: Content) {
     });
   }
   const button = (label: string, action: () => void, showLabel = false) =>
-    state && (
+    enabled && (
       <button
         className={
           showLabel
@@ -536,8 +543,19 @@ export function useInlineEdit(publicData: Content) {
       </button>
     );
   return {
-    enabled: !!state,
-    adminPosts: state?.data.posts,
+    enabled,
+    isAdmin: !!state,
+    guestPreview: !!state && guestPreview,
+    setGuestPreview: (next: boolean) => {
+      setGuestPreview(next);
+      try {
+        if (next) sessionStorage.setItem('profile-guest-preview', 'true');
+        else sessionStorage.removeItem('profile-guest-preview');
+      } catch {
+        /* The server session is unaffected by this display preference. */
+      }
+    },
+    adminPosts: enabled ? state?.data.posts : undefined,
     data: state ? publicContent(state.data) : publicData,
     button,
     profile,
@@ -578,7 +596,7 @@ export function useInlineEdit(publicData: Content) {
           }),
       });
     },
-    settings: state && (
+    settings: enabled && (
       <>
         <div className="settings-divider" />
         <button onClick={addSection}>{t('Các mục hồ sơ', 'Profile sections')}</button>
@@ -601,7 +619,7 @@ export function useInlineEdit(publicData: Content) {
         </button>
       </>
     ),
-    dialog: state && editor && (
+    dialog: enabled && editor && (
       <EditorDialog key={editorKey} editor={editor} csrf={csrf} close={() => setEditor(null)} />
     ),
     notice: notice && (
