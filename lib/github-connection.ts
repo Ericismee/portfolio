@@ -1,27 +1,14 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { getDatabase, HttpError, type Database } from './database.ts';
+import { credentialKey } from './credential-key.ts';
 
 // Credentials live outside content, revisions, public responses and backup exports.
 function table(database: Database) {
   database.db.exec(
     'CREATE TABLE IF NOT EXISTS github_connection(id INTEGER PRIMARY KEY CHECK(id=1), secret TEXT NOT NULL, login TEXT NOT NULL)',
   );
-}
-function key(database: Database) {
-  const filename = path.join(database.directory, 'github-credential.key');
-  try {
-    return readFileSync(filename);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-    try {
-      writeFileSync(filename, randomBytes(32), { flag: 'wx', mode: 0o600 });
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-    }
-    return readFileSync(filename);
-  }
 }
 export function githubCredential(database?: Database) {
   if (!database && !existsSync(path.resolve(process.env.DATA_DIR || '.data', 'profile.sqlite')))
@@ -35,14 +22,26 @@ export function githubCredential(database?: Database) {
   const row = database.db.prepare('SELECT secret,login FROM github_connection WHERE id=1').get() as
     { secret: string; login: string } | undefined;
   if (row) {
-    const [iv, tag, body] = row.secret.split('.').map((v) => Buffer.from(v, 'base64'));
-    const decipher = createDecipheriv('aes-256-gcm', key(database), iv);
-    decipher.setAuthTag(tag);
-    return {
-      token: Buffer.concat([decipher.update(body), decipher.final()]).toString(),
-      login: row.login,
-      source: 'account' as const,
-    };
+    try {
+      const parts = row.secret.split('.'),
+        versioned = parts[0] === 'v2';
+      if (parts.length !== (versioned ? 4 : 3)) throw Error('Invalid credential');
+      const [iv, tag, body] = (versioned ? parts.slice(1) : parts).map((v) =>
+        Buffer.from(v, 'base64'),
+      );
+      if (iv.length !== 12 || tag.length !== 16) throw Error('Invalid credential');
+      const decipher = createDecipheriv('aes-256-gcm', credentialKey(database.directory), iv);
+      if (versioned) decipher.setAAD(Buffer.from('Eric-Profile:GitHub:v2:' + row.login));
+      decipher.setAuthTag(tag);
+      const token = Buffer.concat([decipher.update(body), decipher.final()]).toString();
+      if (!versioned) saveGithubCredential(database, token, row.login);
+      return { token, login: row.login, source: 'account' as const };
+    } catch {
+      throw new HttpError(
+        503,
+        'Không mở được kết nối GitHub đã lưu. Hãy chạy bằng tài khoản hệ điều hành đã kết nối và kiểm tra khóa bảo vệ trên máy chủ. / Unable to unlock the saved GitHub connection. Check the operating system account and credential key.',
+      );
+    }
   }
   return {
     token: process.env.GITHUB_TOKEN || '',
@@ -53,9 +52,10 @@ export function githubCredential(database?: Database) {
 export function saveGithubCredential(database: Database, token: string, login: string) {
   table(database);
   const iv = randomBytes(12),
-    cipher = createCipheriv('aes-256-gcm', key(database), iv);
+    cipher = createCipheriv('aes-256-gcm', credentialKey(database.directory, true), iv);
+  cipher.setAAD(Buffer.from('Eric-Profile:GitHub:v2:' + login));
   const body = Buffer.concat([cipher.update(token), cipher.final()]);
-  const secret = [iv, cipher.getAuthTag(), body].map((v) => v.toString('base64')).join('.');
+  const secret = 'v2.' + [iv, cipher.getAuthTag(), body].map((v) => v.toString('base64')).join('.');
   database.db.prepare('INSERT OR REPLACE INTO github_connection VALUES(1,?,?)').run(secret, login);
 }
 export function disconnectGithub(database: Database) {

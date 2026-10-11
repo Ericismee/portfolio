@@ -14,6 +14,7 @@ export function GithubConnection({ onChange }: { onChange?: () => void }) {
   const { t } = useLanguage();
   const [state, setState] = useState<Connection | null>(null);
   const [token, setToken] = useState('');
+  const [replaceToken, setReplaceToken] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   async function update(method = 'GET') {
@@ -30,6 +31,7 @@ export function GithubConnection({ onChange }: { onChange?: () => void }) {
       setState(result);
       if (method !== 'GET') {
         setToken('');
+        setReplaceToken(false);
         onChange?.();
       }
     } catch (error) {
@@ -57,6 +59,14 @@ export function GithubConnection({ onChange }: { onChange?: () => void }) {
             : ''}
         </p>
       )}
+      {state?.source === 'account' && (
+        <p className="muted">
+          {t(
+            'Đã lưu an toàn. Kết nối được ghi nhớ khi mở lại trang hoặc khởi động lại máy chủ; bạn không cần nhập lại token.',
+            'Saved securely. Your connection is remembered across page visits and server restarts; you do not need to enter the token again.',
+          )}
+        </p>
+      )}
       <p className="muted">
         {t(
           'Kết nối một lần cho admin. Đọc được các kho mã mà tài khoản đã cấp quyền, kể cả kho riêng tư. Token được lưu mã hóa trên máy chủ, không nằm trong bản sao lưu nội dung.',
@@ -76,33 +86,46 @@ export function GithubConnection({ onChange }: { onChange?: () => void }) {
           'Select the resource owner, repositories to read (or All repositories), and Contents: Read-only. Organization repositories may require approval.',
         )}
       </p>
-      <label>
-        {t('Token truy cập GitHub', 'GitHub access token')}
-        <input
-          type="password"
-          autoComplete="off"
-          spellCheck={false}
-          value={token}
-          disabled={busy}
-          onChange={(e) => setToken(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              if (token.trim()) void update('POST');
-            }
-          }}
-          placeholder="github_pat_…"
-        />
-      </label>
+      {(!state?.connected || replaceToken) && (
+        <label>
+          {t('Token truy cập GitHub', 'GitHub access token')}
+          <input
+            type="password"
+            autoComplete="off"
+            spellCheck={false}
+            value={token}
+            disabled={busy}
+            onChange={(e) => setToken(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (token.trim()) void update('POST');
+              }
+            }}
+            placeholder="github_pat_…"
+          />
+        </label>
+      )}
       <div className="github-connection-actions">
-        <button
-          type="button"
-          className="btn primary"
-          disabled={busy || !token.trim()}
-          onClick={() => void update('POST')}
-        >
-          {busy ? t('Đang kết nối…', 'Connecting…') : t('Kết nối GitHub', 'Connect GitHub')}
-        </button>
+        {state?.connected && !replaceToken ? (
+          <button
+            type="button"
+            className="btn neutral"
+            disabled={busy}
+            onClick={() => setReplaceToken(true)}
+          >
+            {t('Thay token', 'Replace token')}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn primary"
+            disabled={busy || !token.trim()}
+            onClick={() => void update('POST')}
+          >
+            {busy ? t('Đang kết nối…', 'Connecting…') : t('Kết nối GitHub', 'Connect GitHub')}
+          </button>
+        )}
         {state?.source === 'account' && (
           <button
             type="button"
