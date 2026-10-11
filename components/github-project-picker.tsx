@@ -1,11 +1,13 @@
 'use client';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { request } from '../lib/client';
 import type { GithubSkills } from '../lib/github-skills';
 import type { GithubProject } from '../lib/github-project';
 import { useLanguage } from './language';
 import { GithubConnection } from './github-connection';
 import { MarkdownContent } from './markdown-content';
+import { Icon } from './icon';
+import { searchRepositories } from '../lib/repository-search';
 
 export function GithubProjectPicker({
   username,
@@ -30,6 +32,8 @@ export function GithubProjectPicker({
   const [error, setError] = useState('');
   const [replace, setReplace] = useState(false);
   const [notice, setNotice] = useState('');
+  const choiceName = useId();
+  const matches = searchRepositories(repos || [], query, visibility);
   const labels: Record<string, string> = {
     name: t('Tên dự án', 'Project name'),
     description: t('Mô tả', 'Description'),
@@ -62,6 +66,8 @@ export function GithubProjectPicker({
               : '';
         setPreview({ ...result, fields: { ...result.fields, role } });
       } else {
+        setSelected('');
+        setPreview(null);
         const connection = await request<{ connected: boolean }>('/api/admin/github-connection');
         if (connection.connected) {
           const result = await request<{
@@ -151,11 +157,15 @@ export function GithubProjectPicker({
             <input
               type="search"
               value={query}
+              disabled={busy || disabled}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') event.preventDefault();
               }}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('Nhập tên kho mã…', 'Repository name…')}
+              placeholder={t(
+                'Tìm theo tên, chủ kho mã hoặc công nghệ…',
+                'Search name, owner or technology…',
+              )}
             />
           </label>
           <div
@@ -166,6 +176,7 @@ export function GithubProjectPicker({
               <button
                 type="button"
                 key={value}
+                disabled={busy || disabled}
                 aria-pressed={visibility === value}
                 onClick={() => {
                   setVisibility(value);
@@ -190,52 +201,75 @@ export function GithubProjectPicker({
               </button>
             ))}
           </div>
-          <div className="github-import-select">
-            <label>
-              {t('Kho mã GitHub', 'GitHub repository')}
-              <select
-                value={selected}
-                disabled={busy}
-                onChange={(e) => {
-                  setSelected(e.target.value);
-                  setPreview(null);
-                  setError('');
-                  setNotice('');
-                }}
-              >
-                <option value="">{t('Chọn kho mã…', 'Select repository…')}</option>
-                {([false, true] as const).map((isPrivate) => (
-                  <optgroup
-                    key={String(isPrivate)}
-                    label={
-                      isPrivate
-                        ? t('Riêng tư · Chỉ admin', 'Private · Admin only')
-                        : t('Công khai', 'Public')
-                    }
+          <p className="repo-result-count" role="status">
+            {matches.length} {t('kho mã phù hợp', 'matching repositories')}
+          </p>
+          <div
+            className="repo-choice-list"
+            role="group"
+            aria-label={t('Kho mã GitHub', 'GitHub repository')}
+          >
+            {matches.map((repo) => {
+              const value = repo.fullName || repo.name;
+              const owner = repo.fullName?.split('/')[0] || username;
+              return (
+                <label
+                  key={value}
+                  className={'repo-choice' + (selected === value ? ' is-selected' : '')}
+                >
+                  <input
+                    type="radio"
+                    name={choiceName}
+                    value={value}
+                    checked={selected === value}
+                    disabled={busy || disabled}
+                    onChange={() => {
+                      setSelected(value);
+                      setPreview(null);
+                      setError('');
+                      setNotice('');
+                    }}
+                  />
+                  <Icon name="projects" />
+                  <span className="repo-choice-text">
+                    <strong>{repo.name}</strong>
+                    <small>
+                      {owner}
+                      {repo.language ? ' · ' + repo.language : ''}
+                      {repo.fork ? ' · Fork' : ''}
+                    </small>
+                  </span>
+                  <span
+                    className={'repository-visibility ' + (repo.private ? 'private' : 'public')}
                   >
-                    {repos
-                      .filter(
-                        (repo) =>
-                          !!repo.private === isPrivate &&
-                          (visibility === 'all' || (visibility === 'private') === isPrivate) &&
-                          ((repo.fullName || repo.name) === selected ||
-                            (repo.fullName || repo.name)
-                              .toLowerCase()
-                              .includes(query.toLowerCase())),
-                      )
-                      .map((repo) => (
-                        <option key={repo.fullName || repo.name} value={repo.fullName || repo.name}>
-                          {repo.fullName || repo.name}
-                          {' · ' +
-                            (repo.private ? t('Riêng tư', 'Private') : t('Công khai', 'Public'))}
-                          {repo.language ? ' · ' + repo.language : ''}
-                          {repo.fork ? ' · Fork' : ''}
-                        </option>
-                      ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
+                    <Icon name={repo.private ? 'lock' : 'globe'} />
+                    {repo.private ? t('Riêng tư', 'Private') : t('Công khai', 'Public')}
+                  </span>
+                </label>
+              );
+            })}
+            {!matches.length && (
+              <p className="repo-no-results">
+                {t(
+                  'Không tìm thấy kho mã. Thử tên khác hoặc đổi bộ lọc.',
+                  'No repositories found. Try another name or filter.',
+                )}
+              </p>
+            )}
+          </div>
+          <div className="repo-selection-actions">
+            <p>
+              {selected ? (
+                <>
+                  {t('Đã chọn', 'Selected')}: <strong>{selected}</strong>
+                </>
+              ) : (
+                t(
+                  'Chọn một kho mã để đọc thông tin.',
+                  'Choose a repository to read its information.',
+                )
+              )}
+            </p>
             <button
               type="button"
               className="btn"

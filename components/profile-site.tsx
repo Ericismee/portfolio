@@ -382,30 +382,61 @@ function Site({
           timeZone: 'Asia/Bangkok',
         })
       : '';
+    const postedOn = timestamp
+      ? new Date(timestamp).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-GB', {
+          day: 'numeric',
+          month: 'long',
+          year:
+            new Date(timestamp).toLocaleDateString('en-GB', {
+              year: 'numeric',
+              timeZone: 'Asia/Bangkok',
+            }) ===
+            new Date().toLocaleDateString('en-GB', { year: 'numeric', timeZone: 'Asia/Bangkok' })
+              ? undefined
+              : 'numeric',
+          timeZone: 'Asia/Bangkok',
+        })
+      : '';
+    const postedAt = timestamp
+      ? new Date(timestamp).toLocaleTimeString('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'Asia/Bangkok',
+        })
+      : '';
     return (
       <article className={detail ? 'card post' : 'activity'} key={p.id}>
         {detail && <Link href="/activity">← {t('Hoạt động', 'Activity')}</Link>}
         <div className="row post-heading">
           {avatar()}
           <div className="post-author">
-            <strong>{profile.name}</strong>
+            <strong>
+              <Link href="/">{profile.name}</Link>
+            </strong>
             <div className="post-meta">
               {date(p) ? (
                 <time dateTime={timestamp} title={formatted + ' (UTC+7)'}>
-                  <Icon name="clock" />
-                  {formatted}
+                  {postedOn} {t('lúc', 'at')} {postedAt}
                 </time>
               ) : null}
-              <span className={'post-status post-status-' + status}>
+              <span className="post-meta-separator" aria-hidden="true">
+                ·
+              </span>
+              <span
+                className={'post-status post-status-' + status}
+                title={published ? t('Công khai', 'Public') : undefined}
+                aria-label={published ? t('Công khai', 'Public') : undefined}
+                role={published ? 'img' : undefined}
+              >
                 <Icon name={published ? 'globe' : 'eye'} />
-                {
+                {!published &&
                   {
                     public: t('Công khai', 'Public'),
                     draft: t('Bản nháp · Chỉ admin', 'Draft · Admin only'),
                     scheduled: t('Đã lên lịch · Chỉ admin', 'Scheduled · Admin only'),
                     hidden: t('Đã ẩn · Chỉ admin', 'Hidden · Admin only'),
-                  }[status]
-                }
+                  }[status]}
               </span>
             </div>
           </div>
