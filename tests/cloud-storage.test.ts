@@ -241,6 +241,20 @@ test('Postgres persistence preserves authorization, atomic versions, rate limits
     assert.equal(traffic.visits, 1);
     assert.equal(traffic.entries[0].browser, 'Firefox');
     assert.equal(traffic.total, 1);
+    assert.equal(
+      traffic.daily.reduce((sum: number, row: { views: number }) => sum + row.views, 0),
+      1,
+    );
+    assert.deepEqual(traffic.countries, [{ country: 'unknown', views: 1, visits: 1 }]);
+    assert.equal(traffic.filtered.pageViews, 1);
+    assert.deepEqual(traffic.breakdowns.browser, [{ name: 'Firefox', views: 1 }]);
+    await pg.query('UPDATE traffic_visits SET created_at=$1', [Date.now() - 400 * 86400000]);
+    const historicalTraffic = await (await call('/api/admin/traffic')).json();
+    assert.equal(historicalTraffic.total, 1);
+    assert.equal(historicalTraffic.entries[0].browser, 'Firefox');
+    const unknownTraffic = await (await call('/api/admin/traffic?country=unknown&path=%2F')).json();
+    assert.equal(unknownTraffic.total, 1);
+    assert.equal((await call('/api/admin/traffic?ip=invalid')).status, 400);
     await call('/api/admin/logout', 'POST');
     assert.equal((await call('/api/admin/content')).status, 401);
     assert.equal((await pg.query('SELECT count(*) AS count FROM rate_limits')).rows.length, 1);

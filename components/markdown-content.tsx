@@ -16,7 +16,7 @@ export function MarkdownContent({ value, base = '' }: { value: string; base?: st
           ),
           img: ({ src, alt }) =>
             typeof src === 'string' && src ? (
-              <img src={src} alt={alt || ''} loading="lazy" />
+              <img src={src} alt={alt || ''} loading="lazy" decoding="async" />
             ) : null,
           table: ({ children }) => (
             <div className="markdown-table">

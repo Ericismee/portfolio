@@ -1,10 +1,10 @@
 import { visibleGithubStats } from '../../lib/github-display';
 import { notFound } from 'next/navigation';
-import { getDatabase } from '../../lib/database';
+import { readServerContent } from '../../lib/server-content';
 import { publicContent } from '../../lib/schema';
 import { ProfileSite } from '../../components/profile-site';
 import type { Metadata } from 'next';
-import { getGithubSkills } from '../../lib/github-skills';
+import { githubSkillsSnapshot } from '../../lib/github-skills';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export async function generateMetadata({
@@ -13,7 +13,7 @@ export async function generateMetadata({
   params: Promise<{ segments?: string[] }>;
 }): Promise<Metadata> {
   const { segments = [] } = await params;
-  const content = publicContent((await (await getDatabase()).read()).data);
+  const content = publicContent((await readServerContent()).data);
   const { profile } = content;
   const titles: Record<string, string> = {
     '': 'Home',
@@ -63,7 +63,7 @@ export default async function PublicPage({
   )
     notFound();
   const query = await searchParams;
-  const source = (await (await getDatabase()).read()).data;
+  const source = (await readServerContent()).data;
   const content = publicContent(source);
   if (
     segments[1] &&
@@ -75,10 +75,7 @@ export default async function PublicPage({
   return (
     <ProfileSite
       content={content}
-      githubSkills={visibleGithubStats(
-        await getGithubSkills(content.githubUsername),
-        source.github,
-      )}
+      githubSkills={visibleGithubStats(githubSkillsSnapshot(content.githubUsername), source.github)}
       page={segments[0] || 'profile'}
       id={segments[1]}
       query={Object.fromEntries(

@@ -63,6 +63,22 @@ type Repository = {
   topics?: string[];
 };
 const cache = new Map<string, { expires: number; value: Promise<GithubSkills> }>();
+const snapshots = new Map<string, GithubSkills>();
+// Never wait for a third-party API to render the public profile.
+export function githubSkillsSnapshot(username: string): GithubSkills {
+  const snapshot = snapshots.get(username.toLowerCase());
+  if (snapshot && Date.now() - Date.parse(snapshot.updatedAt) < 60 * 60_000) return snapshot;
+  return {
+    username,
+    profile: null,
+    repos: [],
+    status: 'empty',
+    languages: [],
+    repositories: 0,
+    partial: false,
+    updatedAt: '',
+  };
+}
 const cachedSkills = z.object({
   format: z.literal(2),
   profile: profileSchema.nullable(),
@@ -92,6 +108,8 @@ export async function getGithubSkills(username: string): Promise<GithubSkills> {
   const value = loadCachedSkills(username);
   cache.set(key, { expires: Date.now() + 60 * 60 * 1000, value });
   void value.then((result) => {
+    if (snapshots.size >= 20) snapshots.delete(snapshots.keys().next().value!);
+    snapshots.set(username.toLowerCase(), result);
     cache.set(key, {
       expires:
         Date.parse(result.updatedAt) + (result.status === 'unavailable' ? 5 : 60) * 60 * 1000,

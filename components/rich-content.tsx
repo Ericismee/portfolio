@@ -57,6 +57,7 @@ export function RichContent({ value, fallback = '' }: { value: string; fallback?
             src={safeMediaUrl(node.attrs?.src)}
             alt={typeof node.attrs?.alt === 'string' ? node.attrs.alt : ''}
             loading="lazy"
+            decoding="async"
           />
         ) : null;
       case 'youtube':

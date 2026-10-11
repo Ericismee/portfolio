@@ -5,15 +5,18 @@ import type { GithubSkills } from '../lib/github-skills';
 import { useLanguage } from './language';
 import { TechnologyChips } from './tech-logo';
 import Link from 'next/link';
+import { Skeleton } from './skeleton';
 
 export function GithubSkillsCard({
   stats,
   settings,
   avatar,
+  loading = false,
 }: {
   stats: GithubSkills;
   settings: GithubSettings;
   avatar: string;
+  loading?: boolean;
 }) {
   const { t, language } = useLanguage();
   const [query, setQuery] = useState('');
@@ -30,9 +33,24 @@ export function GithubSkillsCard({
   const number = (value: number) => value.toLocaleString(language);
   const date = (value: string) =>
     Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleDateString(language) : '—';
+  if (loading)
+    return (
+      <section
+        className="card pad github-skills-card github-deferred"
+        aria-busy="true"
+        aria-label={t('Đang tải GitHub', 'Loading GitHub')}
+      >
+        <h2>GitHub</h2>
+        <Skeleton className="skeleton-field" />
+        <Skeleton className="skeleton-line" />
+        <Skeleton className="skeleton-field" />
+        <Skeleton className="skeleton-field" />
+        <Skeleton className="skeleton-line" />
+      </section>
+    );
   return (
     <section
-      className="card pad github-skills-card"
+      className="card pad github-skills-card github-deferred"
       aria-label={t('Thông tin GitHub', 'GitHub information')}
     >
       <div className="section-heading">

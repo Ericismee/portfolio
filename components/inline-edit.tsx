@@ -1,8 +1,7 @@
 'use client';
-import { SkillManager } from './skill-manager';
+import dynamic from 'next/dynamic';
 import { trashEntry } from '../lib/content-management';
 import { sectionLabel } from '../lib/i18n';
-import { GithubSettingsForm } from './github-settings';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -19,11 +18,23 @@ import {
   type Project,
   type Post,
 } from '../lib/schema';
-import { EditorDialog, type Editor, type Field, type Values } from './admin-form';
+import type { Editor, Field, Values } from './admin-form';
 import { useLanguage } from './language';
 import { Icon } from './icon';
 import { readRichText, richPlainText } from '../lib/rich-text';
 import { saveGithubChanges } from '../lib/github-save';
+
+const EditorDialog = dynamic(() => import('./admin-form').then((module) => module.EditorDialog), {
+  ssr: false,
+});
+const SkillManager = dynamic(
+  () => import('./skill-manager').then((module) => module.SkillManager),
+  { ssr: false },
+);
+const GithubSettingsForm = dynamic(
+  () => import('./github-settings').then((module) => module.GithubSettingsForm),
+  { ssr: false },
+);
 
 // Private content is fetched only after the server confirms an admin session.
 // The profile itself still renders the public projection, including after saves.

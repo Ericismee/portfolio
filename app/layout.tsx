@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { CSSProperties } from 'react';
-import { getDatabase } from '../lib/database';
+import { readServerContent } from '../lib/server-content';
 import { themeBootstrap } from '../lib/theme';
 import '../src/fonts/fonts.css';
 import '../src/tokens.css';
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 export const dynamic = 'force-dynamic';
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const { theme, accent } = (await (await getDatabase()).read()).data;
+  const { theme, accent } = (await readServerContent()).data;
   return (
     <html
       lang="en"

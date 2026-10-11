@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rankLanguages, getGithubSkills } from '../lib/github-skills.ts';
+import { rankLanguages, getGithubSkills, githubSkillsSnapshot } from '../lib/github-skills.ts';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -30,10 +30,13 @@ test('Unavailable GitHub stays an explicit empty state and retries use the cache
     throw Error('Network unavailable');
   };
   try {
+    assert.equal(githubSkillsSnapshot('qa-offline-user').updatedAt, '');
+    assert.equal(calls, 0, 'Rendering a snapshot must not start a network request');
     const first = await getGithubSkills('qa-offline-user');
     assert.equal(first.status, 'unavailable');
     assert.deepEqual(first.languages, []);
     assert.deepEqual(await getGithubSkills('qa-offline-user'), first);
+    assert.deepEqual(githubSkillsSnapshot('qa-offline-user'), first);
     assert.equal(calls, 2);
   } finally {
     globalThis.fetch = originalFetch;

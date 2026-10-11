@@ -106,7 +106,9 @@ export function createApi(database: Database, production = false, origin?: strin
       if (pathname === '/api/traffic' && method === 'GET')
         return send({ views: (await trafficSummary(database)).visits });
       if (pathname === '/api/traffic' && method === 'POST') {
-        const input = trafficClientSchema.extend({ path: z.string().max(240) }).parse(await json(request, 4096));
+        const input = trafficClientSchema
+          .extend({ path: z.string().max(240) })
+          .parse(await json(request, 4096));
         const content = publicContent((await database.read()).data);
         const paths = [
           '/',
@@ -224,7 +226,13 @@ export function createApi(database: Database, production = false, origin?: strin
             .string()
             .max(100)
             .parse(params.get('q') || '');
-          const filters = trafficFilterSchema.parse(Object.fromEntries(['from','to','country','browser','device','os','path','ip'].filter(key => params.has(key)).map(key=>[key,params.get(key)])));
+          const filters = trafficFilterSchema.parse(
+            Object.fromEntries(
+              ['from', 'to', 'country', 'browser', 'device', 'os', 'path', 'ip']
+                .filter((key) => params.has(key))
+                .map((key) => [key, params.get(key)]),
+            ),
+          );
           return send(await trafficDetails(database, page, query, filters));
         }
         if (pathname === '/api/admin/upload-init' && method === 'POST') {

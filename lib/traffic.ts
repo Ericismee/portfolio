@@ -25,31 +25,73 @@ CREATE INDEX IF NOT EXISTS traffic_ip_lookup ON traffic_context(ip_hash);
 `;
 const day = 86400_000;
 const analyticsOffset = 7 * 3600_000;
-const dateInput = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v => !Number.isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0,10) === v);
-export const trafficFilterSchema = z.object({
-  from: dateInput.optional(), to: dateInput.optional(),
-  country: z.string().regex(/^(?:[A-Z]{2}|unknown)?$/).default(''),
-  browser: z.string().max(40).default(''), device: z.string().max(20).default(''),
-  os: z.string().max(40).default(''), path: z.string().max(240).default(''),
-  ip: z.string().max(45).refine(v => !v || !!isIP(v)).default(''),
-}).refine(v => !v.from || !v.to || v.from <= v.to, 'Invalid date range / Khoảng ngày không hợp lệ');
+const dateInput = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((v) => !Number.isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v);
+export const trafficFilterSchema = z
+  .object({
+    from: dateInput.optional(),
+    to: dateInput.optional(),
+    country: z
+      .string()
+      .regex(/^(?:[A-Z]{2}|unknown)?$/)
+      .default(''),
+    browser: z.string().max(40).default(''),
+    device: z.string().max(20).default(''),
+    os: z.string().max(40).default(''),
+    path: z.string().max(240).default(''),
+    ip: z
+      .string()
+      .max(45)
+      .refine((v) => !v || !!isIP(v))
+      .default(''),
+  })
+  .refine(
+    (v) => !v.from || !v.to || v.from <= v.to,
+    'Invalid date range / Khoảng ngày không hợp lệ',
+  );
 export type TrafficFilters = z.input<typeof trafficFilterSchema>;
 export const trafficClientSchema = z.object({
   timezone: z.string().max(80).default(''),
   width: z.number().int().min(0).max(20000).default(0),
   height: z.number().int().min(0).max(20000).default(0),
+  screenWidth: z.number().int().min(0).max(20000).default(0),
+  screenHeight: z.number().int().min(0).max(20000).default(0),
+  pixelRatio: z.number().min(0).max(20).default(0),
   referrer: z.string().max(2048).default(''),
 });
 export function trafficGeo(request: Request, onVercel = process.env.VERCEL === '1') {
   const read = (header: string) => {
     if (!onVercel) return '';
-    try { return decodeURIComponent(request.headers.get(header) || '').replace(/[\x00-\x1f\x7f]/g,'').slice(0,100); } catch { return ''; }
+    try {
+      return decodeURIComponent(request.headers.get(header) || '')
+        .split('')
+        .filter((character) => character.charCodeAt(0) > 31 && character.charCodeAt(0) !== 127)
+        .join('')
+        .slice(0, 100);
+    } catch {
+      return '';
+    }
   };
   const country = read('x-vercel-ip-country').toUpperCase();
-  return { country: /^[A-Z]{2}$/.test(country) ? country : '', city: read('x-vercel-ip-city'), region: read('x-vercel-ip-country-region') };
+  const coordinate = (header: string, limit: number) => {
+    const value = read(header);
+    return value && Number.isFinite(Number(value)) && Math.abs(Number(value)) <= limit ? value : '';
+  };
+  const continent = read('x-vercel-ip-continent');
+  return {
+    country: /^[A-Z]{2}$/.test(country) ? country : '',
+    city: read('x-vercel-ip-city'),
+    region: read('x-vercel-ip-country-region'),
+    continent: /^(AF|AN|AS|EU|NA|OC|SA)$/.test(continent) ? continent : '',
+    latitude: coordinate('x-vercel-ip-latitude', 90),
+    longitude: coordinate('x-vercel-ip-longitude', 180),
+    geoTimezone: read('x-vercel-ip-timezone'),
+    postalCode: read('x-vercel-ip-postal-code').slice(0, 20),
+  };
 }
 const lifetime = 30 * 60_000;
-const retention = 30 * 24 * 60 * 60_000;
 const cookieName = 'profile-traffic';
 const mac = (key: Buffer, value: string) =>
   createHmac('sha256', key)
@@ -175,16 +217,47 @@ export async function recordTraffic(
       );
     const geo = trafficGeo(request);
     let referrer = '';
-    try { const url = new URL(client.referrer); if (['https:', 'http:'].includes(url.protocol)) referrer = url.origin; } catch { /* Direct or unavailable. */ }
+    try {
+      const url = new URL(client.referrer);
+      if (['https:', 'http:'].includes(url.protocol)) referrer = url.origin;
+    } catch {
+      /* Direct or unavailable. */
+    }
     let timezone = '';
-    try { if (client.timezone) timezone = new Intl.DateTimeFormat('en', {timeZone: client.timezone}).resolvedOptions().timeZone; } catch { /* Invalid client hint. */ }
-    await database.db.prepare('INSERT INTO traffic_context VALUES(?,?,?,?) ON CONFLICT(visit_id) DO NOTHING').run(
-      mac(key, sessionHash + ':' + path), geo.country,
-      trafficIp(request) ? mac(key, 'ip:' + trafficIp(request)) : '',
-      encryptIp(key, JSON.stringify({city:geo.city,region:geo.region,referrer,timezone,width:client.width,height:client.height,language:(request.headers.get('accept-language') || '').slice(0,120)}), 'profile-traffic-context:v1'),
-    );
+    try {
+      if (client.timezone)
+        timezone = new Intl.DateTimeFormat('en', { timeZone: client.timezone }).resolvedOptions()
+          .timeZone;
+    } catch {
+      /* Invalid client hint. */
+    }
+    await database.db
+      .prepare(
+        `INSERT INTO traffic_context VALUES(?,?,?,?) ON CONFLICT(visit_id) DO UPDATE
+        SET country=excluded.country,ip_hash=excluded.ip_hash,details=excluded.details
+        WHERE traffic_context.country='' AND excluded.country<>''`,
+      )
+      .run(
+        mac(key, sessionHash + ':' + path),
+        geo.country,
+        trafficIp(request) ? mac(key, 'ip:' + trafficIp(request)) : '',
+        encryptIp(
+          key,
+          JSON.stringify({
+            ...geo,
+            referrer,
+            timezone,
+            width: client.width,
+            height: client.height,
+            screenWidth: client.screenWidth,
+            screenHeight: client.screenHeight,
+            pixelRatio: client.pixelRatio,
+            language: (request.headers.get('accept-language') || '').slice(0, 120),
+          }),
+          'profile-traffic-context:v1',
+        ),
+      );
   }
-  await scrubTraffic(database);
   return {
     summary: await trafficSummary(database),
     cookie: valid
@@ -192,35 +265,55 @@ export async function recordTraffic(
       : `${cookieName}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=1800${production ? '; Secure' : ''}`,
   };
 }
-export async function scrubTraffic(database: Database) {
-  await database.db.prepare('DELETE FROM traffic_context WHERE visit_id IN (SELECT id FROM traffic_visits WHERE created_at<?)').run(Date.now() - retention);
-  await database.db
-    .prepare(
-      `UPDATE traffic_visits SET ip='',user_agent='',browser='',device='',os=''
-    WHERE created_at<? AND (ip<>'' OR user_agent<>'')`,
-    )
-    .run(Date.now() - retention);
-}
-export async function trafficDetails(database: Database, page: number, query: string, input: TrafficFilters = {}) {
-  await scrubTraffic(database);
+export async function trafficDetails(
+  database: Database,
+  page: number,
+  query: string,
+  input: TrafficFilters = {},
+) {
   const filters = trafficFilterSchema.parse(input);
   const key = credentialKey(database.directory, true);
-  const since = Math.max(Date.now() - retention, filters.from ? Date.parse(filters.from + 'T00:00:00+07:00') : 0);
+  const since = filters.from ? Date.parse(filters.from + 'T00:00:00+07:00') : 0;
   const until = filters.to ? Date.parse(filters.to + 'T00:00:00+07:00') + day : Date.now() + 1;
   const pattern = '%' + query.toLowerCase().replace(/[\\%_]/g, '') + '%';
-  const conditions = [`v.created_at>=?`, `v.created_at<?`, `(LOWER(v.path) LIKE ? OR LOWER(v.browser) LIKE ? OR LOWER(v.device) LIKE ? OR LOWER(v.os) LIKE ? OR LOWER(COALESCE(c.country,'')) LIKE ?)`];
-  const values: (number|string)[] = [since, until, pattern, pattern, pattern, pattern, pattern];
-  for (const column of ['browser','device','os','path'] as const) if(filters[column]) { conditions.push('v.' + column + '=?'); values.push(filters[column]); }
-  if (filters.country) { conditions.push("COALESCE(NULLIF(c.country,''),'unknown')=?"); values.push(filters.country); }
-  if(filters.ip) { conditions.push('c.ip_hash=?'); values.push(mac(key, 'ip:' + filters.ip)); }
+  const conditions = [
+    `v.created_at>=?`,
+    `v.created_at<?`,
+    `(LOWER(v.path) LIKE ? OR LOWER(v.browser) LIKE ? OR LOWER(v.device) LIKE ? OR LOWER(v.os) LIKE ? OR LOWER(COALESCE(c.country,'')) LIKE ?)`,
+  ];
+  const values: (number | string)[] = [since, until, pattern, pattern, pattern, pattern, pattern];
+  for (const column of ['browser', 'device', 'os', 'path'] as const)
+    if (filters[column]) {
+      conditions.push('COALESCE(NULLIF(v.' + column + ",''),'Unknown')=?");
+      values.push(filters[column]);
+    }
+  if (filters.country) {
+    conditions.push("COALESCE(NULLIF(c.country,''),'unknown')=?");
+    values.push(filters.country);
+  }
+  if (filters.ip) {
+    conditions.push('c.ip_hash=?');
+    values.push(mac(key, 'ip:' + filters.ip));
+  }
   const filter = conditions.join(' AND ');
   const source = 'traffic_visits v LEFT JOIN traffic_context c ON c.visit_id=v.id';
   const count = (await database.db
-    .prepare('SELECT COUNT(*) AS total,COUNT(DISTINCT v.session_hash) AS visits FROM ' + source + ' WHERE ' + filter)
-    .get(...values)) as { total: number | string };
+    .prepare(
+      "SELECT COUNT(*) AS total,COUNT(DISTINCT v.session_hash) AS visits,COALESCE(SUM(CASE WHEN v.path IN ('/','/profile') THEN 1 ELSE 0 END),0) AS profiles FROM " +
+        source +
+        ' WHERE ' +
+        filter,
+    )
+    .get(...values)) as {
+    total: number | string;
+    visits: number | string;
+    profiles: number | string;
+  };
   const rows = (await database.db
     .prepare(
-      "SELECT v.*,COALESCE(c.country,'') AS country,COALESCE(c.details,'') AS details FROM " + source + ' WHERE ' +
+      "SELECT v.*,COALESCE(c.country,'') AS country,COALESCE(c.details,'') AS details FROM " +
+        source +
+        ' WHERE ' +
         filter +
         ' ORDER BY v.created_at DESC,v.id LIMIT 50 OFFSET ?',
     )
@@ -237,36 +330,121 @@ export async function trafficDetails(database: Database, page: number, query: st
     details: string;
     session_hash: string;
   }>;
-  const daily = await database.db.prepare('SELECT CAST((v.created_at+' + analyticsOffset + ') / ' + day + ' AS BIGINT) AS bucket,COUNT(*) AS views,COUNT(DISTINCT v.session_hash) AS visits FROM ' + source + ' WHERE ' + filter + ' GROUP BY bucket ORDER BY bucket').all(...values) as Array<{bucket:number|string;views:number|string;visits:number|string}>;
-  const countries = await database.db.prepare("SELECT COALESCE(NULLIF(c.country,''),'unknown') AS country,COUNT(*) AS views,COUNT(DISTINCT v.session_hash) AS visits FROM " + source + ' WHERE ' + filter + ' GROUP BY COALESCE(NULLIF(c.country,''),'unknown') ORDER BY views DESC').all(...values) as Array<{country:string;views:number|string;visits:number|string}>;
-  const options: Record<string,string[]> = {};
-  for(const column of ['browser','device','os','path'] as const) options[column] = (await database.db.prepare('SELECT DISTINCT ' + column + ' AS value FROM traffic_visits WHERE created_at>=? AND ' + column + "<>'' ORDER BY value").all(Date.now()-retention) as {value:string}[]).map(row=>row.value);
-  options.country = (await database.db.prepare('SELECT DISTINCT country AS value FROM traffic_context ORDER BY country').all() as {value:string}[]).map(row=>row.value || 'unknown');
+  const daily = (await database.db
+    .prepare(
+      'SELECT CAST((v.created_at+' +
+        analyticsOffset +
+        ') / ' +
+        day +
+        ' AS BIGINT) AS bucket,COUNT(*) AS views,COUNT(DISTINCT v.session_hash) AS visits FROM ' +
+        source +
+        ' WHERE ' +
+        filter +
+        ' GROUP BY bucket ORDER BY bucket',
+    )
+    .all(...values)) as Array<{
+    bucket: number | string;
+    views: number | string;
+    visits: number | string;
+  }>;
+  const countries = (await database.db
+    .prepare(
+      "SELECT COALESCE(NULLIF(c.country,''),'unknown') AS country,COUNT(*) AS views,COUNT(DISTINCT v.session_hash) AS visits FROM " +
+        source +
+        ' WHERE ' +
+        filter +
+        " GROUP BY COALESCE(NULLIF(c.country,''),'unknown') ORDER BY views DESC",
+    )
+    .all(...values)) as Array<{ country: string; views: number | string; visits: number | string }>;
+  const options: Record<string, string[]> = {};
+  const breakdowns: Record<string, Array<{ name: string; views: number }>> = {};
+  for (const column of ['browser', 'device', 'os', 'path'] as const) {
+    const grouped = (await database.db
+      .prepare(
+        'SELECT COALESCE(NULLIF(v.' +
+          column +
+          ",''),'Unknown') AS name,COUNT(*) AS views FROM " +
+          source +
+          ' WHERE ' +
+          filter +
+          ' GROUP BY COALESCE(NULLIF(v.' +
+          column +
+          ",''),'Unknown') ORDER BY views DESC,name LIMIT 12",
+      )
+      .all(...values)) as Array<{ name: string; views: number | string }>;
+    breakdowns[column] = grouped.map((row) => ({ name: row.name, views: Number(row.views) }));
+  }
+  for (const column of ['browser', 'device', 'os', 'path'] as const)
+    options[column] = (
+      (await database.db
+        .prepare(
+          'SELECT DISTINCT ' +
+            column +
+            ' AS value FROM traffic_visits WHERE ' +
+            column +
+            "<>'' ORDER BY value",
+        )
+        .all()) as { value: string }[]
+    ).map((row) => row.value);
+  options.country = (
+    (await database.db
+      .prepare('SELECT DISTINCT country AS value FROM traffic_context ORDER BY country')
+      .all()) as { value: string }[]
+  ).map((row) => row.value || 'unknown');
   return {
     ...(await trafficSummary(database)),
     total: Number(count.total),
+    filtered: {
+      pageViews: Number(count.total),
+      visits: Number(count.visits),
+      profileViews: Number(count.profiles),
+      countries: countries.filter((row) => row.country !== 'unknown').length,
+    },
+    breakdowns,
     page,
     pageSize: 50,
     filters,
     options,
     timezone: 'Asia/Ho_Chi_Minh',
-    daily: daily.map(row=>({date:new Date(Number(row.bucket)*day).toISOString().slice(0,10),views:Number(row.views),visits:Number(row.visits)})),
-    countries: countries.map(row=>({...row,views:Number(row.views),visits:Number(row.visits)})),
+    daily: daily.map((row) => ({
+      date: new Date(Number(row.bucket) * day).toISOString().slice(0, 10),
+      views: Number(row.views),
+      visits: Number(row.visits),
+    })),
+    countries: countries.map((row) => ({
+      ...row,
+      views: Number(row.views),
+      visits: Number(row.visits),
+    })),
     entries: rows.map((row) => {
-      let context = trafficClientSchema.parse({}) as z.infer<typeof trafficClientSchema> & {city?:string;region?:string;language?:string};
-      try { context = JSON.parse(decryptIp(key,row.details,'profile-traffic-context:v1')); } catch { /* Older records have no context. */ }
-      return ({
-      id: row.id,
-      path: row.path,
-      at: Number(row.created_at),
-      ip: decryptIp(key, row.ip),
-      userAgent: row.user_agent,
-      browser: row.browser,
-      device: row.device,
-      os: row.os,
-      country: row.country,
-      sessionId: row.session_hash.slice(0,12),
-      ...context,
-    }); }),
+      let context = trafficClientSchema.parse({}) as z.infer<typeof trafficClientSchema> & {
+        city?: string;
+        region?: string;
+        language?: string;
+        continent?: string;
+        latitude?: string;
+        longitude?: string;
+        geoTimezone?: string;
+        postalCode?: string;
+      };
+      try {
+        context = JSON.parse(decryptIp(key, row.details, 'profile-traffic-context:v1'));
+      } catch {
+        /* Older records have no context. */
+      }
+      return {
+        id: row.id,
+        path: row.path,
+        at: Number(row.created_at),
+        ip: decryptIp(key, row.ip),
+        userAgent: row.user_agent,
+        browser: row.browser,
+        device: row.device,
+        os: row.os,
+        country: row.country,
+        sessionId: row.session_hash.slice(0, 12),
+        ...context,
+      };
+    }),
   };
 }

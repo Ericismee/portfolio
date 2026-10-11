@@ -1,6 +1,7 @@
 'use client';
 import { uiLabel, localizedError } from '../lib/i18n';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { Content, Project, Post } from '../lib/schema';
@@ -13,7 +14,6 @@ import { LanguageProvider, useLanguage } from './language';
 import { useInlineEdit } from './inline-edit';
 import type { GithubSkills } from '../lib/github-skills';
 import { GithubSkillsCard } from './github-skills';
-import { GithubProfile } from './github-profile';
 import { PostBody } from './post-body';
 import { CvDocument } from './cv-document';
 import { MarkdownContent } from './markdown-content';
@@ -25,6 +25,9 @@ import {
   projectTechnologies,
   normalizeSearch,
 } from '../lib/search';
+const GithubProfile = dynamic(() =>
+  import('./github-profile').then((module) => module.GithubProfile),
+);
 
 export function ProfileSite(props: {
   content: Content;
@@ -41,7 +44,7 @@ export function ProfileSite(props: {
 }
 function Site({
   content,
-  githubSkills,
+  githubSkills: initialGithubSkills,
   page,
   id,
   query,
@@ -52,6 +55,35 @@ function Site({
   id?: string;
   query: Record<string, string>;
 }) {
+  const [githubSkills, setGithubSkills] = useState(initialGithubSkills);
+  const [githubLoading, setGithubLoading] = useState(
+    !initialGithubSkills.updatedAt && !!initialGithubSkills.username,
+  );
+  useEffect(() => {
+    setGithubSkills(initialGithubSkills);
+    if (initialGithubSkills.updatedAt || !initialGithubSkills.username || page === 'github') {
+      setGithubLoading(false);
+      return;
+    }
+    setGithubLoading(true);
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      void fetch('/api/github?view=skills', { signal: controller.signal, cache: 'no-store' })
+        .then(async (response) => {
+          if (!response.ok) throw Error('Unavailable');
+          const result = await response.json();
+          if (!controller.signal.aborted) setGithubSkills(result.stats);
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          if (!controller.signal.aborted) setGithubLoading(false);
+        });
+    }, 150);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [initialGithubSkills, page]);
   const editing = useInlineEdit(content),
     data = editing.data;
   const { language, t, toggle } = useLanguage(),
@@ -273,7 +305,7 @@ function Site({
           >
             {p.thumbnail ? (
               <span className="project-image">
-                <img src={p.thumbnail} alt={p.name} />
+                <img src={p.thumbnail} alt={p.name} loading="lazy" decoding="async" />
               </span>
             ) : (
               <>
@@ -635,7 +667,14 @@ function Site({
             className="cover"
             data-label={profile.name.toUpperCase() + ' / ' + profile.headline.toUpperCase()}
           >
-            {profile.cover && <img src={profile.cover} alt={t('Ảnh bìa', 'Cover image')} />}
+            {profile.cover && (
+              <img
+                src={profile.cover}
+                alt={t('Ảnh bìa', 'Cover image')}
+                fetchPriority="high"
+                decoding="async"
+              />
+            )}
             <div className="inline-cover-action">
               {editing.button(t('Sửa ảnh bìa', 'Edit cover'), () => editing.profile('cover'), true)}
             </div>
@@ -708,7 +747,12 @@ function Site({
       <>
         {card(t('Liên kết', 'Links'), links())}
         {data.github.showSidebar && (
-          <GithubSkillsCard stats={githubSkills} settings={data.github} avatar={profile.avatar} />
+          <GithubSkillsCard
+            stats={githubSkills}
+            settings={data.github}
+            avatar={profile.avatar}
+            loading={githubLoading}
+          />
         )}
         {sections.length > 1 &&
           card(

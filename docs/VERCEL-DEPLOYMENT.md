@@ -59,7 +59,7 @@ The public footer displays only the all-time visit count. A visit is a signed, H
 
 The authenticated **Traffic statistics** admin section shows profile views, visits, page views, the last 24 hours, and searchable, paginated visitor details. Only Vercel's trusted client-IP header is accepted in production. IP addresses use AES-256-GCM with the protected server credential key; IP and browser/device details never appear in the public API. Detail requests require an administrator session. Browser/device classification is approximate and can be spoofed by clients.
 
-IP and user-agent detail is scrubbed after 30 days on the next traffic write or admin detail request. Historical path/session records remain for aggregate counts. The footer includes a bilingual privacy notice. Origin validation, bounded request bodies, signed cookies and per-IP rate limits protect the recording endpoint, but the counter is not an anti-fraud billing metric. Keep the server credential key backed up when rotating or migrating the deployment.
+Visitor history, encrypted IPs and supplementary metadata are retained indefinitely without automatic expiry. Empty date filters include the complete saved history; date ranges only restrict the report and never delete data. Previously scrubbed metadata cannot be reconstructed. The dashboard includes trend, device, country, software and page charts. The footer includes a bilingual privacy notice. Origin validation, bounded request bodies, signed cookies and per-IP rate limits protect the recording endpoint, but the counter is not an anti-fraud billing metric. Keep the server credential key and database backed up when rotating or migrating the deployment.
 
 ## Deployment verification checklist
 

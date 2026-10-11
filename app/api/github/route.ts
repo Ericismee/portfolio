@@ -13,6 +13,11 @@ export async function GET(request: Request) {
   const { githubUsername, github } = (await (await getDatabase()).read()).data;
   try {
     const stats = await getGithubSkills(githubUsername);
+    if (new URL(request.url).searchParams.get('view') === 'skills')
+      return Response.json(
+        { stats: visibleGithubStats(stats, github) },
+        { headers: { 'Cache-Control': 'no-store' } },
+      );
     return Response.json(
       {
         stats: visibleGithubStats(stats, github),

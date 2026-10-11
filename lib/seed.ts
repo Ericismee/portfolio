@@ -2,9 +2,10 @@ export const initial = {
   profile: {
     name: 'Eric',
     headline: 'Software Engineer',
-    summary: 'Simplify everything.',
+    summary:
+      'Software developer building AI-powered research, learning experiences, and thoughtful desktop tools.',
     about:
-      'Các dự án trong hồ sơ tập trung vào AI cho nghiên cứu tài liệu, học ngôn ngữ và công cụ desktop. Xem từng dự án để tìm hiểu mục tiêu, công nghệ và mã nguồn công khai.',
+      "I'm Eric, also known as Nguyen Ngoc Han, a software developer based in Vietnam. I turn ideas into practical tools that make learning, research, and everyday work simpler.\n\nMy projects explore AI-assisted document research, language learning, and desktop productivity. I enjoy connecting thoughtful interfaces with reliable systems, from the first prototype to the details that make an application comfortable to use.\n\nI care about clarity, privacy, and continuous improvement. This portfolio is where I share what I'm building, what I'm learning, and the thinking behind each project.",
     location: '',
     avatar: '',
     cover: '',

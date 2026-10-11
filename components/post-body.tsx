@@ -55,10 +55,13 @@ export function PostBody({
           )}
         </div>
       </div>
-      {!detail && overflow && (
+      {!detail && (
         <button
           type="button"
           className="text-action post-expand"
+          style={{ visibility: overflow ? 'visible' : 'hidden' }}
+          disabled={!overflow}
+          aria-hidden={!overflow}
           aria-expanded={expanded}
           aria-controls={id}
           onClick={() => setExpanded((v) => !v)}
