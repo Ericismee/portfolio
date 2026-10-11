@@ -36,21 +36,18 @@ export function authService(
       .find((x) => x.startsWith(cookieName + '='))
       ?.slice(cookieName.length + 1);
     return raw && /^[a-f0-9]{64}$/.test(raw)
-      ? (await db
+      ? ((await db
           .prepare('SELECT * FROM sessions WHERE token_hash=? AND expires>?')
-          .get(digest(raw), Date.now()) as Session) || null
+          .get(digest(raw), Date.now())) as Session) || null
       : null;
   };
   async function create(username: string) {
     await db.prepare('DELETE FROM sessions WHERE expires<?').run(Date.now());
     const value = token(),
       csrf = token();
-    await db.prepare('INSERT INTO sessions VALUES(?,?,?,?)').run(
-      digest(value),
-      username,
-      csrf,
-      Date.now() + 43200000,
-    );
+    await db
+      .prepare('INSERT INTO sessions VALUES(?,?,?,?)')
+      .run(digest(value), username, csrf, Date.now() + 43200000);
     return { cookie: cookie(value, 43200), csrf };
   }
   return { session, create, cookie };

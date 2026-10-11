@@ -1,0 +1,10 @@
+.data
+.env
+.env.*
+!.env.example
+.qa-*
+.chrome-preview
+coverage
+*.sqlite*
+docs/screenshots
+src/legacy

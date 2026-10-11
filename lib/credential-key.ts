@@ -41,7 +41,8 @@ function encode(key: Buffer) {
 export function credentialKey(directory: string, create = false): Buffer {
   if (directory === 'cloud') {
     const encoded = process.env.GITHUB_CREDENTIAL_KEY || '';
-    if (!/^[a-f0-9]{64}$/i.test(encoded)) throw Error('Cloud credential encryption key is unavailable');
+    if (!/^[a-f0-9]{64}$/i.test(encoded))
+      throw Error('Cloud credential encryption key is unavailable');
     return Buffer.from(encoded, 'hex');
   }
   const filename = path.resolve(directory, 'github-credential.key');

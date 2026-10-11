@@ -63,12 +63,12 @@ export function createApi(database: Database, production = false, origin?: strin
   const rate = async (key: string, max: number) => {
     const now = Date.now();
     await db.prepare('DELETE FROM rate_limits WHERE until<=?').run(now);
-    const result = await db
+    const result = (await db
       .prepare(
         `INSERT INTO rate_limits(key,count,until) VALUES(?,1,?)
-      ON CONFLICT(key) DO UPDATE SET count=count+1 RETURNING count`,
+      ON CONFLICT(key) DO UPDATE SET count=rate_limits.count+1 RETURNING count`,
       )
-      .get(key, now + 900000) as { count: number };
+      .get(key, now + 900000)) as { count: number };
     if (result.count > max)
       throw new HttpError(429, 'Too many requests. Please try later. / Vui lòng thử lại sau.');
   };
@@ -98,8 +98,9 @@ export function createApi(database: Database, production = false, origin?: strin
           .object({ username: z.string().min(1).max(40), password: z.string().max(256) })
           .parse(await json(request, 16 * 1024));
         await rate('login-account:' + digest(input.username.toLowerCase()), 30);
-        const user = await db.prepare('SELECT * FROM admins WHERE username=?').get(input.username) as
-          { username: string; password_hash: string } | undefined;
+        const user = (await db
+          .prepare('SELECT * FROM admins WHERE username=?')
+          .get(input.username)) as { username: string; password_hash: string } | undefined;
         const valid = await verifyPassword(
           input.password,
           user?.password_hash ||
@@ -116,34 +117,51 @@ export function createApi(database: Database, production = false, origin?: strin
       if (pathname === '/api/contact' && method === 'POST') {
         await rate('contact', 30);
         const b = messageInput.parse(await json(request));
-        await db.prepare(
-          'INSERT INTO messages(name,email,subject,message,created_at) VALUES(?,?,?,?,?)',
-        ).run(b.name, b.email, b.subject, b.message, new Date().toISOString());
+        await db
+          .prepare('INSERT INTO messages(name,email,subject,message,created_at) VALUES(?,?,?,?,?)')
+          .run(b.name, b.email, b.subject, b.message, new Date().toISOString());
         return send({ saved: true }, 201);
       }
       if (pathname.startsWith('/api/admin/')) {
         if (!session) throw new HttpError(401, 'Please sign in / Vui lòng đăng nhập');
         if (pathname === '/api/admin/upload-init' && method === 'POST') {
           await rate('upload-init', 60);
-          if (database.directory !== 'cloud') return send({ mode:'local' });
-          return send(await startCloudUpload(database, session.username, await json(request,4096)));
+          if (database.directory !== 'cloud') return send({ mode: 'local' });
+          return send(
+            await startCloudUpload(database, session.username, await json(request, 4096)),
+          );
         }
         if (pathname === '/api/admin/upload-finish' && method === 'POST') {
-          if (database.directory !== 'cloud') throw new HttpError(404,'Not found');
-          const {id} = z.object({id:z.string().max(50)}).parse(await json(request,4096));
-          const {bytes,mime} = await consumeCloudUpload(database,session.username,id);
-          return send({url:await storeUpload(database.directory,bytes,mime)},201);
+          if (database.directory !== 'cloud') throw new HttpError(404, 'Not found');
+          const { id } = z.object({ id: z.string().max(50) }).parse(await json(request, 4096));
+          const { bytes, mime } = await consumeCloudUpload(database, session.username, id);
+          return send({ url: await storeUpload(database.directory, bytes, mime) }, 201);
         }
         if (pathname === '/api/admin/import-blob' && method === 'POST') {
-          if (database.directory !== 'cloud') throw new HttpError(404,'Not found');
-          const {id,version} = z.object({id:z.string().max(50),version:z.number().int().positive()}).parse(await json(request,4096));
-          const {bytes,mime} = await consumeCloudUpload(database,session.username,id);
-          if (mime !== 'application/json') throw new HttpError(400,'Expected JSON import');
-          let input:unknown;
-          try { input=JSON.parse(bytes.toString()); } catch { throw new HttpError(400,'Invalid JSON'); }
-          const created:string[]=[];
-          try { return send(await database.write(await migrateAssets(input,database.directory,created),version)); }
-          catch(error) { await Promise.allSettled(created.map(url=>removeUpload(database.directory,url))); throw error; }
+          if (database.directory !== 'cloud') throw new HttpError(404, 'Not found');
+          const { id, version } = z
+            .object({ id: z.string().max(50), version: z.number().int().positive() })
+            .parse(await json(request, 4096));
+          const { bytes, mime } = await consumeCloudUpload(database, session.username, id);
+          if (mime !== 'application/json') throw new HttpError(400, 'Expected JSON import');
+          let input: unknown;
+          try {
+            input = JSON.parse(bytes.toString());
+          } catch {
+            throw new HttpError(400, 'Invalid JSON');
+          }
+          const created: string[] = [];
+          try {
+            return send(
+              await database.write(
+                await migrateAssets(input, database.directory, created),
+                version,
+              ),
+            );
+          } catch (error) {
+            await Promise.allSettled(created.map((url) => removeUpload(database.directory, url)));
+            throw error;
+          }
         }
         if (pathname === '/api/admin/github-connection') {
           if (method === 'GET') {
@@ -230,7 +248,8 @@ export function createApi(database: Database, production = false, origin?: strin
             );
           }
         }
-        if (pathname === '/api/admin/content' && method === 'GET') return send(await database.read());
+        if (pathname === '/api/admin/content' && method === 'GET')
+          return send(await database.read());
         if (pathname === '/api/admin/content' && method === 'PUT') {
           const b = envelope.parse(await json(request));
           return send(await database.write(b.data, b.version));
@@ -243,9 +262,7 @@ export function createApi(database: Database, production = false, origin?: strin
             return send(await database.write(migrated, b.version));
           } catch (error) {
             // Only generated files from this rejected import are eligible for cleanup.
-            await Promise.allSettled(
-              created.map((url) => removeUpload(database.directory,url)),
-            );
+            await Promise.allSettled(created.map((url) => removeUpload(database.directory, url)));
             throw error;
           }
         }
@@ -259,11 +276,13 @@ export function createApi(database: Database, production = false, origin?: strin
         }
         if (pathname === '/api/admin/revisions' && method === 'GET')
           return send({
-            revisions: await db.prepare('SELECT id,created_at FROM revisions ORDER BY id DESC').all(),
+            revisions: await db
+              .prepare('SELECT id,created_at FROM revisions ORDER BY id DESC')
+              .all(),
           });
         if (pathname === '/api/admin/restore' && method === 'POST') {
           const b = restoreInput.parse(await json(request)),
-            r = await db.prepare('SELECT body FROM revisions WHERE id=?').get(b.id) as
+            r = (await db.prepare('SELECT body FROM revisions WHERE id=?').get(b.id)) as
               { body: string } | undefined;
           if (!r) throw new HttpError(404, 'Revision not found');
           return send(await database.write(JSON.parse(r.body), b.version));
@@ -291,7 +310,8 @@ export function createApi(database: Database, production = false, origin?: strin
           400,
         );
       if (isHttpError(e)) return send({ error: e.message }, e.status);
-      console.error('API request failed:', e instanceof Error ? e.stack : 'Unknown error');
+      // Database/provider errors can contain SQL values or connection details.
+      console.error('API request failed:', e instanceof Error ? e.name : 'Unknown error');
       return send({ error: 'Server error / Lỗi máy chủ' }, 500);
     }
   };

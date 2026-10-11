@@ -540,9 +540,7 @@ function AdminDashboard() {
         'Replace current content. A recovery revision will be retained.',
       ),
       async () => {
-        setState(
-          await importContent(prepared, state!.version, csrf.current),
-        );
+        setState(await importContent(prepared, state!.version, csrf.current));
         setDirty(false);
         setToast(t('Đã nhập dữ liệu', 'Data imported'));
       },

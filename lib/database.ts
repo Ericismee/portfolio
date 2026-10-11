@@ -100,6 +100,7 @@ export function openDatabase(
 export type LocalDatabase = ReturnType<typeof openDatabase>;
 export type SqlValue = string | number | bigint | null | Uint8Array;
 export type Connection = {
+  close?(): void | Promise<void>;
   exec(sql: string): void | Promise<void>;
   prepare(sql: string): {
     get(...values: SqlValue[]): unknown | Promise<unknown>;
@@ -120,9 +121,12 @@ const globalDB = globalThis as typeof globalThis & {
 };
 export const getDatabase = () => {
   if (process.env.DATABASE_URL) {
-    return (globalDB.cloudDB ??= import('./cloud-database.ts').then(({ openCloudDatabase }) =>
-      openCloudDatabase(),
-    ).catch((error) => { globalDB.cloudDB = undefined; throw error; }));
+    return (globalDB.cloudDB ??= import('./cloud-database.ts')
+      .then(({ openCloudDatabase }) => openCloudDatabase())
+      .catch((error) => {
+        globalDB.cloudDB = undefined;
+        throw error;
+      }));
   }
   if (process.env.VERCEL) throw new HttpError(503, 'Cloud database is not configured');
   if (globalDB.profileDBSchema !== contentSchema) {

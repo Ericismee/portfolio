@@ -29,7 +29,11 @@ export async function storeUpload(directory: string, bytes: Buffer, mime: string
   const name = randomUUID() + '.' + ext;
   if (directory === 'cloud') {
     const { put } = await import('@vercel/blob');
-    await put('uploads/' + name, bytes, { access: 'private', contentType: mime, addRandomSuffix: false });
+    await put('uploads/' + name, bytes, {
+      access: 'private',
+      contentType: mime,
+      addRandomSuffix: false,
+    });
     return '/uploads/' + name;
   }
   const folder = path.join(directory, 'uploads');
@@ -42,17 +46,22 @@ export async function readUpload(directory: string, name: string): Promise<Buffe
   const stream = await uploadBody(directory, name);
   return Buffer.from(await new Response(stream as BodyInit).arrayBuffer());
 }
-export async function uploadBody(directory: string, name: string): Promise<ReadableStream<Uint8Array> | Uint8Array> {
+export async function uploadBody(
+  directory: string,
+  name: string,
+): Promise<ReadableStream<Uint8Array> | Uint8Array> {
   if (directory !== 'cloud') return new Uint8Array(await readUpload(directory, name));
   const { get } = await import('@vercel/blob');
-  const result = await get('uploads/' + name, { access:'private', useCache:false });
+  const result = await get('uploads/' + name, { access: 'private', useCache: false });
   if (!result || result.statusCode !== 200) throw new HttpError(404, 'File not found');
   return result.stream;
 }
 export async function removeUpload(directory: string, url: string) {
   const name = path.basename(url);
-  if (directory === 'cloud') { const {del} = await import('@vercel/blob'); await del('uploads/' + name); }
-  else await unlink(path.join(directory, 'uploads', name));
+  if (directory === 'cloud') {
+    const { del } = await import('@vercel/blob');
+    await del('uploads/' + name);
+  } else await unlink(path.join(directory, 'uploads', name));
 }
 export async function migrateAssets(
   input: unknown,

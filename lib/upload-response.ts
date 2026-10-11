@@ -16,7 +16,7 @@ export async function uploadResponse(database: Database, request: Request, filen
           ?.some((reference) => reference === url) ??
           false)
       : !!v && typeof v === 'object' && Object.values(v).some(referenced);
-  if (!await authService(database).session(request) && !referenced(content))
+  if (!(await authService(database).session(request)) && !referenced(content))
     return new Response('Not found', { status: 404 });
   try {
     const body = await uploadBody(database.directory, filename),

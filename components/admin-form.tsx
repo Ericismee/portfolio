@@ -87,7 +87,7 @@ export function FieldsForm({
     setError('');
     try {
       const mime = await uploadMime(file);
-      const result = {url:await uploadFile(file,mime,csrf)};
+      const result = { url: await uploadFile(file, mime, csrf) };
       if (done) done(result.url);
       else
         setValues((v) => ({

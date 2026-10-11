@@ -11,7 +11,11 @@ async function table(database: Database) {
   );
 }
 export async function githubCredential(database?: Database) {
-  if (!database && !process.env.DATABASE_URL && !existsSync(path.resolve(process.env.DATA_DIR || '.data', 'profile.sqlite')))
+  if (
+    !database &&
+    !process.env.DATABASE_URL &&
+    !existsSync(path.resolve(process.env.DATA_DIR || '.data', 'profile.sqlite'))
+  )
     return {
       token: process.env.GITHUB_TOKEN || '',
       login: '',
@@ -19,8 +23,9 @@ export async function githubCredential(database?: Database) {
     };
   database ??= await getDatabase();
   await table(database);
-  const row = await database.db.prepare('SELECT secret,login FROM github_connection WHERE id=1').get() as
-    { secret: string; login: string } | undefined;
+  const row = (await database.db
+    .prepare('SELECT secret,login FROM github_connection WHERE id=1')
+    .get()) as { secret: string; login: string } | undefined;
   if (row) {
     try {
       const parts = row.secret.split('.'),
@@ -56,7 +61,11 @@ export async function saveGithubCredential(database: Database, token: string, lo
   cipher.setAAD(Buffer.from('Eric-Profile:GitHub:v2:' + login));
   const body = Buffer.concat([cipher.update(token), cipher.final()]);
   const secret = 'v2.' + [iv, cipher.getAuthTag(), body].map((v) => v.toString('base64')).join('.');
-  await database.db.prepare('INSERT INTO github_connection VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET secret=excluded.secret,login=excluded.login').run(secret, login);
+  await database.db
+    .prepare(
+      'INSERT INTO github_connection VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET secret=excluded.secret,login=excluded.login',
+    )
+    .run(secret, login);
 }
 export async function disconnectGithub(database: Database) {
   await table(database);
