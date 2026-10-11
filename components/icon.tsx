@@ -32,6 +32,8 @@ export function Icon({ name }: { name: string }) {
       </>
     ),
     plus: <path d="M12 5v14M5 12h14" />,
+    moon: <path d="M20.5 13.5A9 9 0 0 1 10.5 3a9 9 0 1 0 10 10.5Z" />,
+    share: <path d="M14 4h6v6m0-6L9 15M10 5H4v15h15v-6" />,
     profile: (
       <>
         <circle cx="12" cy="8" r="4" />

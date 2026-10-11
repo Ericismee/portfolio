@@ -2389,3 +2389,77 @@ button.gh-day:hover {
   font-weight: 600;
   margin-bottom: 12px;
 }
+
+/* Compact actions keep the post content clear. */
+.post-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.post-heading > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.post-admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.post-admin-actions .inline-icon-button {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  flex-basis: 36px;
+  padding: 9px;
+  border-radius: 8px;
+}
+.post-admin-actions .post-delete:hover {
+  color: #c43838;
+  background: color-mix(in srgb, #c43838 9%, var(--card));
+}
+.activity .post-footer,
+.post .post-footer {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0;
+  margin-top: 14px;
+  padding-top: 10px;
+}
+.post-share-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--muted);
+  font: 600 12px var(--font-ui);
+}
+.post-share-button:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+.post-share-button svg,
+.theme-menu-action svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.site-menu .theme-menu-action {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+@media (max-width: 600px) {
+  .post-admin-actions .inline-icon-button {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    flex-basis: 40px;
+  }
+  .post-share-button {
+    min-height: 40px;
+  }
+}

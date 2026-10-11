@@ -335,7 +335,7 @@ function Site({
     return (
       <article className={detail ? 'card post' : 'activity'} key={p.id}>
         {detail && <Link href="/activity">← {t('Hoạt động', 'Activity')}</Link>}
-        <div className="row">
+        <div className="row post-heading">
           {avatar()}
           <div>
             <strong>{profile.name}</strong>
@@ -345,6 +345,28 @@ function Site({
               ) : null}
             </div>
           </div>
+          {editing.enabled && (
+            <div className="post-admin-actions">
+              <button
+                type="button"
+                className="inline-icon-button"
+                aria-label={t('Sửa bài viết', 'Edit post')}
+                title={t('Sửa bài viết', 'Edit post')}
+                onClick={() => editing.item('posts', '', p.id)}
+              >
+                <Icon name="edit" />
+              </button>
+              <button
+                type="button"
+                className="inline-icon-button post-delete"
+                aria-label={t('Xóa bài viết', 'Delete post')}
+                title={t('Xóa bài viết', 'Delete post')}
+                onClick={() => editing.removePost(p.id)}
+              >
+                <Icon name="trash" />
+              </button>
+            </div>
+          )}
         </div>
         {detail ? (
           <h1>{p.title}</h1>
@@ -373,16 +395,12 @@ function Site({
           </a>
         )}
         <div className="post-footer">
-          {editing.button(
-            t('Sửa bài viết', 'Edit post'),
-            () => editing.item('posts', '', p.id),
-            true,
-          )}
-          {editing.button(t('Xóa bài viết', 'Delete post'), () => editing.removePost(p.id), true)}
           <button
-            className="btn neutral"
+            type="button"
+            className="post-share-button"
             onClick={() => share('/posts/' + encodeURIComponent(p.id))}
           >
+            <Icon name="share" />
             {t('Chia sẻ', 'Share')}
           </button>
         </div>
@@ -1004,6 +1022,7 @@ function Site({
             >
               <strong className="settings-title">{t('Cài đặt', 'Settings')}</strong>
               <button
+                className="theme-menu-action"
                 onClick={() => {
                   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
                   applyTheme(data.accent, next);
@@ -1014,7 +1033,8 @@ function Site({
                   }
                 }}
               >
-                {t('☼ / ☾  Đổi sáng / tối', '☼ / ☾  Toggle light / dark')}
+                <Icon name="moon" />
+                {t('Giao diện sáng / tối', 'Light / dark appearance')}
               </button>
               <span className="settings-label">
                 {t('Ngôn ngữ giao diện', 'Interface language')}
