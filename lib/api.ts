@@ -1,3 +1,4 @@
+import { digest } from './auth.ts';
 import { MAX_UPLOAD_BYTES } from './upload-limits.ts';
 import { getGithubSkills } from './github-skills.ts';
 import { getGithubProject, githubProjectQuery } from './github-project.ts';
@@ -53,17 +54,21 @@ const send = (body: unknown, status = 200, headers: HeadersInit = {}) =>
   Response.json(body, { status, headers: { 'Cache-Control': 'no-store', ...headers } });
 export function createApi(database: Database, production = false, origin?: string) {
   const { db } = database,
-    auth = authService(database, production),
-    limits = new Map<string, { count: number; until: number }>();
+    auth = authService(database, production);
+  db.exec(
+    'CREATE TABLE IF NOT EXISTS rate_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,until INTEGER NOT NULL)',
+  );
   let dummy: Promise<string>;
   const rate = (key: string, max: number) => {
     const now = Date.now();
-    let r = limits.get(key);
-    if (!r || r.until < now) {
-      r = { count: 0, until: now + 900000 };
-      limits.set(key, r);
-    }
-    if (++r.count > max)
+    db.prepare('DELETE FROM rate_limits WHERE until<=?').run(now);
+    const result = db
+      .prepare(
+        `INSERT INTO rate_limits(key,count,until) VALUES(?,1,?)
+      ON CONFLICT(key) DO UPDATE SET count=count+1 RETURNING count`,
+      )
+      .get(key, now + 900000) as { count: number };
+    if (result.count > max)
       throw new HttpError(429, 'Too many requests. Please try later. / Vui lòng thử lại sau.');
   };
   return async function handle(request: Request): Promise<Response> {
@@ -86,10 +91,11 @@ export function createApi(database: Database, production = false, origin?: strin
       if (pathname === '/api/session' && method === 'GET')
         return send({ authenticated: !!session, csrf: session?.csrf });
       if (pathname === '/api/login' && method === 'POST') {
-        rate('login', 30);
+        rate('login-global', 300);
         const input = z
           .object({ username: z.string().min(1).max(40), password: z.string().max(256) })
-          .parse(await json(request));
+          .parse(await json(request, 16 * 1024));
+        rate('login-account:' + digest(input.username.toLowerCase()), 30);
         const user = db.prepare('SELECT * FROM admins WHERE username=?').get(input.username) as
           { username: string; password_hash: string } | undefined;
         const valid = await verifyPassword(

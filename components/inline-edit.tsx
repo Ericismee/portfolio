@@ -447,8 +447,8 @@ export function useInlineEdit(publicData: Content) {
       },
     });
   }
-  function sectionSettings(name: string) {
-    if (!state) return;
+  function sectionSettings(name: string, current = state) {
+    if (!current) return;
     open({
       title: t('Thiết lập mục', 'Section settings'),
       fields: [
@@ -456,16 +456,16 @@ export function useInlineEdit(publicData: Content) {
         field('visible', t('Hiển thị mục', 'Show section'), 'checkbox'),
         {
           ...field('position', t('Vị trí', 'Position'), 'select'),
-          options: state.data.sections.map((s, i) => [
+          options: current.data.sections.map((s, i) => [
             String(i),
-            String(i + 1) + ' · ' + sectionLabel(s, state.data.sectionTitles[s], language),
+            String(i + 1) + ' · ' + sectionLabel(s, current.data.sectionTitles[s], language),
           ]),
         },
       ],
       values: {
-        title: state.data.sectionTitles[name] || name,
-        visible: !state.data.hidden.includes(name),
-        position: String(state.data.sections.indexOf(name)),
+        title: current.data.sectionTitles[name] || name,
+        visible: !current.data.hidden.includes(name),
+        position: String(current.data.sections.indexOf(name)),
       },
       submit: (v) =>
         save((d) => {
@@ -474,7 +474,7 @@ export function useInlineEdit(publicData: Content) {
           if (!v.visible) d.hidden.push(name);
           d.sections = d.sections.filter((s) => s !== name);
           d.sections.splice(Number(v.position), 0, name);
-        }),
+        }, current),
     });
   }
   function addSection(current = state) {
@@ -567,7 +567,7 @@ export function useInlineEdit(publicData: Content) {
                   type="button"
                   className="icon-btn"
                   aria-label={t('Thiết lập ', 'Configure ') + name}
-                  onClick={() => sectionSettings(name)}
+                  onClick={() => sectionSettings(name, current)}
                 >
                   <Icon name="more" />
                 </button>
@@ -710,7 +710,7 @@ export function useInlineEdit(publicData: Content) {
     settings: enabled && (
       <>
         <div className="settings-divider" />
-        <button onClick={addSection}>{t('Các mục hồ sơ', 'Profile sections')}</button>
+        <button onClick={() => addSection()}>{t('Các mục hồ sơ', 'Profile sections')}</button>
         <button onClick={githubSettings}>{t('Cấu hình GitHub', 'GitHub settings')}</button>
         <button onClick={appearance}>{t('Giao diện hồ sơ', 'Profile appearance')}</button>
         <Link href="/admin">{t('Quản trị nâng cao', 'Advanced administration')}</Link>
