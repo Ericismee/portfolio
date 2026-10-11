@@ -168,7 +168,13 @@ function Site({
     </div>
   );
   const shell = (main: ReactNode, side: ReactNode = aside()) => (
-    <div className={'layout ' + (data.layout === 'wide' ? 'layout-wide' : '')}>
+    <div
+      className={
+        'layout ' +
+        (data.layout === 'wide' ? 'layout-wide ' : '') +
+        (page === 'contact' ? 'contact-layout' : '')
+      }
+    >
       <div className="main">{main}</div>
       <aside className="sidebar">{side}</aside>
     </div>

@@ -54,10 +54,12 @@ export function FieldsForm({
   formId,
   githubUsername,
   knownRepositories,
+  onBusyChange,
 }: {
   fields: Field[];
   initial: Values;
   submit: (values: Values) => Promise<unknown>;
+  onBusyChange?: (busy: boolean) => void;
   csrf: string;
   onDirty?: (dirty: boolean) => void;
   footer?: boolean;
@@ -76,6 +78,10 @@ export function FieldsForm({
   useEffect(() => {
     onDirty?.(dirty);
   }, [dirty, onDirty]);
+  const blocked = busy || uploading > 0 || pendingCrops.size > 0;
+  useEffect(() => {
+    onBusyChange?.(blocked);
+  }, [blocked, onBusyChange]);
   async function upload(key: string, file: File, done?: (url: string) => void) {
     setUploading((n) => n + 1);
     setError('');
@@ -141,7 +147,7 @@ export function FieldsForm({
     }
   }
   return (
-    <form id={formId} onSubmit={save} className="admin-form">
+    <form id={formId} onSubmit={save} className="admin-form" aria-busy={blocked}>
       {githubUsername && (
         <GithubProjectPicker
           kind={fields.some((f) => f.key === 'richText') ? 'posts' : 'projects'}
@@ -332,6 +338,11 @@ export function FieldsForm({
       <p className="form-error" role="alert">
         {localizedError(error, language)}
       </p>
+      {!footer && (busy || uploading > 0) && (
+        <p role="status">
+          {uploading ? t('Đang tải file…', 'Uploading…') : t('Đang lưu…', 'Saving…')}
+        </p>
+      )}
       {footer && (
         <div className="actions">
           <button
@@ -366,6 +377,7 @@ export function EditorDialog({
     ref = useRef<HTMLDialogElement>(null),
     [dirty, setDirty] = useState(false),
     [discarding, setDiscarding] = useState(false),
+    [submitting, setSubmitting] = useState(false),
     lastFocus = useRef<HTMLElement | null>(null);
   useEffect(() => {
     const dialog = ref.current;
@@ -375,8 +387,14 @@ export function EditorDialog({
     dialog?.addEventListener('cancel', preventNativeClose);
     lastFocus.current = document.activeElement as HTMLElement;
     ref.current?.showModal();
-    const firstField = ref.current?.querySelector<HTMLElement>(
-      'input:not([type=file]),textarea,select',
+    const firstField = Array.from(
+      dialog?.querySelectorAll<HTMLElement>(
+        'input:not([type=file]):not([type=hidden]),textarea,select',
+      ) || [],
+    ).find(
+      (element) =>
+        element.getClientRects().length > 0 &&
+        !element.closest('details:not([open]),[hidden],[inert]'),
     );
     (firstField || ref.current?.querySelector<HTMLElement>('button'))?.focus();
     return () => {
@@ -411,7 +429,11 @@ export function EditorDialog({
           ref.current?.querySelectorAll<HTMLElement>(
             'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href]',
           ) || [],
-        ).filter((element) => element.getClientRects().length > 0);
+        ).filter(
+          (element) =>
+            element.getClientRects().length > 0 &&
+            !element.closest('details:not([open]),[hidden],[inert]'),
+        );
         const first = controls[0],
           last = controls.at(-1);
         if (event.shiftKey && document.activeElement === first) {
@@ -454,8 +476,16 @@ export function EditorDialog({
                 type="button"
                 onClick={() => {
                   setDiscarding(false);
-                  ref.current
-                    ?.querySelector<HTMLElement>('input:not([type=file]),textarea,select')
+                  Array.from(
+                    ref.current?.querySelectorAll<HTMLElement>(
+                      'input:not([type=file]):not([type=hidden]),textarea,select',
+                    ) || [],
+                  )
+                    .find(
+                      (element) =>
+                        element.getClientRects().length > 0 &&
+                        !element.closest('details:not([open]),[hidden],[inert]'),
+                    )
                     ?.focus();
                 }}
               >
@@ -471,6 +501,8 @@ export function EditorDialog({
         {editor.renderBody?.(setDirty)}
         {editor.submit && (
           <FieldsForm
+            footer={false}
+            onBusyChange={setSubmitting}
             formId="editor-content-form"
             githubUsername={editor.githubUsername}
             knownRepositories={editor.knownRepositories}
@@ -495,8 +527,15 @@ export function EditorDialog({
             {t('Đóng', 'Close')}
           </button>
           {editor.submit && (
-            <button className="btn primary" type="submit" form="editor-content-form">
-              {editor.submitLabel || t('Lưu', 'Save')}
+            <button
+              className="btn primary"
+              type="submit"
+              form="editor-content-form"
+              disabled={submitting}
+            >
+              {submitting
+                ? t('Vui lòng chờ…', 'Please wait…')
+                : editor.submitLabel || t('Lưu', 'Save')}
             </button>
           )}
         </div>

@@ -959,6 +959,10 @@
     display: flex !important;
     flex-wrap: wrap;
   }
+  /* The old mock hid these behind a toggle that the current form does not have. */
+  .filters:not(.expanded) > select {
+    display: block;
+  }
   .filters input {
     flex: 1 1 100%;
   }
@@ -999,6 +1003,10 @@
 }
 
 @media screen and (max-width: 800px) {
+  .layout.contact-layout > .sidebar {
+    display: block;
+    position: static;
+  }
   .layout > .sidebar:has(.github-skills-card) {
     display: block;
   }
