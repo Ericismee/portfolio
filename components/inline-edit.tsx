@@ -111,7 +111,7 @@ export function useInlineEdit(publicData: Content) {
       field('name', t('Tên hiển thị', 'Display name'), 'text', true),
       field('headline', t('Chuyên môn', 'Headline')),
       field('summary', t('Giới thiệu ngắn', 'Short introduction')),
-      field('location', t('Địa điểm', 'Location')),
+      field('location', t('Địa điểm', 'Location'), 'location'),
     ];
     const fields =
       part === 'identity'

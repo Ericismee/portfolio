@@ -31,9 +31,10 @@ import { projectUsesMarkdown, markdownSummary } from '../lib/markdown';
 import { Icon } from './icon';
 import { TrafficAdmin } from './traffic';
 import { AccountSettings } from './account-settings';
+import { AdminSkeleton } from './skeleton';
 import { readRichText, richPlainText } from '../lib/rich-text';
 import { saveGithubChanges } from '../lib/github-save';
-import { applyTheme } from '../lib/theme';
+import { applyTheme, readTheme, saveTheme, type Theme } from '../lib/theme';
 import { LanguageProvider, useLanguage } from './language';
 import { EditorDialog, FieldsForm, type Editor, type Field, type Values } from './admin-form';
 
@@ -72,7 +73,18 @@ function AdminDashboard() {
     [pending, setPending] = useState(false),
     [messages, setMessages] = useState<InboxMessage[]>([]),
     [csrfToken, setCsrfToken] = useState(''),
+    [adminTheme, setAdminTheme] = useState<Theme | null>(null),
     csrf = useRef('');
+  const themeLabel =
+    adminTheme === 'dark'
+      ? t('Chuyển sang chế độ sáng', 'Switch to light mode')
+      : t('Chuyển sang chế độ tối', 'Switch to dark mode');
+  const languageLabel = t('Chuyển sang tiếng Anh', 'Switch to Vietnamese');
+  function toggleTheme() {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    setAdminTheme(next);
+    saveTheme(state?.data.accent || '#4264da', next);
+  }
   const api = useCallback(
     <T,>(url: string, method = 'GET', body?: unknown) =>
       request<T>(url, method, body, csrf.current),
@@ -97,8 +109,11 @@ function AdminDashboard() {
   }, [api]);
   useEffect(() => {
     void reload();
-    applyTheme('#4264da', 'light');
+    setAdminTheme(readTheme(document.documentElement.dataset.theme));
   }, [reload]);
+  useEffect(() => {
+    if (adminTheme) applyTheme(state?.data.accent || '#4264da', adminTheme);
+  }, [adminTheme, state?.data.accent]);
   useEffect(() => {
     const beforeUnload = (e: BeforeUnloadEvent) => {
       if (dirty) {
@@ -712,7 +727,7 @@ function AdminDashboard() {
         field('name', t('Tên hiển thị', 'Display name'), 'text', true),
         field('headline', t('Chuyên môn', 'Headline')),
         field('summary', t('Giới thiệu ngắn', 'Short introduction')),
-        field('location', t('Địa điểm', 'Location')),
+        field('location', t('Địa điểm', 'Location'), 'location'),
         field('about', t('Giới thiệu', 'About'), 'textarea'),
         field('avatar', t('Ảnh đại diện', 'Avatar'), 'image'),
         field('cover', t('Ảnh bìa', 'Cover image'), 'image'),
@@ -1187,14 +1202,21 @@ function AdminDashboard() {
       );
   }
   return (
-    <div className="admin-page">
+    <div className={'admin-page' + (!state && !loading ? ' admin-signin-page' : '')}>
       {loading ? (
-        <main className="card admin-login" role="status">
-          {t('Đang tải…', 'Loading…')}
-        </main>
+        <AdminSkeleton />
       ) : !state ? (
         <main className="card admin-login">
-          <h1>{t('Quản trị hồ sơ', 'Manage your profile')}</h1>
+          <div className="signin-brand">
+            <span aria-hidden="true">
+              <Icon name="lock" />
+            </span>
+            <div>
+              <strong>Eric</strong>
+              <small>{t('Không gian quản trị', 'Admin workspace')}</small>
+            </div>
+          </div>
+          <h1>{t('Chào mừng trở lại', 'Welcome back')}</h1>
           <p className="admin-help">
             {t(
               'Đăng nhập để quản lý nội dung và giao diện.',
@@ -1217,12 +1239,29 @@ function AdminDashboard() {
               setError('');
             }}
           />
-          <p>
+          <div className="signin-footer">
             <Link href="/">{t('← Xem trang công khai', '← View public site')}</Link>
-          </p>
-          <button className="btn neutral" onClick={toggle}>
-            {language === 'vi' ? 'English' : 'Tiếng Việt'}
-          </button>
+            <div>
+              <button
+                type="button"
+                className="btn neutral admin-icon-control"
+                aria-label={themeLabel}
+                title={themeLabel}
+                aria-pressed={adminTheme === 'dark'}
+                onClick={toggleTheme}
+              >
+                <Icon name={adminTheme === 'dark' ? 'sun' : 'moon'} />
+              </button>
+              <button
+                className="btn neutral admin-icon-control"
+                aria-label={languageLabel}
+                title={languageLabel}
+                onClick={toggle}
+              >
+                <Icon name="languages" />
+              </button>
+            </div>
+          </div>
           {error && (
             <>
               <p className="form-error" role="alert">
@@ -1253,8 +1292,22 @@ function AdminDashboard() {
               <Link className="btn neutral" href="/" target="_blank" rel="noopener noreferrer">
                 {t('Xem website ↗', 'View website ↗')}
               </Link>
-              <button className="btn neutral" onClick={toggle}>
-                {language === 'vi' ? 'English' : 'Tiếng Việt'}
+              <button
+                className="btn neutral admin-icon-control"
+                aria-label={themeLabel}
+                title={themeLabel}
+                aria-pressed={adminTheme === 'dark'}
+                onClick={toggleTheme}
+              >
+                <Icon name={adminTheme === 'dark' ? 'sun' : 'moon'} />
+              </button>
+              <button
+                className="btn neutral admin-icon-control"
+                aria-label={languageLabel}
+                title={languageLabel}
+                onClick={toggle}
+              >
+                <Icon name="languages" />
               </button>
               <button
                 className="btn neutral"

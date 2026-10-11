@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { Content, Project, Post } from '../lib/schema';
 import { publicationStatus } from '../lib/schema';
-import { applyTheme } from '../lib/theme';
+import { applyTheme, readTheme, saveTheme } from '../lib/theme';
 import { Icon } from './icon';
 import { PublicTraffic } from './traffic';
 import { SocialLogo, socialLabels } from './social-logo';
@@ -63,13 +63,7 @@ function Site({
     menuButton = useRef<HTMLButtonElement>(null),
     menuPanel = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    let theme = data.theme;
-    try {
-      const saved = localStorage.getItem('profile-theme');
-      if (saved === 'light' || saved === 'dark') theme = saved;
-    } catch {
-      /* Storage may be unavailable. */
-    }
+    const theme = readTheme(data.theme);
     applyTheme(data.accent, theme);
     document.body.classList.toggle('compact', data.density === 'compact');
     return () => {
@@ -1172,12 +1166,7 @@ function Site({
                 className="theme-menu-action"
                 onClick={() => {
                   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-                  applyTheme(data.accent, next);
-                  try {
-                    localStorage.setItem('profile-theme', next);
-                  } catch {
-                    /* Optional local preference. */
-                  }
+                  saveTheme(data.accent, next);
                 }}
               >
                 <Icon name="moon" />

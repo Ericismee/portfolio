@@ -33,6 +33,17 @@ export function Icon({ name }: { name: string }) {
     ),
     plus: <path d="M12 5v14M5 12h14" />,
     moon: <path d="M20.5 13.5A9 9 0 0 1 10.5 3a9 9 0 1 0 10 10.5Z" />,
+    sun: (
+      <>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
+      </>
+    ),
+    languages: (
+      <>
+        <path d="M3 5h12M9 3v2m4 0c-1 6-4 9-9 12m1-9c2 4 5 7 8 9m0 4 4-11 4 11m-6.5-4h5" />
+      </>
+    ),
     clock: (
       <>
         <circle cx="12" cy="12" r="9" />

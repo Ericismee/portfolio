@@ -36,15 +36,15 @@
 }
 
 [data-theme=dark] {
-  --bg: #191e2c;
-  --card: #242b3b;
-  --ink: #f5f1e8;
-  --muted: #c2c8d5;
-  --line: #b9c6df;
-  --edge: #aab9d5;
-  --border-subtle: #4c5870;
+  --bg: #111827;
+  --card: #1b2535;
+  --ink: #edf2fb;
+  --muted: #acbad0;
+  --line: #64748b;
+  --edge: #73839e;
+  --border-subtle: #36465e;
   --inverse: #20243a;
-  --surface: #30384a;
+  --surface: #222f43;
   --dots: #3d4759;
   --blue: #304668;
   --yellow: #51472a;

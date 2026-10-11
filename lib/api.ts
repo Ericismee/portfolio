@@ -21,6 +21,8 @@ import {
   trafficDetails,
   recordTraffic,
   trafficIp,
+  trafficClientSchema,
+  trafficFilterSchema,
 } from './traffic.ts';
 const envelope = z.object({ version: z.number().int().positive(), data: z.unknown() });
 const restoreInput = z.object({
@@ -104,7 +106,7 @@ export function createApi(database: Database, production = false, origin?: strin
       if (pathname === '/api/traffic' && method === 'GET')
         return send({ views: (await trafficSummary(database)).visits });
       if (pathname === '/api/traffic' && method === 'POST') {
-        const input = z.object({ path: z.string().max(240) }).parse(await json(request, 1024));
+        const input = trafficClientSchema.extend({ path: z.string().max(240) }).parse(await json(request, 4096));
         const content = publicContent((await database.read()).data);
         const paths = [
           '/',
@@ -122,7 +124,7 @@ export function createApi(database: Database, production = false, origin?: strin
         if (!paths.includes(input.path)) throw new HttpError(400, 'Invalid page');
         if (session) return send({ views: (await trafficSummary(database)).visits });
         await rate('traffic:' + digest(trafficIp(request) || 'unknown'), 120);
-        const result = await recordTraffic(database, request, input.path, production);
+        const result = await recordTraffic(database, request, input.path, production, input);
         return send(
           { views: result.summary.visits },
           200,
@@ -222,7 +224,8 @@ export function createApi(database: Database, production = false, origin?: strin
             .string()
             .max(100)
             .parse(params.get('q') || '');
-          return send(await trafficDetails(database, page, query));
+          const filters = trafficFilterSchema.parse(Object.fromEntries(['from','to','country','browser','device','os','path','ip'].filter(key => params.has(key)).map(key=>[key,params.get(key)])));
+          return send(await trafficDetails(database, page, query, filters));
         }
         if (pathname === '/api/admin/upload-init' && method === 'POST') {
           await rate('upload-init', 60);

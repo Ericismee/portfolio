@@ -5,6 +5,7 @@ import { localizedError } from '../lib/i18n';
 import { FieldsForm, type Field } from './admin-form';
 import { useLanguage } from './language';
 import { Icon } from './icon';
+import { AccountSkeleton } from './skeleton';
 
 type Account = { username: string; email: string };
 export function AccountSettings({
@@ -26,7 +27,8 @@ export function AccountSettings({
   const dirty = useRef(false);
   function open(section: 'username' | 'email' | 'password') {
     if (busy) return;
-    if (dirty.current && !confirm(t('Bỏ các thay đổi chưa lưu?', 'Discard unsaved changes?'))) return;
+    if (dirty.current && !confirm(t('Bỏ các thay đổi chưa lưu?', 'Discard unsaved changes?')))
+      return;
     dirty.current = false;
     onDirty(false);
     setSaved(false);
@@ -94,26 +96,64 @@ export function AccountSettings({
   ];
   return (
     <div className="account-settings">
-      {account && <div className="account-actions">
-        {([
-          ['username', t('Tên đăng nhập / ID', 'Username / ID'), account.username, t('Đổi tên đăng nhập', 'Change username'), 'user'],
-          ['email', t('Email tài khoản', 'Account email'), account.email || t('Chưa thêm email', 'No email added'), t('Đổi email', 'Change email'), 'mail'],
-          ['password', t('Mật khẩu', 'Password'), t('Xác nhận bằng mật khẩu hiện tại', 'Confirm with your current password'), t('Đổi mật khẩu', 'Change password'), 'lock'],
-        ] as const).map(([key, label, value, button, icon]) => <div className="account-action-row" key={key}>
-          <Icon name={icon} />
-          <div><strong>{label}</strong><p>{value}</p></div>
-          <button type="button" className="btn neutral" aria-expanded={active === key} aria-controls="account-change-panel" disabled={busy} onClick={() => open(key)}>{active === key ? t('Đóng', 'Close') : button}</button>
-        </div>)}
-      </div>}
-      {active && <div className="account-notice">
-        <Icon name="lock" />
-        <p>
-          {t(
-            'Xác nhận bằng mật khẩu hiện tại để lưu thay đổi. Các phiên đăng nhập cũ sẽ bị đăng xuất; bạn tiếp tục sử dụng phiên mới trên trình duyệt này.',
-            'Confirm your current password to save changes. Previous sessions will be signed out; you will stay signed in with a new session in this browser.',
-          )}
-        </p>
-      </div>}
+      {account && (
+        <div className="account-actions">
+          {(
+            [
+              [
+                'username',
+                t('Tên đăng nhập / ID', 'Username / ID'),
+                account.username,
+                t('Đổi tên đăng nhập', 'Change username'),
+                'profile',
+              ],
+              [
+                'email',
+                t('Email tài khoản', 'Account email'),
+                account.email || t('Chưa thêm email', 'No email added'),
+                t('Đổi email', 'Change email'),
+                'contact',
+              ],
+              [
+                'password',
+                t('Mật khẩu', 'Password'),
+                t('Xác nhận bằng mật khẩu hiện tại', 'Confirm with your current password'),
+                t('Đổi mật khẩu', 'Change password'),
+                'lock',
+              ],
+            ] as const
+          ).map(([key, label, value, button, icon]) => (
+            <div className="account-action-row" key={key}>
+              <Icon name={icon} />
+              <div>
+                <strong>{label}</strong>
+                <p>{value}</p>
+              </div>
+              <button
+                type="button"
+                className="btn neutral"
+                aria-expanded={active === key}
+                aria-controls="account-change-panel"
+                disabled={busy}
+                onClick={() => open(key)}
+              >
+                {active === key ? t('Đóng', 'Close') : button}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {active && (
+        <div className="account-notice">
+          <Icon name="lock" />
+          <p>
+            {t(
+              'Xác nhận bằng mật khẩu hiện tại để lưu thay đổi. Các phiên đăng nhập cũ sẽ bị đăng xuất; bạn tiếp tục sử dụng phiên mới trên trình duyệt này.',
+              'Confirm your current password to save changes. Previous sessions will be signed out; you will stay signed in with a new session in this browser.',
+            )}
+          </p>
+        </div>
+      )}
       {error && (
         <p role="alert" className="form-error">
           {localizedError(error, language)}
@@ -129,34 +169,49 @@ export function AccountSettings({
       )}
       {account && active ? (
         <div id="account-change-panel">
-        <FieldsForm
-          key={revision}
-          fields={fields.filter((field) => field.key === active || field.key === 'currentPassword' || (active === 'password' && ['newPassword', 'confirmPassword'].includes(field.key)))}
-          initial={{ ...account, currentPassword: '', newPassword: '', confirmPassword: '' }}
-          csrf={csrf}
-          onBusyChange={setBusy}
-          onDirty={(value) => { dirty.current = value; onDirty(value); }}
-          submitLabel={t('Lưu tài khoản', 'Save account')}
-          submit={async (values) => {
-            setSaved(false);
-            const result = await request<Account & { csrf: string }>(
-              '/api/admin/account',
-              'PUT',
-              { ...account, currentPassword: '', newPassword: '', confirmPassword: '', ...values },
-              csrf,
-            );
-            onSessionChange(result.csrf);
-            setAccount({ username: result.username, email: result.email });
-            setRevision((value) => value + 1);
-            setSaved(true);
-            setActive(null);
-            dirty.current = false;
-            onDirty(false);
-          }}
-        />
+          <FieldsForm
+            key={revision}
+            fields={fields.filter(
+              (field) =>
+                field.key === active ||
+                field.key === 'currentPassword' ||
+                (active === 'password' && ['newPassword', 'confirmPassword'].includes(field.key)),
+            )}
+            initial={{ ...account, currentPassword: '', newPassword: '', confirmPassword: '' }}
+            csrf={csrf}
+            onBusyChange={setBusy}
+            onDirty={(value) => {
+              dirty.current = value;
+              onDirty(value);
+            }}
+            submitLabel={t('Lưu tài khoản', 'Save account')}
+            submit={async (values) => {
+              setSaved(false);
+              const result = await request<Account & { csrf: string }>(
+                '/api/admin/account',
+                'PUT',
+                {
+                  ...account,
+                  currentPassword: '',
+                  newPassword: '',
+                  confirmPassword: '',
+                  ...values,
+                },
+                csrf,
+              );
+              onSessionChange(result.csrf);
+              setAccount({ username: result.username, email: result.email });
+              setRevision((value) => value + 1);
+              setSaved(true);
+              setBusy(false);
+              setActive(null);
+              dirty.current = false;
+              onDirty(false);
+            }}
+          />
         </div>
       ) : (
-        !account && !error && <p role="status">{t('Đang tải tài khoản…', 'Loading account…')}</p>
+        !account && !error && <AccountSkeleton />
       )}
     </div>
   );

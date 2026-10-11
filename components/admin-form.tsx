@@ -11,6 +11,7 @@ import { MarkdownEditor } from './markdown-editor';
 import { uploadMime, uploadFile } from '../lib/upload-client';
 import { CvDocument } from './cv-document';
 import { PasswordInput } from './password-input';
+import { LocationInput } from './location-input';
 export type Field = {
   key: string;
   label: string;
@@ -21,6 +22,7 @@ export type Field = {
     | 'url'
     | 'email'
     | 'password'
+    | 'location'
     | 'color'
     | 'select'
     | 'checkbox'
@@ -293,6 +295,8 @@ export function FieldsForm({
                   />
                   <small className="admin-help">{t('PDF tối đa 20 MB', 'PDF up to 20 MB')}</small>
                 </>
+              ) : field.type === 'location' ? (
+                <LocationInput name={field.key} value={String(value)} onChange={update} />
               ) : field.type === 'password' ? (
                 <PasswordInput
                   name={field.key}
