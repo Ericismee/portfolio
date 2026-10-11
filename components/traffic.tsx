@@ -66,8 +66,6 @@ export function PublicTraffic() {
           </span>
         </span>
       }
-      
-        
         
     </footer>
   );
