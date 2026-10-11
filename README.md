@@ -2,7 +2,7 @@
 
 A personal profile and publishing website built with **Next.js, React, strict TypeScript and Node.js**. It combines a familiar professional profile layout with a private administration area for managing content without editing code.
 
-**Production:** [eric-profile.vercel.app](https://eric-profile.vercel.app) · [Administration](https://eric-profile.vercel.app/admin). PostgreSQL and private Blob storage are provisioned and the local data has been migrated. Custom-domain DNS for `ericisme.cloud` is pending.
+**Production:** [ericisme.cloud](https://ericisme.cloud) · [Administration](https://ericisme.cloud/admin). PostgreSQL and private Blob storage are provisioned and the local data has been migrated. DNS is managed at iNET; `www` redirects to the main domain.
 
 **Local website:** [localhost:3001](http://localhost:3001) · **Administration:** [localhost:3001/admin](http://localhost:3001/admin)
 
@@ -14,6 +14,7 @@ A personal profile and publishing website built with **Next.js, React, strict Ty
 - Experience, education, certifications and custom profile sections with editable entries.
 - Search, project filters, grid/list presentation, reorder controls and individual visibility settings.
 - Authenticated administration with server-side authorization, CSRF checks and HttpOnly session cookies.
+- Password visibility controls and private account settings for username, account email and password. Changes require the current password and rotate all sessions; account email is separate from public contact information and is not a password recovery service.
 - Persistent SQLite and disk uploads locally, or PostgreSQL and private Vercel Blob storage in the cloud. Cloud data survives redeployments.
 - Deleted entries can be restored from trash as drafts. The last 30 document revisions are available for full recovery.
 - Contact form that saves real messages to the private administration inbox.

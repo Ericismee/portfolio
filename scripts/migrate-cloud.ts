@@ -19,6 +19,11 @@ try {
   };
   contentSchema.parse(JSON.parse(row.body));
   const admins = source.prepare('SELECT username,password_hash FROM admins').all();
+  const accountProfiles = source
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='admin_profiles'")
+    .get()
+    ? source.prepare('SELECT username,email FROM admin_profiles').all()
+    : [];
   const revisions = source.prepare('SELECT body,created_at FROM revisions ORDER BY id').all();
   const messages = source
     .prepare('SELECT name,email,subject,message,created_at FROM messages ORDER BY id')
@@ -86,6 +91,8 @@ try {
         await tx`UPDATE content SET version=${row.version},body=${row.body} WHERE id=1`;
         for (const admin of admins)
           await tx`INSERT INTO admins VALUES(${String(admin.username)},${String(admin.password_hash)})`;
+        for (const profile of accountProfiles)
+          await tx`INSERT INTO admin_profiles VALUES(${String(profile.username)},${String(profile.email)})`;
         for (const revision of revisions)
           await tx`INSERT INTO revisions(body,created_at) VALUES(${String(revision.body)},${String(revision.created_at)})`;
         for (const message of messages)

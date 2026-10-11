@@ -10,6 +10,7 @@ import { projectUsesMarkdown } from '../lib/markdown';
 import { MarkdownEditor } from './markdown-editor';
 import { uploadMime, uploadFile } from '../lib/upload-client';
 import { CvDocument } from './cv-document';
+import { PasswordInput } from './password-input';
 export type Field = {
   key: string;
   label: string;
@@ -27,6 +28,7 @@ export type Field = {
     | 'image'
     | 'pdf';
   required?: boolean;
+  autoComplete?: 'username' | 'email' | 'current-password' | 'new-password';
   options?: [string, string][];
   help?: string;
   rows?: number;
@@ -291,6 +293,14 @@ export function FieldsForm({
                   />
                   <small className="admin-help">{t('PDF tối đa 20 MB', 'PDF up to 20 MB')}</small>
                 </>
+              ) : field.type === 'password' ? (
+                <PasswordInput
+                  name={field.key}
+                  value={String(value)}
+                  required={field.required}
+                  autoComplete={field.autoComplete || 'current-password'}
+                  onChange={(e) => update(e.target.value)}
+                />
               ) : (
                 <input
                   name={field.key}
@@ -298,11 +308,7 @@ export function FieldsForm({
                   value={String(value)}
                   required={field.required}
                   autoComplete={
-                    field.type === 'password'
-                      ? 'current-password'
-                      : field.key === 'username'
-                        ? 'username'
-                        : undefined
+                    field.autoComplete || (field.key === 'username' ? 'username' : undefined)
                   }
                   onChange={(e) => update(e.target.value)}
                   onInput={

@@ -244,6 +244,70 @@ test('Postgres persistence preserves authorization, atomic versions, rate limits
     await call('/api/admin/logout', 'POST');
     assert.equal((await call('/api/admin/content')).status, 401);
     assert.equal((await pg.query('SELECT count(*) AS count FROM rate_limits')).rows.length, 1);
+    const accountLogin = await handle(
+      new Request('https://profile.example/api/login', {
+        method: 'POST',
+        headers: { origin: 'https://profile.example', 'content-type': 'application/json' },
+        body: JSON.stringify({ username: 'owner', password: 'test-only-cloud-password' }),
+      }),
+    );
+    assert.equal(accountLogin.status, 200);
+    const oldCookie = accountLogin.headers.get('set-cookie')!.split(';')[0];
+    const accountCsrf = (await accountLogin.json()).csrf;
+    await database.db
+      .prepare('INSERT INTO upload_intents VALUES(?,?,?,?,?)')
+      .run('account-upload', 'owner', 'application/pdf', 20, Date.now() + 10000);
+    const changed = await handle(
+      new Request('https://profile.example/api/admin/account', {
+        method: 'PUT',
+        headers: {
+          origin: 'https://profile.example',
+          'content-type': 'application/json',
+          cookie: oldCookie,
+          'x-csrf-token': accountCsrf,
+        },
+        body: JSON.stringify({
+          username: 'cloud-owner',
+          email: 'cloud-owner@example.test',
+          currentPassword: 'test-only-cloud-password',
+          newPassword: 'new-cloud-password-only',
+          confirmPassword: 'new-cloud-password-only',
+        }),
+      }),
+    );
+    assert.equal(changed.status, 200);
+    assert.match(changed.headers.get('set-cookie')!, /HttpOnly.*Secure/);
+    assert.equal(
+      (
+        (await database.db
+          .prepare('SELECT username FROM upload_intents WHERE id=?')
+          .get('account-upload')) as { username: string }
+      ).username,
+      'cloud-owner',
+    );
+    assert.equal(
+      await database.db.prepare('SELECT username FROM admins WHERE username=?').get('owner'),
+      undefined,
+    );
+    const privateAccount = await handle(
+      new Request('https://profile.example/api/admin/account', {
+        headers: { cookie: changed.headers.get('set-cookie')!.split(';')[0] },
+      }),
+    );
+    assert.deepEqual(await privateAccount.json(), {
+      username: 'cloud-owner',
+      email: 'cloud-owner@example.test',
+    });
+    assert.equal(
+      (
+        await handle(
+          new Request('https://profile.example/api/admin/account', {
+            headers: { cookie: oldCookie },
+          }),
+        )
+      ).status,
+      401,
+    );
   } finally {
     if (key === undefined) delete process.env.GITHUB_CREDENTIAL_KEY;
     else process.env.GITHUB_CREDENTIAL_KEY = key;

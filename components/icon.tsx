@@ -59,6 +59,13 @@ export function Icon({ name }: { name: string }) {
         <circle cx="12" cy="12" r="3" />
       </>
     ),
+    'eye-off': (
+      <>
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z" />
+        <circle cx="12" cy="12" r="3" />
+        <path d="m3 3 18 18" />
+      </>
+    ),
     share: <path d="M14 4h6v6m0-6L9 15M10 5H4v15h15v-6" />,
     profile: (
       <>

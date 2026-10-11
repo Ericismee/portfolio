@@ -5,6 +5,16 @@ import { contentSchema, type ContentState } from './schema.ts';
 import { duplicateContent } from './content-management.ts';
 import { initial, skills } from './seed.ts';
 const httpErrorBrand = Symbol.for('profile.httpError');
+export const accountSchema =
+  'CREATE TABLE IF NOT EXISTS admin_profiles(username TEXT PRIMARY KEY REFERENCES admins(username),email TEXT NOT NULL)';
+export type AccountChange = {
+  current: string;
+  sessionHash: string;
+  expectedHash: string;
+  username: string;
+  email: string;
+  passwordHash: string;
+};
 export class HttpError extends Error {
   readonly [httpErrorBrand] = true;
   status: number;
@@ -95,7 +105,53 @@ export function openDatabase(
       throw e;
     }
   }
-  return { db, read, write, directory };
+  function changeAccount(input: AccountChange) {
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      const row = db
+        .prepare('SELECT password_hash FROM admins WHERE username=?')
+        .get(input.current) as { password_hash: string } | undefined;
+      if (!row || row.password_hash !== input.expectedHash)
+        throw new HttpError(
+          409,
+          'Account changed. Sign in again. / Tài khoản đã thay đổi. Vui lòng đăng nhập lại.',
+        );
+      if (
+        !db
+          .prepare(
+            'SELECT token_hash FROM sessions WHERE token_hash=? AND username=? AND expires>?',
+          )
+          .get(input.sessionHash, input.current, Date.now())
+      )
+        throw new HttpError(
+          409,
+          'Account session changed. Sign in again. / Phiên tài khoản đã thay đổi. Vui lòng đăng nhập lại.',
+        );
+      if (
+        db
+          .prepare('SELECT username FROM admins WHERE LOWER(username)=LOWER(?) AND username<>?')
+          .get(input.username, input.current)
+      )
+        throw new HttpError(409, 'Username already exists / Tên đăng nhập đã tồn tại');
+      if (input.username !== input.current)
+        db.prepare('INSERT INTO admins VALUES(?,?)').run(input.username, input.passwordHash);
+      else
+        db.prepare('UPDATE admins SET password_hash=? WHERE username=?').run(
+          input.passwordHash,
+          input.current,
+        );
+      db.prepare('DELETE FROM sessions WHERE username=?').run(input.current);
+      db.prepare('DELETE FROM admin_profiles WHERE username=?').run(input.current);
+      db.prepare('INSERT INTO admin_profiles VALUES(?,?)').run(input.username, input.email);
+      if (input.username !== input.current)
+        db.prepare('DELETE FROM admins WHERE username=?').run(input.current);
+      db.exec('COMMIT');
+    } catch (error) {
+      db.exec('ROLLBACK');
+      throw error;
+    }
+  }
+  return { db, read, write, changeAccount, directory };
 }
 export type LocalDatabase = ReturnType<typeof openDatabase>;
 export type SqlValue = string | number | bigint | null | Uint8Array;
@@ -112,6 +168,7 @@ export type Database = {
   db: Connection;
   read(): ContentState | Promise<ContentState>;
   write(input: unknown, version: number): ContentState | Promise<ContentState>;
+  changeAccount(input: AccountChange): void | Promise<void>;
   directory: string;
 };
 const globalDB = globalThis as typeof globalThis & {
@@ -129,7 +186,10 @@ export const getDatabase = () => {
       }));
   }
   if (process.env.VERCEL) throw new HttpError(503, 'Cloud database is not configured');
-  if (globalDB.profileDBSchema !== contentSchema) {
+  if (
+    globalDB.profileDBSchema !== contentSchema ||
+    (globalDB.profileDB && !globalDB.profileDB.changeAccount)
+  ) {
     // Pages and API routes may load separate module generations. Reuse the
     // connection without closing one still used by an in-flight handler.
     const previous = globalDB.profileDB;

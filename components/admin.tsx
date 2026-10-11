@@ -18,6 +18,7 @@ import {
   type Post,
   type Entry,
   type InboxMessage,
+  type Trash,
 } from '../lib/schema';
 import { entries, prepareLegacyImport, request, RequestError } from '../lib/client';
 import { SkillManager } from './skill-manager';
@@ -29,6 +30,7 @@ import { MarkdownContent } from './markdown-content';
 import { projectUsesMarkdown, markdownSummary } from '../lib/markdown';
 import { Icon } from './icon';
 import { TrafficAdmin } from './traffic';
+import { AccountSettings } from './account-settings';
 import { readRichText, richPlainText } from '../lib/rich-text';
 import { saveGithubChanges } from '../lib/github-save';
 import { applyTheme } from '../lib/theme';
@@ -45,6 +47,7 @@ type Tab =
   | 'settings'
   | 'inbox'
   | 'traffic'
+  | 'account'
   | 'trash';
 type Revision = { id: number; created_at: string };
 export function Admin() {
@@ -127,6 +130,7 @@ function AdminDashboard() {
     settings: t('Giao diện & dữ liệu', 'Appearance & data'),
     inbox: t('Hộp thư', 'Inbox'),
     traffic: t('Thống kê truy cập', 'Traffic statistics'),
+    account: t('Tài khoản & bảo mật', 'Account & security'),
     trash: t('Thùng rác', 'Trash'),
   };
   useEffect(() => {
@@ -140,6 +144,7 @@ function AdminDashboard() {
       settings: 'Settings',
       inbox: 'Inbox',
       traffic: 'Traffic',
+      account: 'Account',
       trash: 'Trash',
     };
     document.title = 'Eric | Admin · ' + titles[tab];
@@ -372,14 +377,41 @@ function AdminDashboard() {
         }),
     );
   }
-  function preview(p: Project | Post | Entry) {
+  function preview(p: Project | Post | Entry, deleted?: Trash) {
     const image = 'thumbnail' in p ? p.thumbnail : 'image' in p ? p.image : '';
     setEditor({
       title: 'name' in p ? p.name : p.title,
       body: (
         <>
-          <span className="badge">{status(p)}</span>
+          {deleted ? (
+            <div className="trash-preview-notice">
+              <Icon name="trash" />
+              <div>
+                <strong>{t('Nội dung đã xóa', 'Deleted content')}</strong>
+                <p>
+                  {t('Đã xóa lúc', 'Deleted at')}{' '}
+                  {new Date(deleted.deletedAt).toLocaleString(language)}
+                </p>
+                <p>
+                  {t(
+                    'Khôi phục từ danh sách để lưu lại dưới dạng nháp.',
+                    'Restore from the list to save this entry as a draft.',
+                  )}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <span className="badge">{status(p)}</span>
+          )}
           {image && <img className="admin-asset" src={image} alt="" />}
+          {'organization' in p && (
+            <p className="muted">{[p.organization, p.period].filter(Boolean).join(' · ')}</p>
+          )}
+          {'createdAt' in p && p.createdAt && (
+            <p className="muted">
+              {t('Ngày tạo', 'Created at')}: {new Date(p.createdAt).toLocaleString(language)}
+            </p>
+          )}
           {'text' in p ? (
             <PostBody
               value={p.bodyFormat === 'markdown' ? '' : p.richText}
@@ -397,11 +429,56 @@ function AdminDashboard() {
             ) : (
               <p className="preserve">{p.details}</p>
             ))}
+          {'tech' in p && (
+            <dl className="preview-facts">
+              {[
+                [
+                  t('Công nghệ', 'Technologies'),
+                  p.technologies.length ? p.technologies.join(', ') : p.tech,
+                ],
+                [t('Trạng thái dự án', 'Project status'), p.status],
+                [t('Vai trò', 'Role'), p.role],
+                [t('Vấn đề', 'Problem'), p.problem],
+                [t('Đóng góp', 'Contribution'), p.contribution],
+                [t('Kết quả', 'Outcome'), p.outcome],
+              ]
+                .filter(([, value]) => value)
+                .map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd className="preserve">{value}</dd>
+                  </div>
+                ))}
+            </dl>
+          )}
+          <div className="preview-links">
+            {('github' in p
+              ? [
+                  ['GitHub', p.github],
+                  [t('Bản chạy thử', 'Demo'), p.demo],
+                  [t('Nguồn', 'Source'), p.source],
+                ]
+              : 'link' in p
+                ? [[t('Liên kết', 'Link'), p.link]]
+                : []
+            )
+              .filter(([, value]) => value)
+              .map(([label, value]) => (
+                <a key={label} href={value} target="_blank" rel="noopener noreferrer">
+                  {label} ↗
+                </a>
+              ))}
+          </div>
           <p className="admin-help">
-            {t(
-              'Xem trước nội dung. Chỉ bản công khai mới xuất hiện trên website.',
-              'Content preview. Only published entries appear on the website.',
-            )}
+            {deleted
+              ? t(
+                  'Bản xem chỉ đọc; nội dung này chưa được khôi phục hoặc đăng lại.',
+                  'Read-only preview; this entry has not been restored or republished.',
+                )
+              : t(
+                  'Xem trước nội dung. Chỉ bản công khai mới xuất hiện trên website.',
+                  'Content preview. Only published entries appear on the website.',
+                )}
           </p>
         </>
       ),
@@ -1016,29 +1093,34 @@ function AdminDashboard() {
                     · {new Date(r.deletedAt).toLocaleString(language)}
                   </p>
                 </div>
-                <button
-                  className="btn neutral"
-                  disabled={pending}
-                  onClick={() =>
-                    void action(() =>
-                      mutate((d) => {
-                        if (entries(d, r.kind, r.section).some((e) => e.id === r.value.id))
-                          throw Error('Entry ID already exists');
-                        if (r.kind === 'projects')
-                          d.projects.push({ ...r.value, visibility: 'draft' });
-                        else if (r.kind === 'posts')
-                          d.posts.push({ ...r.value, visibility: 'draft' });
-                        else {
-                          if (!d.sections.includes(r.section)) d.sections.push(r.section);
-                          (d.items[r.section] ??= []).push({ ...r.value, visibility: 'draft' });
-                        }
-                        d.trash = d.trash.filter((x) => x.id !== r.id);
-                      }),
-                    )
-                  }
-                >
-                  {t('Khôi phục', 'Restore')}
-                </button>
+                <div className="admin-row-actions">
+                  <button type="button" className="btn neutral" onClick={() => preview(r.value, r)}>
+                    <Icon name="eye" /> {t('Xem chi tiết', 'View details')}
+                  </button>
+                  <button
+                    className="btn neutral"
+                    disabled={pending}
+                    onClick={() =>
+                      void action(() =>
+                        mutate((d) => {
+                          if (entries(d, r.kind, r.section).some((e) => e.id === r.value.id))
+                            throw Error('Entry ID already exists');
+                          if (r.kind === 'projects')
+                            d.projects.push({ ...r.value, visibility: 'draft' });
+                          else if (r.kind === 'posts')
+                            d.posts.push({ ...r.value, visibility: 'draft' });
+                          else {
+                            if (!d.sections.includes(r.section)) d.sections.push(r.section);
+                            (d.items[r.section] ??= []).push({ ...r.value, visibility: 'draft' });
+                          }
+                          d.trash = d.trash.filter((x) => x.id !== r.id);
+                        }),
+                      )
+                    }
+                  >
+                    {t('Khôi phục', 'Restore')}
+                  </button>
+                </div>
               </article>
             ))
           ) : (
@@ -1047,6 +1129,17 @@ function AdminDashboard() {
         </>
       );
     if (tab === 'traffic') body = <TrafficAdmin />;
+    if (tab === 'account')
+      body = (
+        <AccountSettings
+          csrf={csrfToken}
+          onDirty={setDirty}
+          onSessionChange={(value) => {
+            csrf.current = value;
+            setCsrfToken(value);
+          }}
+        />
+      );
     if (tab === 'inbox')
       body = (
         <>
@@ -1214,6 +1307,7 @@ function AdminDashboard() {
                           settings: 'settings',
                           inbox: 'contact',
                           traffic: 'eye',
+                          account: 'lock',
                           trash: 'trash',
                         } as Record<string, string>
                       )[key]

@@ -10,7 +10,7 @@ import {
   accountRepositories,
 } from './github-connection.ts';
 import { z, ZodError } from 'zod';
-import { getDatabase, HttpError, isHttpError, type Database } from './database.ts';
+import { getDatabase, HttpError, isHttpError, accountSchema, type Database } from './database.ts';
 import { authService, passwordHash, verifyPassword } from './auth.ts';
 import { publicContent } from './schema.ts';
 import { migrateAssets, storeUpload, removeUpload } from './uploads.ts';
@@ -68,6 +68,7 @@ export function createApi(database: Database, production = false, origin?: strin
       'CREATE TABLE IF NOT EXISTS rate_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,until INTEGER NOT NULL)',
     );
     await db.exec(trafficSchema);
+    await db.exec(accountSchema);
   })();
   let dummy: Promise<string>;
   const rate = async (key: string, max: number) => {
@@ -162,6 +163,53 @@ export function createApi(database: Database, production = false, origin?: strin
       }
       if (pathname.startsWith('/api/admin/')) {
         if (!session) throw new HttpError(401, 'Please sign in / Vui lòng đăng nhập');
+        if (pathname === '/api/admin/account' && method === 'GET') {
+          const profile = (await db
+            .prepare('SELECT email FROM admin_profiles WHERE username=?')
+            .get(session.username)) as { email: string } | undefined;
+          return send({ username: session.username, email: profile?.email || '' });
+        }
+        if (pathname === '/api/admin/account' && method === 'PUT') {
+          await rate('account-change:' + digest(session.username), 10);
+          const input = z
+            .object({
+              username: z
+                .string()
+                .trim()
+                .min(1)
+                .max(40)
+                .regex(/^[A-Za-z0-9._-]+$/),
+              email: z.union([z.email().max(254), z.literal('')]),
+              currentPassword: z.string().min(1).max(256),
+              newPassword: z.union([z.string().min(12).max(256), z.literal('')]),
+              confirmPassword: z.string().max(256),
+            })
+            .parse(await json(request, 4096));
+          if (input.newPassword !== input.confirmPassword)
+            throw new HttpError(400, 'Passwords do not match / Mật khẩu xác nhận không khớp');
+          const user = (await db
+            .prepare('SELECT password_hash FROM admins WHERE username=?')
+            .get(session.username)) as { password_hash: string } | undefined;
+          if (!user || !(await verifyPassword(input.currentPassword, user.password_hash)))
+            throw new HttpError(
+              400,
+              'Current password is incorrect / Mật khẩu hiện tại không đúng',
+            );
+          await database.changeAccount({
+            current: session.username,
+            sessionHash: session.token_hash,
+            expectedHash: user.password_hash,
+            username: input.username,
+            email: input.email,
+            passwordHash: input.newPassword
+              ? await passwordHash(input.newPassword)
+              : user.password_hash,
+          });
+          const rotated = await auth.create(input.username);
+          return send({ username: input.username, email: input.email, csrf: rotated.csrf }, 200, {
+            'Set-Cookie': rotated.cookie,
+          });
+        }
         if (pathname === '/api/admin/traffic' && method === 'GET') {
           const params = new URL(request.url).searchParams;
           const page = z.coerce
