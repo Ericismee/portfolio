@@ -5,7 +5,7 @@ import { ImageFramePicker } from './image-frame-picker';
 import { RichTextEditor } from './rich-text-editor';
 import { GithubProjectPicker } from './github-project-picker';
 import { applyGithubFields, applyGithubPostFields } from '../lib/github-project-fields';
-import { MarkdownContent } from './markdown-content';
+import { MarkdownEditor } from './markdown-editor';
 import { uploadMime } from '../lib/upload-client';
 import { CvDocument } from './cv-document';
 export type Field = {
@@ -173,22 +173,11 @@ export function FieldsForm({
                 </label>
               </div>
               {values.bodyFormat === 'markdown' ? (
-                <>
-                  <textarea
-                    aria-label="Markdown"
-                    name="markdown"
-                    rows={16}
-                    value={String(values.markdown || '')}
-                    onChange={(e) => setValues((v) => ({ ...v, markdown: e.target.value }))}
-                  />
-                  <details className="markdown-preview">
-                    <summary>{t('Xem trước nội dung', 'Preview content')}</summary>
-                    <MarkdownContent
-                      value={String(values.markdown || '')}
-                      base={String(values.markdownBase || '')}
-                    />
-                  </details>
-                </>
+                <MarkdownEditor
+                  value={String(values.markdown || '')}
+                  base={String(values.markdownBase || '')}
+                  change={(markdown) => setValues((v) => ({ ...v, markdown }))}
+                />
               ) : (
                 <RichTextEditor
                   name={field.key}

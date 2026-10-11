@@ -5,6 +5,7 @@ import type { GithubSkills } from '../lib/github-skills';
 import type { GithubProject } from '../lib/github-project';
 import { useLanguage } from './language';
 import { GithubConnection } from './github-connection';
+import { MarkdownContent } from './markdown-content';
 
 export function GithubProjectPicker({
   username,
@@ -22,6 +23,7 @@ export function GithubProjectPicker({
     (GithubSkills['repos'][number] & { fullName?: string; private?: boolean })[] | null
   >(null);
   const [query, setQuery] = useState('');
+  const [visibility, setVisibility] = useState('all');
   const [selected, setSelected] = useState('');
   const [preview, setPreview] = useState<GithubProject | null>(null);
   const [busy, setBusy] = useState(false);
@@ -156,6 +158,38 @@ export function GithubProjectPicker({
               placeholder={t('Nhập tên kho mã…', 'Repository name…')}
             />
           </label>
+          <div
+            className="repo-visibility-tabs"
+            aria-label={t('Quyền riêng tư kho mã', 'Repository visibility')}
+          >
+            {(['all', 'public', 'private'] as const).map((value) => (
+              <button
+                type="button"
+                key={value}
+                aria-pressed={visibility === value}
+                onClick={() => {
+                  setVisibility(value);
+                  setSelected('');
+                  setPreview(null);
+                }}
+              >
+                {
+                  {
+                    all: t('Tất cả', 'All'),
+                    public: t('Công khai', 'Public'),
+                    private: t('Riêng tư', 'Private'),
+                  }[value]
+                }{' '}
+                <span>
+                  {
+                    repos.filter(
+                      (repo) => value === 'all' || (value === 'private') === !!repo.private,
+                    ).length
+                  }
+                </span>
+              </button>
+            ))}
+          </div>
           <div className="github-import-select">
             <label>
               {t('Kho mã GitHub', 'GitHub repository')}
@@ -170,20 +204,36 @@ export function GithubProjectPicker({
                 }}
               >
                 <option value="">{t('Chọn kho mã…', 'Select repository…')}</option>
-                {repos
-                  .filter(
-                    (repo) =>
-                      (repo.fullName || repo.name) === selected ||
-                      (repo.fullName || repo.name).toLowerCase().includes(query.toLowerCase()),
-                  )
-                  .map((repo) => (
-                    <option key={repo.fullName || repo.name} value={repo.fullName || repo.name}>
-                      {repo.fullName || repo.name}
-                      {repo.private ? ' · ' + t('Riêng tư', 'Private') : ''}
-                      {repo.language ? ' · ' + repo.language : ''}
-                      {repo.fork ? ' · Fork' : ''}
-                    </option>
-                  ))}
+                {([false, true] as const).map((isPrivate) => (
+                  <optgroup
+                    key={String(isPrivate)}
+                    label={
+                      isPrivate
+                        ? t('Riêng tư · Chỉ admin', 'Private · Admin only')
+                        : t('Công khai', 'Public')
+                    }
+                  >
+                    {repos
+                      .filter(
+                        (repo) =>
+                          !!repo.private === isPrivate &&
+                          (visibility === 'all' || (visibility === 'private') === isPrivate) &&
+                          ((repo.fullName || repo.name) === selected ||
+                            (repo.fullName || repo.name)
+                              .toLowerCase()
+                              .includes(query.toLowerCase())),
+                      )
+                      .map((repo) => (
+                        <option key={repo.fullName || repo.name} value={repo.fullName || repo.name}>
+                          {repo.fullName || repo.name}
+                          {' · ' +
+                            (repo.private ? t('Riêng tư', 'Private') : t('Công khai', 'Public'))}
+                          {repo.language ? ' · ' + repo.language : ''}
+                          {repo.fork ? ' · Fork' : ''}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
               </select>
             </label>
             <button
@@ -210,6 +260,11 @@ export function GithubProjectPicker({
       {preview && (
         <div className="github-import-preview">
           <h4>{t('Thông tin từ kho mã', 'Repository information')}</h4>
+          <span className={'repository-visibility ' + (preview.private ? 'private' : 'public')}>
+            {preview.private
+              ? t('Kho mã riêng tư', 'Private repository')
+              : t('Kho mã công khai', 'Public repository')}
+          </span>
           {preview.private && (
             <p className="form-error">
               {t(
@@ -224,7 +279,13 @@ export function GithubProjectPicker({
               .map(([key, value]) => (
                 <div key={key}>
                   <dt>{labels[key]}</dt>
-                  <dd>{value}</dd>
+                  <dd>
+                    {key === 'details' ? (
+                      <MarkdownContent value={value} base={preview.fields.detailsBase} />
+                    ) : (
+                      value
+                    )}
+                  </dd>
                 </div>
               ))}
           </dl>

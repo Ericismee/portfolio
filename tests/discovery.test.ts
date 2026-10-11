@@ -3,8 +3,52 @@ import assert from 'node:assert/strict';
 import { contentSchema } from '../lib/schema.ts';
 import { initial, skills } from '../lib/seed.ts';
 import { searchContent } from '../lib/search.ts';
-import { postMatches } from '../lib/activity.ts';
+import { postMatches, activityPosts } from '../lib/activity.ts';
 import { uploadMime } from '../lib/upload-client.ts';
+
+test('Activity orders publication timestamps newest first and keeps drafts, hidden and scheduled entries separate', () => {
+  const data = contentSchema.parse({
+    ...initial,
+    skills,
+    posts: [
+      { id: 'old', title: 'Old', visibility: 'public', createdAt: '2026-10-01T00:00:00Z' },
+      { id: 'draft', title: 'Draft', visibility: 'draft', createdAt: '2026-10-11T10:00:00Z' },
+      {
+        id: 'new',
+        title: 'New',
+        visibility: 'public',
+        createdAt: '2026-10-02T00:00:00Z',
+        displayAt: '2026-10-11T09:00:00Z',
+        type: 'Media',
+      },
+      { id: 'future', title: 'Scheduled', visibility: 'public', displayAt: '2026-10-12T09:00:00Z' },
+      { id: 'hidden', title: 'Hidden', visibility: 'public', visible: false },
+      { id: 'undated', title: 'Undated', visibility: 'public' },
+    ],
+  });
+  const now = Date.parse('2026-10-11T12:00:00Z');
+  assert.deepEqual(
+    activityPosts(data.posts, 'public', 'all', now).map((p) => p.id),
+    ['new', 'old', 'undated'],
+  );
+  assert.deepEqual(
+    activityPosts(data.posts, 'draft', 'all', now).map((p) => p.id),
+    ['draft'],
+  );
+  assert.deepEqual(
+    activityPosts(data.posts, 'scheduled', 'all', now).map((p) => p.id),
+    ['future'],
+  );
+  assert.deepEqual(
+    activityPosts(data.posts, 'hidden', 'all', now).map((p) => p.id),
+    ['hidden'],
+  );
+  assert.deepEqual(
+    activityPosts(data.posts, 'public', 'Media', now).map((p) => p.id),
+    ['new'],
+  );
+  assert.equal(data.posts[0].id, 'old', 'sorting does not mutate stored order');
+});
 
 test('Search finds related fields across words and accents without exposing private entries', () => {
   const data = contentSchema.parse({

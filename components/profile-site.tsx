@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { Content, Project, Post } from '../lib/schema';
+import { publicationStatus } from '../lib/schema';
 import { applyTheme } from '../lib/theme';
 import { Icon } from './icon';
 import { SocialLogo, socialLabels } from './social-logo';
@@ -15,7 +16,7 @@ import { PostBody } from './post-body';
 import { CvDocument } from './cv-document';
 import { MarkdownContent } from './markdown-content';
 import { projectUsesMarkdown } from '../lib/markdown';
-import { postMatches } from '../lib/activity';
+import { postMatches, activityPosts } from '../lib/activity';
 import { searchContent } from '../lib/search';
 
 export function ProfileSite(props: {
@@ -51,6 +52,7 @@ function Site({
     [menu, setMenu] = useState(false),
     [toast, setToast] = useState(''),
     [filter, setFilter] = useState('all'),
+    [feedStatus, setFeedStatus] = useState('public'),
     menuButton = useRef<HTMLButtonElement>(null),
     menuPanel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -304,45 +306,106 @@ function Site({
     );
   }
   function tabs() {
+    const source =
+      page === 'activity' && editing.enabled ? editing.adminPosts || data.posts : data.posts;
+    const status = page === 'activity' && editing.enabled ? feedStatus : 'public';
     return (
-      <div className="tabs" aria-label={t('Loại bài viết', 'Post type')}>
-        {[
-          ['all', t('Tất cả', 'All')],
-          ['Bài viết', t('Bài viết', 'Articles')],
-          ['Cập nhật dự án', t('Cập nhật dự án', 'Project updates')],
-          ['Media', 'Media'],
-          ['Liên kết', t('Liên kết', 'Links')],
-        ].map(([value, label]) => (
-          <button
-            key={value}
-            className={filter === value ? 'active' : ''}
-            aria-pressed={filter === value}
-            onClick={() => setFilter(value)}
+      <>
+        {page === 'activity' && editing.enabled && (
+          <div
+            className="feed-status-tabs"
+            aria-label={t('Trạng thái bài viết', 'Post visibility')}
           >
-            {label}{' '}
-            <span className="tab-count">
-              {data.posts.filter((p) => postMatches(p, value)).length}
-            </span>
-          </button>
-        ))}
-      </div>
+            {(['public', 'draft', 'scheduled', 'hidden'] as const).map((value) => (
+              <button
+                type="button"
+                key={value}
+                aria-pressed={status === value}
+                className={status === value ? 'active' : ''}
+                onClick={() => setFeedStatus(value)}
+              >
+                {
+                  {
+                    public: t('Đã đăng', 'Published'),
+                    draft: t('Bản nháp', 'Drafts'),
+                    scheduled: t('Đã lên lịch', 'Scheduled'),
+                    hidden: t('Đã ẩn', 'Hidden'),
+                  }[value]
+                }{' '}
+                <span>{source.filter((p) => publicationStatus(p) === value).length}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="tabs" aria-label={t('Loại bài viết', 'Post type')}>
+          {[
+            ['all', t('Tất cả', 'All')],
+            ['Bài viết', t('Bài viết', 'Articles')],
+            ['Cập nhật dự án', t('Cập nhật dự án', 'Project updates')],
+            ['Media', 'Media'],
+            ['Liên kết', t('Liên kết', 'Links')],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              className={filter === value ? 'active' : ''}
+              aria-pressed={filter === value}
+              onClick={() => setFilter(value)}
+            >
+              {label}{' '}
+              <span className="tab-count">
+                {
+                  source.filter((p) => publicationStatus(p) === status && postMatches(p, value))
+                    .length
+                }
+              </span>
+            </button>
+          ))}
+        </div>
+      </>
     );
   }
   function date(p: Post) {
     return p.displayAt || p.createdAt;
   }
   function post(p: Post, detail = false) {
+    const status = publicationStatus(p);
+    const published = status === 'public';
+    const timestamp = date(p);
+    const formatted = timestamp
+      ? new Date(timestamp).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'Asia/Bangkok',
+        })
+      : '';
     return (
       <article className={detail ? 'card post' : 'activity'} key={p.id}>
         {detail && <Link href="/activity">← {t('Hoạt động', 'Activity')}</Link>}
         <div className="row post-heading">
           {avatar()}
-          <div>
+          <div className="post-author">
             <strong>{profile.name}</strong>
-            <div className="muted">
+            <div className="post-meta muted">
               {date(p) ? (
-                <time dateTime={date(p)}>{new Date(date(p)!).toLocaleDateString(language)}</time>
+                <time dateTime={timestamp} title={formatted + ' (UTC+7)'}>
+                  {formatted}
+                </time>
               ) : null}
+              <span aria-hidden="true">·</span>
+              <span className={'post-status post-status-' + status}>
+                {
+                  {
+                    public: t('Công khai', 'Public'),
+                    draft: t('Bản nháp · Chỉ admin', 'Draft · Admin only'),
+                    scheduled: t('Đã lên lịch · Chỉ admin', 'Scheduled · Admin only'),
+                    hidden: t('Đã ẩn · Chỉ admin', 'Hidden · Admin only'),
+                  }[status]
+                }
+              </span>
             </div>
           </div>
           {editing.enabled && (
@@ -372,7 +435,17 @@ function Site({
           <h1>{p.title}</h1>
         ) : (
           <h3>
-            <Link href={'/posts/' + encodeURIComponent(p.id)}>{p.title}</Link>
+            {published ? (
+              <Link href={'/posts/' + encodeURIComponent(p.id)}>{p.title}</Link>
+            ) : (
+              <button
+                type="button"
+                className="post-title-edit"
+                onClick={() => editing.item('posts', '', p.id)}
+              >
+                {p.title}
+              </button>
+            )}
           </h3>
         )}
         <PostBody
@@ -394,21 +467,28 @@ function Site({
             ↗ {p.link}
           </a>
         )}
-        <div className="post-footer">
-          <button
-            type="button"
-            className="post-share-button"
-            onClick={() => share('/posts/' + encodeURIComponent(p.id))}
-          >
-            <Icon name="share" />
-            {t('Chia sẻ', 'Share')}
-          </button>
-        </div>
+        {published && (
+          <div className="post-footer">
+            <button
+              type="button"
+              className="post-share-button"
+              onClick={() => share('/posts/' + encodeURIComponent(p.id))}
+            >
+              <Icon name="share" />
+              {t('Chia sẻ', 'Share')}
+            </button>
+          </div>
+        )}
       </article>
     );
   }
   function activities() {
-    const entries = data.posts.filter((p) => postMatches(p, filter));
+    const privateView = page === 'activity' && editing.enabled;
+    const entries = activityPosts(
+      privateView ? editing.adminPosts || data.posts : data.posts,
+      privateView ? feedStatus : 'public',
+      filter,
+    );
     return entries.length
       ? entries.map((p) => post(p))
       : empty(

@@ -537,6 +537,7 @@ export function useInlineEdit(publicData: Content) {
     );
   return {
     enabled: !!state,
+    adminPosts: state?.data.posts,
     data: state ? publicContent(state.data) : publicData,
     button,
     profile,
