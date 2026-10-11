@@ -224,7 +224,9 @@ export function publicContent(content: Content, now = Date.now()): Content {
   d.sectionTitles = Object.fromEntries(
     Object.entries(d.sectionTitles).filter(([key]) => d.sections.includes(key)),
   );
-  d.skills = d.skills.filter((skill) => !d.hiddenSkills.includes(skill));
+  d.skills = d.hidden.includes('Kỹ năng')
+    ? []
+    : d.skills.filter((skill) => !d.hiddenSkills.includes(skill));
   d.hiddenSkills = [];
   d.hidden = [];
   return d;

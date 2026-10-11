@@ -749,3 +749,82 @@ test('Uploads enforce publication and session access, revoke access immediately 
     await f.cleanup();
   }
 });
+
+test('Two administrators have independent sessions and session-bound CSRF; SQL-like usernames cannot authenticate', async () => {
+  const f = await fixture();
+  try {
+    f.database.db
+      .prepare('INSERT INTO admins VALUES(?,?)')
+      .run('reviewer', await passwordHash('reviewer-password-for-testing'));
+    const first = await f.login();
+    const secondLogin = await f.call('/api/login', 'POST', {
+      username: 'reviewer',
+      password: 'reviewer-password-for-testing',
+    });
+    assert.equal(secondLogin.response.status, 200);
+    const second = {
+      cookie: secondLogin.response.headers.get('set-cookie')!.split(';')[0],
+      'x-csrf-token': secondLogin.data.csrf,
+    };
+    const before = f.database.read();
+    assert.equal(
+      (await f.call('/api/admin/content', 'PUT', before, { ...second, 'x-csrf-token': first.csrf }))
+        .response.status,
+      403,
+    );
+    assert.equal((await f.call('/api/admin/content', 'PUT', before, second)).response.status, 200);
+    assert.equal(
+      (await f.call('/api/login', 'POST', { username: "admin' OR 1=1 --", password: 'incorrect' }))
+        .response.status,
+      401,
+    );
+    assert.equal((await f.call('/api/admin/logout', 'POST')).response.status, 200);
+    assert.equal((await f.call('/api/admin/content')).response.status, 401);
+    assert.equal(
+      (await f.call('/api/admin/content', 'GET', undefined, second)).response.status,
+      200,
+    );
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test('Login limits survive API reload and database restart without locking other administrators; login bodies are bounded', async () => {
+  const f = await fixture();
+  try {
+    const request = (username = 'blocked-user') =>
+      new Request(f.origin + '/api/login', {
+        method: 'POST',
+        headers: { origin: f.origin, 'content-type': 'application/json' },
+        body: JSON.stringify({ username, password: 'incorrect' }),
+      });
+    // Seed the exhausted bucket to avoid spending CPU on repeated password hashing.
+    const { digest } = await import('../lib/auth.ts');
+    f.database.db
+      .prepare('INSERT INTO rate_limits VALUES(?,?,?)')
+      .run('login-account:' + digest('blocked-user'), 30, Date.now() + 900000);
+    assert.equal((await f.handle(request())).status, 429);
+    assert.equal((await createApi(f.database)(request())).status, 429);
+    const reopened = openDatabase(f.directory);
+    try {
+      assert.equal((await createApi(reopened)(request())).status, 429);
+    } finally {
+      reopened.db.close();
+    }
+    assert.equal((await f.login()).cookie.startsWith('profile_session='), true);
+    const large = await f.handle(
+      new Request(f.origin + '/api/login', {
+        method: 'POST',
+        headers: { origin: f.origin },
+        body: 'x'.repeat(16385),
+      }),
+    );
+    assert.equal(large.status, 413);
+    f.database.db
+      .prepare('UPDATE rate_limits SET until=0 WHERE key=?')
+      .run('login-account:' + digest('blocked-user'));
+    assert.equal((await f.handle(request())).status, 401);
+  } finally {
+    await f.cleanup();
+  }
+});

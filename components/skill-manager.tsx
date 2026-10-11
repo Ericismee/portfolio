@@ -135,7 +135,7 @@ export function SkillManager({
                 <button
                   type="button"
                   className="icon-btn"
-                  disabled={busy}
+                  disabled={busy || value.trim() !== (editing || '')}
                   aria-label={t('Sửa ', 'Edit ') + item}
                   title={t('Sửa', 'Edit')}
                   onClick={() => {
@@ -148,7 +148,7 @@ export function SkillManager({
                 <button
                   type="button"
                   className="icon-btn"
-                  disabled={busy}
+                  disabled={busy || value.trim() !== (editing || '')}
                   aria-label={
                     (hiddenItems.includes(item) ? t('Hiện ', 'Show ') : t('Ẩn ', 'Hide ')) + item
                   }
@@ -167,7 +167,7 @@ export function SkillManager({
                 <button
                   type="button"
                   className="icon-btn danger"
-                  disabled={busy}
+                  disabled={busy || value.trim() !== (editing || '')}
                   aria-label={t('Xóa ', 'Delete ') + item}
                   title={t('Xóa', 'Delete')}
                   onClick={() =>
