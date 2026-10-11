@@ -4,7 +4,8 @@ import { useLanguage } from './language';
 import { ImageFramePicker } from './image-frame-picker';
 import { RichTextEditor } from './rich-text-editor';
 import { GithubProjectPicker } from './github-project-picker';
-import { applyGithubFields } from '../lib/github-project-fields';
+import { applyGithubFields, applyGithubPostFields } from '../lib/github-project-fields';
+import { MarkdownContent } from './markdown-content';
 import { uploadMime } from '../lib/upload-client';
 import { CvDocument } from './cv-document';
 export type Field = {
@@ -138,10 +139,15 @@ export function FieldsForm({
     <form id={formId} onSubmit={save} className="admin-form">
       {githubUsername && (
         <GithubProjectPicker
+          kind={fields.some((f) => f.key === 'richText') ? 'posts' : 'projects'}
           username={githubUsername}
           disabled={busy || uploading > 0}
           apply={(incoming, replace) =>
-            setValues((current) => applyGithubFields(current, incoming, replace))
+            setValues((current) =>
+              fields.some((f) => f.key === 'richText')
+                ? applyGithubPostFields(current, incoming, replace)
+                : applyGithubFields(current, incoming, replace),
+            )
           }
         />
       )}
@@ -153,13 +159,45 @@ export function FieldsForm({
           return (
             <div key={field.key}>
               <h3>{field.label}</h3>
-              <RichTextEditor
-                name={field.key}
-                label={field.label}
-                value={String(value)}
-                change={update}
-                upload={(file, done) => upload(field.key, file, done)}
-              />
+              <div className="content-format-switch">
+                <label>
+                  {t('Cách soạn nội dung', 'Content format')}
+                  <select
+                    name="bodyFormat"
+                    value={String(values.bodyFormat || 'rich')}
+                    onChange={(e) => setValues((v) => ({ ...v, bodyFormat: e.target.value }))}
+                  >
+                    <option value="rich">{t('Soạn trực quan', 'Visual editor')}</option>
+                    <option value="markdown">Markdown</option>
+                  </select>
+                </label>
+              </div>
+              {values.bodyFormat === 'markdown' ? (
+                <>
+                  <textarea
+                    aria-label="Markdown"
+                    name="markdown"
+                    rows={16}
+                    value={String(values.markdown || '')}
+                    onChange={(e) => setValues((v) => ({ ...v, markdown: e.target.value }))}
+                  />
+                  <details className="markdown-preview">
+                    <summary>{t('Xem trước nội dung', 'Preview content')}</summary>
+                    <MarkdownContent
+                      value={String(values.markdown || '')}
+                      base={String(values.markdownBase || '')}
+                    />
+                  </details>
+                </>
+              ) : (
+                <RichTextEditor
+                  name={field.key}
+                  label={field.label}
+                  value={String(value)}
+                  change={update}
+                  upload={(file, done) => upload(field.key, file, done)}
+                />
+              )}
             </div>
           );
         if (field.type === 'image')

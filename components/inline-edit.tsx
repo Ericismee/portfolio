@@ -180,6 +180,14 @@ export function useInlineEdit(publicData: Content) {
           ['outcome', t('Kết quả', 'Outcome')],
           ['details', t('Chi tiết', 'Details')],
         ].map(([key, label]) => field(key, label, 'textarea')),
+        {
+          ...field('detailsFormat', t('Định dạng phần chi tiết', 'Details format'), 'select'),
+          options: [
+            ['auto', t('Tự nhận diện nội dung GitHub', 'Detect GitHub content')],
+            ['plain', t('Văn bản nhập thủ công', 'Plain text')],
+            ['markdown', 'Markdown'],
+          ],
+        },
         field('github', 'GitHub', 'url'),
         field('demo', 'Demo', 'url'),
         field('source', t('Nguồn', 'Source'), 'url'),
@@ -251,7 +259,8 @@ export function useInlineEdit(publicData: Content) {
     );
     open({
       title: id ? t('Sửa nội dung', 'Edit content') : t('Thêm nội dung', 'Add content'),
-      githubUsername: kind === 'projects' ? state.data.githubUsername : undefined,
+      githubUsername:
+        kind === 'projects' || kind === 'posts' ? state.data.githubUsername : undefined,
       fields,
       values,
       submit: (v) =>
@@ -271,7 +280,10 @@ export function useInlineEdit(publicData: Content) {
           } else if (kind === 'posts') {
             const item = postSchema.parse({
               ...input,
-              text: richPlainText(String(v.richText || '')),
+              text:
+                v.bodyFormat === 'markdown'
+                  ? String(v.markdown || '')
+                  : richPlainText(String(v.richText || '')),
               createdAt: (existing as Post | undefined)?.createdAt || new Date().toISOString(),
               displayAt: v.displayAt
                 ? new Date(String(v.displayAt)).toISOString()

@@ -65,6 +65,11 @@ async function load(username: string, repo: string): Promise<GithubProject> {
       redirect: 'error',
       cache: 'no-store',
     });
+    if (response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0')
+      throw new HttpError(
+        429,
+        'GitHub đã hết lượt truy cập tạm thời. Hãy thử lại sau. / GitHub rate limit reached. Please retry later.',
+      );
     if (!response.ok)
       throw new HttpError(
         response.status === 404 ? 404 : 502,
@@ -94,6 +99,7 @@ async function load(username: string, repo: string): Promise<GithubProject> {
       private: z.literal(false),
       fork: z.boolean(),
       archived: z.boolean(),
+      default_branch: z.string().optional(),
       homepage: z.string().nullable().optional(),
       owner: z.object({ login: z.string(), type: z.string() }),
     })
@@ -144,7 +150,7 @@ async function load(username: string, repo: string): Promise<GithubProject> {
     'Supabase',
   ])
     if (builtWith.toLowerCase().includes(name.toLowerCase())) stack.add(name);
-  const readme = rawReadme
+  const plainReadme = rawReadme
     .replace(/```[\s\S]*?```/g, '')
     .replace(/<[^>]*>/g, '')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
@@ -153,10 +159,11 @@ async function load(username: string, repo: string): Promise<GithubProject> {
     .replace(/\n{3,}/g, '\n\n')
     .trim()
     .slice(0, 6000);
+  const readme = rawReadme.trim().slice(0, 30000);
   const github = `https://github.com/${encodeURIComponent(username)}/${encodeURIComponent(meta.name)}`;
   const demo = url.safeParse(meta.homepage || '');
   const summary =
-    readme
+    plainReadme
       .split(/\n\s*\n/)
       .map((p) => p.replace(/\s+/g, ' ').trim())
       .find((p) => p.length > 40 && !/^[|#>!*]/.test(p) && !p.startsWith('[')) || '';
@@ -170,6 +177,18 @@ async function load(username: string, repo: string): Promise<GithubProject> {
       source: github + '#readme',
       demo: demo.success ? demo.data : '',
       details: readme,
+      detailsFormat: 'markdown',
+      detailsBase:
+        github +
+        '/blob/' +
+        encodeURIComponent(meta.default_branch || 'HEAD') +
+        '/' +
+        (z.object({ path: z.string().max(1000) }).safeParse(data(1)).success
+          ? String((data(1) as { path: string }).path)
+              .split('/')
+              .map(encodeURIComponent)
+              .join('/')
+          : 'README.md'),
     },
     ownership:
       meta.owner.type === 'User' && meta.owner.login.toLowerCase() === username.toLowerCase()

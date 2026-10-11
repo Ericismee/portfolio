@@ -9,10 +9,12 @@ export function GithubProjectPicker({
   username,
   apply,
   disabled,
+  kind = 'projects',
 }: {
   username: string;
   apply: (fields: Record<string, string>, replace: boolean) => void;
   disabled: boolean;
+  kind?: 'projects' | 'posts';
 }) {
   const { t } = useLanguage();
   const [repos, setRepos] = useState<GithubSkills['repos'] | null>(null);
@@ -83,7 +85,11 @@ export function GithubProjectPicker({
   return (
     <section
       className="github-project-picker"
-      aria-label={t('Nhập dự án từ GitHub', 'Import project from GitHub')}
+      aria-label={
+        kind === 'posts'
+          ? t('Nhập bài viết từ GitHub', 'Import post from GitHub')
+          : t('Nhập dự án từ GitHub', 'Import project from GitHub')
+      }
     >
       <div className="github-import-heading">
         <div>
@@ -174,7 +180,7 @@ export function GithubProjectPicker({
           <h4>{t('Thông tin từ kho mã', 'Repository information')}</h4>
           <dl>
             {Object.entries(preview.fields)
-              .filter(([, v]) => v)
+              .filter(([key, v]) => v && labels[key])
               .map(([key, value]) => (
                 <div key={key}>
                   <dt>{labels[key]}</dt>
@@ -206,8 +212,8 @@ export function GithubProjectPicker({
               apply(preview.fields, replace);
               setNotice(
                 t(
-                  'Đã điền vào biểu mẫu. Kiểm tra rồi nhấn Lưu để tạo hoặc cập nhật dự án.',
-                  'Form filled. Review and Save to create or update the project.',
+                  'Đã điền vào biểu mẫu. Kiểm tra nội dung rồi nhấn Lưu.',
+                  'Form filled. Review the content and Save.',
                 ),
               );
             }}

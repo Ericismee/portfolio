@@ -46,7 +46,8 @@ test('GitHub project import reads public metadata, languages and declared framew
     assert.equal(result.ownership, 'owner');
     assert.equal(result.partial, false);
     assert.ok(result.fields.details.includes('A research tool for organising documents'));
-    assert.ok(!result.fields.details.includes('<img'));
+    assert.ok(result.fields.details.startsWith('# Example'), 'README Markdown is preserved');
+    assert.equal(result.fields.detailsFormat, 'markdown');
     assert.ok(paths.every((p) => p.startsWith('https://api.github.com/repos/qa-project/example')));
     await getGithubProject('qa-project', 'example');
     assert.equal(paths.length, 4);
@@ -112,4 +113,15 @@ test('Applying GitHub fields preserves authored content by default and never cha
   assert.equal(merged.visible, false);
   assert.equal(applyGithubFields(current, incoming, true).name, 'Repo');
   assert.equal(current.description, '');
+});
+
+test('GitHub import explains exhausted upstream rate limits without writing content', async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = async () =>
+    Response.json({}, { status: 403, headers: { 'x-ratelimit-remaining': '0' } });
+  try {
+    await assert.rejects(getGithubProject('qa-limit', 'limited'), /GitHub rate limit reached/);
+  } finally {
+    globalThis.fetch = original;
+  }
 });

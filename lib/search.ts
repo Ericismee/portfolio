@@ -34,7 +34,7 @@ export function searchContent(content: Content, query: string) {
     ]),
   );
   const posts = data.posts.filter((p) =>
-    matches([p.title, p.text, p.type, p.link, richPlainText(p.richText)]),
+    matches([p.title, p.text, p.markdown, p.type, p.link, richPlainText(p.richText)]),
   );
   const skills = data.skills.filter((s) => matches(s));
   const profile = matches(Object.values(data.profile));

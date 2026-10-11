@@ -2319,3 +2319,73 @@ button.gh-day:hover {
 .pdf-pages p {
   color: white;
 }
+.markdown-content {
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+.markdown-content > :first-child {
+  margin-top: 0;
+}
+.markdown-content h1 {
+  font-size: 1.8rem;
+}
+.markdown-content h2 {
+  font-size: 1.4rem;
+  margin-top: 1.5em;
+}
+.markdown-content h3 {
+  font-size: 1.15rem;
+}
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.markdown-content pre {
+  overflow-x: auto;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+}
+.markdown-content code {
+  font-size: 0.9em;
+}
+.markdown-content blockquote {
+  margin-inline: 0;
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+  color: var(--muted);
+}
+.markdown-table {
+  width: 100%;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+.markdown-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.markdown-table th,
+.markdown-table td {
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  text-align: left;
+}
+.markdown-table th {
+  background: var(--surface);
+}
+.content-format-switch {
+  margin: 12px 0;
+}
+.markdown-preview {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 12px 0;
+}
+.markdown-preview summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 12px;
+}

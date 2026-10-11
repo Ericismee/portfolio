@@ -229,6 +229,11 @@ function AdminDashboard() {
             ['details', t('Chi tiết', 'Details')],
           ] as const
         ).map(([k, label]) => field(k, label, 'textarea')),
+        select('detailsFormat', t('Định dạng phần chi tiết', 'Details format'), [
+          ['auto', t('Tự nhận diện nội dung GitHub', 'Detect GitHub content')],
+          ['plain', t('Văn bản nhập thủ công', 'Plain text')],
+          ['markdown', 'Markdown'],
+        ]),
         field('github', 'GitHub URL', 'url'),
         field('demo', 'Demo URL', 'url'),
         field('source', t('Nguồn tham khảo', 'Reference URL'), 'url'),
@@ -282,7 +287,8 @@ function AdminDashboard() {
     );
     setEditor({
       title: id ? t('Chỉnh sửa nội dung', 'Edit content') : t('Thêm nội dung', 'Add content'),
-      githubUsername: kind === 'projects' ? state.data.githubUsername : undefined,
+      githubUsername:
+        kind === 'projects' || kind === 'posts' ? state.data.githubUsername : undefined,
       fields,
       values,
       submit: async (v) =>
@@ -302,7 +308,10 @@ function AdminDashboard() {
           } else if (kind === 'posts') {
             const next = postSchema.parse({
               ...input,
-              text: richPlainText(String(v.richText || '')),
+              text:
+                v.bodyFormat === 'markdown'
+                  ? String(v.markdown || '')
+                  : richPlainText(String(v.richText || '')),
               createdAt: (p as Post | undefined)?.createdAt || new Date().toISOString(),
               displayAt: v.displayAt
                 ? new Date(String(v.displayAt)).toISOString()

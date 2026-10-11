@@ -2,15 +2,20 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { RichContent } from './rich-content';
 import { useLanguage } from './language';
+import { MarkdownContent } from './markdown-content';
 
 export function PostBody({
   value,
   text,
   detail = false,
+  markdown = '',
+  base = '',
 }: {
   value: string;
   text: string;
   detail?: boolean;
+  markdown?: string;
+  base?: string;
 }) {
   const { t } = useLanguage();
   const id = useId();
@@ -25,7 +30,7 @@ export function PostBody({
     const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [value, text, detail]);
+  }, [value, text, detail, markdown]);
   return (
     <>
       <div
@@ -37,7 +42,9 @@ export function PostBody({
         }
       >
         <div ref={content}>
-          {value ? (
+          {markdown ? (
+            <MarkdownContent value={markdown} base={base} />
+          ) : value ? (
             <RichContent value={value} fallback={text} />
           ) : (
             <p className="preserve">{text}</p>

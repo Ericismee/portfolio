@@ -32,7 +32,7 @@ export function PdfPreview({ url }: { url: string }) {
           'pdfjs-dist/build/pdf.worker.min.mjs',
           import.meta.url,
         ).toString();
-      const loadingTask = pdfjs.getDocument({ url });
+        const loadingTask = pdfjs.getDocument({ url });
         task = loadingTask;
         const pdf = await loadingTask.promise;
         if (!disposed) setDocument(pdf);
@@ -57,8 +57,10 @@ export function PdfPreview({ url }: { url: string }) {
       .getPage(page)
       .then(async (pdfPage) => {
         if (disposed) return;
-      const natural = pdfPage.getViewport({ scale: 1 });
-      const viewport = pdfPage.getViewport({ scale: Math.min(1.4, width / natural.width) * zoom });
+        const natural = pdfPage.getViewport({ scale: 1 });
+        const viewport = pdfPage.getViewport({
+          scale: Math.min(1.4, width / natural.width) * zoom,
+        });
         const ratio = Math.min(window.devicePixelRatio || 1, 2);
         element.width = Math.floor(viewport.width * ratio);
         element.height = Math.floor(viewport.height * ratio);

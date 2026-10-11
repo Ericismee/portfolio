@@ -13,6 +13,8 @@ import { GithubSkillsCard } from './github-skills';
 import { GithubProfile } from './github-profile';
 import { PostBody } from './post-body';
 import { CvDocument } from './cv-document';
+import { MarkdownContent } from './markdown-content';
+import { projectUsesMarkdown } from '../lib/markdown';
 import { postMatches } from '../lib/activity';
 import { searchContent } from '../lib/search';
 
@@ -351,7 +353,13 @@ function Site({
             <Link href={'/posts/' + encodeURIComponent(p.id)}>{p.title}</Link>
           </h3>
         )}
-        <PostBody value={p.richText} text={p.text} detail={detail} />
+        <PostBody
+          value={p.bodyFormat === 'markdown' ? '' : p.richText}
+          text={p.text}
+          detail={detail}
+          markdown={p.bodyFormat === 'markdown' ? p.markdown : ''}
+          base={p.markdownBase}
+        />
         {p.image && (
           <img
             className="post-image"
@@ -731,7 +739,14 @@ function Site({
             .map(([k, label]) => (
               <div key={k}>
                 <h3>{label}</h3>
-                <p className="preserve">{p[k]}</p>
+                {k === 'details' && projectUsesMarkdown(p) ? (
+                  <MarkdownContent
+                    value={p[k]}
+                    base={p.detailsBase || p.github + '/blob/HEAD/README.md'}
+                  />
+                ) : (
+                  <p className="preserve">{p[k]}</p>
+                )}
               </div>
             ))}
           <div className="actions">
@@ -781,8 +796,12 @@ function Site({
                 {t('Hồ sơ', 'Profile')} · {profile.name} — {profile.headline}
               </Link>
             )}
-            {projects.length > 0 && <><h3>{t('Dự án', 'Projects')}</h3>
-            <div className="project-grid">{projects.map(projectCard)}</div></>}
+            {projects.length > 0 && (
+              <>
+                <h3>{t('Dự án', 'Projects')}</h3>
+                <div className="project-grid">{projects.map(projectCard)}</div>
+              </>
+            )}
             {posts.length > 0 && <h3>{t('Bài viết', 'Posts')}</h3>}
             {posts.map((p) => (
               <Link className="side-link" href={'/posts/' + encodeURIComponent(p.id)} key={p.id}>
