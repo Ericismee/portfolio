@@ -1,3 +1,6 @@
+.admin-mobile-navigation {
+  display: none;
+}
 .admin-page {
   background: #f3f6fb;
   color: #172b4d;
@@ -507,6 +510,19 @@
   }
   .admin-nav button {
     white-space: nowrap;
+  }
+  .admin-mobile-navigation {
+    display: grid;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .admin-mobile-navigation select {
+    width: 100%;
+    min-height: 44px;
+  }
+  .admin-nav {
+    display: none;
   }
   .admin-content {
     grid-column: 1;

@@ -102,3 +102,16 @@ test('Shared deletion moves each resource to recoverable trash and keeps trash b
   assert.equal(data.trash.length, 100);
   assert.equal(data.trash[0].value.id, '109');
 });
+
+test('Section duplicate checks recognize built-in English and Vietnamese names and renamed display titles', () => {
+  const before = content();
+  for (const title of ['Projects', 'PROJECTS', ' dự ÁN ']) {
+    const next = structuredClone(before);
+    next.sections.push(title);
+    assert.equal(duplicateContent(next, before), 'section');
+  }
+  const next = structuredClone(before);
+  next.sections.push('Custom');
+  next.sectionTitles.Custom = 'Skills';
+  assert.equal(duplicateContent(next, before), 'section');
+});

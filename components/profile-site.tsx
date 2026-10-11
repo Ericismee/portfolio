@@ -18,7 +18,12 @@ import { CvDocument } from './cv-document';
 import { MarkdownContent } from './markdown-content';
 import { projectUsesMarkdown } from '../lib/markdown';
 import { postMatches, activityPosts } from '../lib/activity';
-import { searchContent } from '../lib/search';
+import {
+  searchContent,
+  projectMatchesSearch,
+  projectTechnologies,
+  normalizeSearch,
+} from '../lib/search';
 
 export function ProfileSite(props: {
   content: Content;
@@ -323,7 +328,10 @@ function Site({
                 key={value}
                 aria-pressed={status === value}
                 className={status === value ? 'active' : ''}
-                onClick={() => setFeedStatus(value)}
+                onClick={() => {
+                  setFeedStatus(value);
+                  setFilter('all');
+                }}
               >
                 {
                   {
@@ -734,10 +742,11 @@ function Site({
     const { q = '', tech = '', status = '', sort = '', view = '' } = query;
     let list = data.projects.filter(
       (p) =>
-        `${p.name} ${p.description} ${p.tech}`
-          .toLocaleLowerCase()
-          .includes(q.toLocaleLowerCase()) &&
-        (!tech || p.tech === tech) &&
+        (!q.trim() || projectMatchesSearch(p, q)) &&
+        (!tech ||
+          projectTechnologies(p).some(
+            (value) => normalizeSearch(value) === normalizeSearch(tech),
+          )) &&
         (!status || p.status === status),
     );
     if (sort === 'name') list = [...list].sort((a, b) => a.name.localeCompare(b.name, language));
@@ -792,9 +801,11 @@ function Site({
             onChange={(e) => update(e.currentTarget.form!)}
           >
             <option value="">{t('Tất cả công nghệ', 'All technologies')}</option>
-            {[...new Set(data.projects.map((p) => p.tech))].map((v) => (
-              <option key={v}>{v}</option>
-            ))}
+            {[...new Set(data.projects.flatMap(projectTechnologies))]
+              .sort((a, b) => a.localeCompare(b, language))
+              .map((v) => (
+                <option key={v}>{v}</option>
+              ))}
           </select>
           <select
             name="status"
@@ -820,8 +831,16 @@ function Site({
             <option value="reverse">{t('Đảo thứ tự', 'Reverse order')}</option>
           </select>
           <button className="btn neutral">{t('Tìm', 'Search')}</button>
+          {(q || tech || status || sort) && (
+            <Link
+              className="btn neutral"
+              href={view ? '/projects?view=' + encodeURIComponent(view) : '/projects'}
+            >
+              {t('Xóa bộ lọc', 'Clear filters')}
+            </Link>
+          )}
         </form>
-        <p className="results-line">
+        <p className="results-line" role="status">
           {list.length} {t('dự án hiển thị', 'projects shown')}
         </p>
         <div className={'project-grid ' + (view === 'list' ? 'list' : '')}>
@@ -1114,6 +1133,8 @@ function Site({
             <input
               name="q"
               id="global-search"
+              key={page + ':' + (query.q || '')}
+              defaultValue={page === 'search' ? query.q || '' : ''}
               placeholder={t('Tìm kiếm', 'Search')}
               aria-label={t('Tìm kiếm', 'Search')}
             />

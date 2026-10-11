@@ -1,3 +1,5 @@
+import { unlink } from 'node:fs/promises';
+import path from 'node:path';
 import { digest } from './auth.ts';
 import { MAX_UPLOAD_BYTES } from './upload-limits.ts';
 import { getGithubSkills } from './github-skills.ts';
@@ -213,7 +215,19 @@ export function createApi(database: Database, production = false, origin?: strin
         }
         if (pathname === '/api/admin/import' && method === 'POST') {
           const b = envelope.parse(await json(request, MAX_UPLOAD_BYTES + 1024));
-          return send(database.write(await migrateAssets(b.data, database.directory), b.version));
+          const created: string[] = [];
+          try {
+            const migrated = await migrateAssets(b.data, database.directory, created);
+            return send(database.write(migrated, b.version));
+          } catch (error) {
+            // Only generated files from this rejected import are eligible for cleanup.
+            await Promise.allSettled(
+              created.map((url) =>
+                unlink(path.join(database.directory, 'uploads', path.basename(url))),
+              ),
+            );
+            throw error;
+          }
         }
         if (pathname === '/api/admin/upload' && method === 'POST') {
           const url = await storeUpload(

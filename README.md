@@ -20,7 +20,7 @@ A personal profile and publishing website built with **Next.js, React, strict Ty
 - English by default with a remembered Vietnamese/English interface choice, light/dark themes, readable accent colors, density and standard/wide layout settings.
 - Explicit import of the previous browser mock or a JSON export, including embedded image/PDF migration.
 
-GitHub links open the actual GitHub account and repositories. The profile sidebar also displays up to five languages from the public GitHub API. The site does not pretend to synchronize contributions or commits. Owner-authored descriptions and custom titles remain in their original language when switching the interface language.
+GitHub links open the actual account and repositories. Public GitHub summaries, contribution history and language rankings use upstream data with explicit unavailable/stale states. An authenticated administrator can separately connect GitHub to import accessible public and private repositories; private repository discovery is never exposed by the public summary. Owner-authored descriptions and custom titles remain in their original language when switching the interface language.
 
 ## Screenshots
 
@@ -182,3 +182,14 @@ Repositories can be hidden individually; forks can be excluded as a group. Featu
 Public server rendering and refresh responses filter hidden repositories and their owner-account commit/event records. The private repository list remains available only to administrators. Account-wide contribution and language totals are intentionally not recalculated when a repository is hidden. The recent commit source remains a bounded six-repository sample; hiding a source repository does not expand that sample. The public account and repositories remain accessible on GitHub itself.
 
 The configured cadence applies while `/github` is visible. It is a browser-driven refresh, not an hourly background job when the site is closed. Upstream cache expiry, quota and polling limits still apply. Manual refresh checks the same caches. The compact profile card uses server-loaded data and updates on page reload/navigation.
+
+
+## Shared editing and audit
+
+Markdown posts and project details use the same keyboard-accessible **Edit / Preview** tabs in both inline editing and administration. Markdown mode can open a local `.md` file directly into preview. Plain project details retain line breaks; imported READMEs render headings, lists, tables, links and code. File inputs support 20 MiB; Markdown content retains the existing 30,000-character limit and rejects a longer file without replacing the form.
+
+Skills have their own searchable add/edit/hide/delete list. Sections expose their own entry lists and configuration, including hide/show and removal. Project/post/custom-entry deletion uses shared recoverable trash; section and skill changes can also be recovered from document revisions. The server rejects newly introduced duplicate project names/repositories, section names (including built-in English/Vietnamese aliases), skills, identical posts and custom-entry identities. Existing duplicates may be edited or reduced. Different posts about the same repository remain supported.
+
+Use `npm run dev` or `npm start`. The obsolete root `server.mjs` fails closed; it is not a supported deployment entrypoint. The old administrator `.mjs` command delegates to the current TypeScript implementation. Login/contact limits persist in SQLite across API reloads and restarts.
+
+See [the 11 October 2026 functional and security audit](docs/SECURITY-AUDIT-2026-10-11.md) for evidence, scope and deployment limitations.

@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { contentSchema } from '../lib/schema.ts';
 import { initial, skills } from '../lib/seed.ts';
-import { searchContent } from '../lib/search.ts';
-import { postMatches, activityPosts } from '../lib/activity.ts';
+import { searchContent, projectMatchesSearch, projectTechnologies } from '../lib/search.ts';
+import { postMatches, activityPosts, sortPosts } from '../lib/activity.ts';
 import { uploadMime } from '../lib/upload-client.ts';
 
 test('Activity orders publication timestamps newest first and keeps drafts, hidden and scheduled entries separate', () => {
@@ -129,6 +129,59 @@ test('Activity filters include embedded media and links and retain explicit cate
   assert.equal(
     postMatches({ ...post, richText: '', type: 'Cập nhật dự án' }, 'Cập nhật dự án'),
     true,
+  );
+});
+
+test('Project search finds secondary technologies and combined accented fields consistently', () => {
+  const data = contentSchema.parse({
+    ...initial,
+    skills,
+    projects: [
+      {
+        id: 'web',
+        name: 'Đồng hồ',
+        tech: 'TypeScript, React',
+        technologies: ['React', 'react', ' Tauri '],
+        role: 'Kỹ sư',
+        visibility: 'public',
+      },
+    ],
+  });
+  const project = data.projects[0];
+  assert.deepEqual(projectTechnologies(project), ['TypeScript', 'React', 'Tauri']);
+  for (const query of ['React', '  dong ho react ky su  ', 'Tauri TypeScript']) {
+    assert.equal(projectMatchesSearch(project, query), true);
+    assert.deepEqual(
+      searchContent(data, query).projects.map((p) => p.id),
+      ['web'],
+    );
+  }
+  assert.equal(projectMatchesSearch(project, 'React Rust'), false);
+  assert.equal(projectMatchesSearch(project, '   '), false);
+  assert.deepEqual(project.technologies, ['React', 'react', 'Tauri']);
+});
+
+test('Administrative post order agrees with the feed while retaining every publication state', () => {
+  const data = contentSchema.parse({
+    ...initial,
+    skills,
+    posts: [
+      { id: 'old', title: 'Old', visibility: 'public', createdAt: '2026-10-01T00:00:00Z' },
+      { id: 'draft', title: 'Draft', visibility: 'draft', createdAt: '2026-10-12T00:00:00Z' },
+      { id: 'new', title: 'New', visibility: 'public', displayAt: '2026-10-11T00:00:00Z' },
+    ],
+  });
+  assert.deepEqual(
+    sortPosts(data.posts).map((p) => p.id),
+    ['draft', 'new', 'old'],
+  );
+  assert.deepEqual(
+    activityPosts(data.posts, 'public', 'all', Date.parse('2026-10-13')).map((p) => p.id),
+    ['new', 'old'],
+  );
+  assert.deepEqual(
+    data.posts.map((p) => p.id),
+    ['old', 'draft', 'new'],
   );
 });
 

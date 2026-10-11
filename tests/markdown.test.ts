@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { markdownUrl, projectUsesMarkdown } from '../lib/markdown.ts';
+import { markdownUrl, projectUsesMarkdown, markdownSummary } from '../lib/markdown.ts';
 import { applyGithubPostFields, applyGithubFields } from '../lib/github-project-fields.ts';
 import { postSchema } from '../lib/schema.ts';
 
@@ -63,6 +63,16 @@ test('README relative links and images resolve to their repository and reject un
     }),
     true,
   );
+});
+
+test('Admin README summaries show readable text rather than HTML comments and Markdown', () => {
+  assert.equal(
+    markdownSummary(
+      '<a id="top"></a>\n<!-- private-looking scaffold -->\n# NotebookE\n\n![logo](logo.png)\n**Local AI** with [React](https://react.dev).',
+    ),
+    'NotebookE Local AI with React.',
+  );
+  assert.equal(markdownSummary('Visible text <!-- unfinished comment'), 'Visible text');
 });
 test('Post import preserves manual content and publication; replacement retains Markdown and provenance through saving', () => {
   const current = {

@@ -123,6 +123,7 @@ export function MarkdownEditor({
               name={name}
               aria-label={label}
               rows={16}
+              maxLength={30000}
               value={value}
               required={required}
               onChange={(event) => change(event.target.value)}
@@ -157,7 +158,8 @@ export function MarkdownEditor({
           : t(
               'Hỗ trợ tiêu đề, danh sách, bảng, liên kết và khối mã. Xem trước trước khi lưu.',
               'Headings, lists, tables, links and code blocks. Preview your content before saving.',
-            )}
+            )}{' '}
+        {value.length.toLocaleString()} / 30,000 {t('ký tự', 'characters')}
       </p>
     </div>
   );

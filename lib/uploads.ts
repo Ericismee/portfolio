@@ -30,20 +30,31 @@ export async function storeUpload(directory: string, bytes: Buffer, mime: string
 }
 export const readUpload = (directory: string, name: string) =>
   readFile(path.join(directory, 'uploads', name));
-export async function migrateAssets(input: unknown, directory: string): Promise<unknown> {
+export async function migrateAssets(
+  input: unknown,
+  directory: string,
+  created: string[] = [],
+): Promise<unknown> {
   if (typeof input === 'string' && input.startsWith('data:')) {
     const m =
       /^data:(image\/(?:png|jpeg|gif|webp)|application\/pdf);base64,([A-Za-z0-9+/=]+)$/.exec(input);
     if (!m) throw new HttpError(400, 'Unsupported imported file');
-    return storeUpload(directory, Buffer.from(m[2], 'base64'), m[1]);
+    const url = await storeUpload(directory, Buffer.from(m[2], 'base64'), m[1]);
+    created.push(url);
+    return url;
   }
-  if (Array.isArray(input)) return Promise.all(input.map((v) => migrateAssets(v, directory)));
+  if (Array.isArray(input)) {
+    // Await every write before propagating failure so rollback cannot race pending writes.
+    const result: unknown[] = [];
+    for (const value of input) result.push(await migrateAssets(value, directory, created));
+    return result;
+  }
   if (input && typeof input === 'object') {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(input)) {
       if (['__proto__', 'constructor', 'prototype'].includes(k))
         throw new HttpError(400, 'Invalid key');
-      out[k] = await migrateAssets(v, directory);
+      out[k] = await migrateAssets(v, directory, created);
     }
     return out;
   }

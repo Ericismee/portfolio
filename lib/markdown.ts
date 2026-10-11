@@ -1,3 +1,17 @@
+// List summaries are plain text; never show imported HTML comments or README syntax.
+export function markdownSummary(value: string) {
+  return value
+    .replace(/<!--[\s\S]*?(?:-->|$)/g, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/^\s*\[[^\]]+\]:\s+\S+.*$/gm, '')
+    .replace(/!\[[^\]]*\](?:\([^)]*\)|\[[^\]]*\])/g, '')
+    .replace(/\[([^\]]+)\](?:\([^)]*\)|\[[^\]]*\])/g, '$1')
+    .replace(/^\s*(?:#{1,6}\s+|>\s*|[-*+]\s+|\d+[.)]\s+)/gm, '')
+    .replace(/[*_`~]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function markdownUrl(value: string, base = '', image = false): string {
   if (value.startsWith('#') && (image || !base)) return image ? '' : value;
   try {

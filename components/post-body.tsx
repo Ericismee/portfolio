@@ -35,6 +35,10 @@ export function PostBody({
     <>
       <div
         id={id}
+        onFocusCapture={() => {
+          // Keyboard users must be able to see links that receive focus below the excerpt.
+          if (!detail && overflow) setExpanded(true);
+        }}
         className={
           'post-body' +
           (!detail && !expanded ? ' is-collapsed' : '') +

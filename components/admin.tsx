@@ -22,8 +22,10 @@ import { entries, prepareLegacyImport, request, RequestError } from '../lib/clie
 import { SkillManager } from './skill-manager';
 import { trashEntry } from '../lib/content-management';
 import { PostBody } from './post-body';
+import { sortPosts } from '../lib/activity';
+import { matchesSearch, projectMatchesSearch } from '../lib/search';
 import { MarkdownContent } from './markdown-content';
-import { projectUsesMarkdown } from '../lib/markdown';
+import { projectUsesMarkdown, markdownSummary } from '../lib/markdown';
 import { Icon } from './icon';
 import { readRichText, richPlainText } from '../lib/rich-text';
 import { saveGithubChanges } from '../lib/github-save';
@@ -389,11 +391,21 @@ function AdminDashboard() {
   function rows(kind: Kind, sectionName = '') {
     if (!state) return null;
     const group = entries(state.data, kind, sectionName),
-      list = group
-        .filter((p) =>
-          `${'name' in p ? p.name : p.title} ${'text' in p ? p.text : p.description}`
-            .toLocaleLowerCase()
-            .includes(query.toLocaleLowerCase()),
+      list = (kind === 'posts' ? sortPosts(group as Post[]) : group)
+        .filter(
+          (p) =>
+            !query.trim() ||
+            ('name' in p
+              ? projectMatchesSearch(p, query)
+              : matchesSearch(
+                  [
+                    p.title,
+                    'text' in p
+                      ? [p.text, p.markdown, richPlainText(p.richText)]
+                      : [p.description, p.organization, p.period],
+                  ],
+                  query,
+                )),
         )
         .filter((p) => filter === 'all' || publicationStatus(p) === filter);
     return (
@@ -424,7 +436,12 @@ function AdminDashboard() {
           </select>
         </div>
         <p className="admin-help">
-          {t('Dùng ↑ ↓ để đổi thứ tự hiển thị.', 'Use ↑ ↓ to change display order.')}
+          {kind === 'posts'
+            ? t(
+                'Bài mới nhất hiển thị trước, theo thời gian đăng. Sửa thời gian đăng trong biểu mẫu để thay đổi vị trí.',
+                'Newest posts appear first by publication time. Edit a post’s publication time to change its position.',
+              )
+            : t('Dùng ↑ ↓ để đổi thứ tự hiển thị.', 'Use ↑ ↓ to change display order.')}
         </p>
         {list.map((p) => {
           const index = group.indexOf(p),
@@ -441,7 +458,14 @@ function AdminDashboard() {
             <article className="admin-row" data-publication={publicationStatus(p)} key={p.id}>
               <div className="admin-row-content">
                 <h3>{'name' in p ? p.name : p.title}</h3>
-                <p className="muted">{('text' in p ? p.text : p.description).slice(0, 140)}</p>
+                <p className="muted">
+                  {('text' in p
+                    ? p.bodyFormat === 'markdown'
+                      ? markdownSummary(p.markdown)
+                      : richPlainText(p.richText) || p.text
+                    : p.description
+                  ).slice(0, 140)}
+                </p>
                 <span className="badge">{status(p)}</span>
                 {'displayAt' in p && p.displayAt && (
                   <time dateTime={p.displayAt} className="muted">
@@ -450,22 +474,26 @@ function AdminDashboard() {
                 )}
               </div>
               <div className="actions">
-                <button
-                  className="btn neutral"
-                  aria-label={t('Di chuyển lên', 'Move up')}
-                  disabled={pending || index === 0}
-                  onClick={() => void move(-1)}
-                >
-                  ↑
-                </button>
-                <button
-                  className="btn neutral"
-                  aria-label={t('Di chuyển xuống', 'Move down')}
-                  disabled={pending || index === group.length - 1}
-                  onClick={() => void move(1)}
-                >
-                  ↓
-                </button>
+                {kind !== 'posts' && (
+                  <>
+                    <button
+                      className="btn neutral"
+                      aria-label={t('Di chuyển lên', 'Move up')}
+                      disabled={pending || index === 0}
+                      onClick={() => void move(-1)}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      className="btn neutral"
+                      aria-label={t('Di chuyển xuống', 'Move down')}
+                      disabled={pending || index === group.length - 1}
+                      onClick={() => void move(1)}
+                    >
+                      ↓
+                    </button>
+                  </>
+                )}
                 <button className="btn neutral" onClick={() => preview(p)}>
                   {t('Xem', 'Preview')}
                 </button>
@@ -1140,6 +1168,16 @@ function AdminDashboard() {
             </div>
           </div>
           <div className="admin-shell">
+            <label className="admin-mobile-navigation">
+              {t('Chọn mục quản trị', 'Choose an admin section')}
+              <select value={tab} onChange={(event) => navigate(event.target.value as Tab)}>
+                {Object.entries(labels).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <nav className="admin-nav" aria-label={t('Quản trị', 'Administration')}>
               <p className="admin-nav-label">{t('Không gian quản trị', 'Workspace')}</p>
               {Object.entries(labels).map(([key, label]) => (

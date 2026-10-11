@@ -497,7 +497,10 @@ export function useInlineEdit(publicData: Content) {
                 <button
                   type="button"
                   className="icon-btn"
-                  aria-label={t('Sửa ', 'Edit ') + name}
+                  aria-label={
+                    t('Sửa ', 'Edit ') +
+                    sectionLabel(name, current.data.sectionTitles[name], language)
+                  }
                   onClick={() => section(name, current)}
                 >
                   <Icon name="edit" />
@@ -566,7 +569,10 @@ export function useInlineEdit(publicData: Content) {
                 <button
                   type="button"
                   className="icon-btn"
-                  aria-label={t('Thiết lập ', 'Configure ') + name}
+                  aria-label={
+                    t('Thiết lập ', 'Configure ') +
+                    sectionLabel(name, current.data.sectionTitles[name], language)
+                  }
                   onClick={() => sectionSettings(name, current)}
                 >
                   <Icon name="more" />

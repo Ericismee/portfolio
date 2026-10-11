@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, readFile } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { openDatabase, HttpError } from '../lib/database.ts';
@@ -824,6 +824,80 @@ test('Login limits survive API reload and database restart without locking other
       .prepare('UPDATE rate_limits SET until=0 WHERE key=?')
       .run('login-account:' + digest('blocked-user'));
     assert.equal((await f.handle(request())).status, 401);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test('Public contact rate limits remain effective across API reloads and expire without deleting saved messages', async () => {
+  const f = await fixture();
+  try {
+    const message = {
+      name: 'QA visitor',
+      email: 'qa@example.com',
+      subject: 'QA contact',
+      message: 'Synthetic message',
+    };
+    for (let i = 0; i < 30; i++)
+      assert.equal((await f.call('/api/contact', 'POST', message)).response.status, 201);
+    assert.equal((await f.call('/api/contact', 'POST', message)).response.status, 429);
+    const request = () =>
+      new Request(f.origin + '/api/contact', {
+        method: 'POST',
+        headers: { origin: f.origin, 'content-type': 'application/json' },
+        body: JSON.stringify(message),
+      });
+    assert.equal((await createApi(f.database)(request())).status, 429);
+    assert.equal(f.database.db.prepare('SELECT count(*) AS n FROM messages').get()!.n, 30);
+    f.database.db.prepare('UPDATE rate_limits SET until=0 WHERE key=?').run('contact');
+    assert.equal((await createApi(f.database)(request())).status, 201);
+    assert.equal(f.database.db.prepare('SELECT count(*) AS n FROM messages').get()!.n, 31);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test('Rejected embedded-asset imports remove only their new files after schema, asset or version failure', async () => {
+  const f = await fixture();
+  try {
+    await f.login();
+    const original = await storeUpload(
+      f.directory,
+      Buffer.from('GIF89a preserved upload'),
+      'image/gif',
+    );
+    const state = f.database.read();
+    const image =
+      'data:image/gif;base64,' + Buffer.from('GIF89a imported upload').toString('base64');
+    const cases = [
+      {
+        ...structuredClone(state),
+        data: {
+          ...structuredClone(state.data),
+          profile: { ...state.data.profile, avatar: image, name: '' },
+        },
+      },
+      {
+        ...structuredClone(state),
+        data: {
+          ...structuredClone(state.data),
+          profile: { ...state.data.profile, avatar: image, cover: 'data:image/gif;base64,YmFk' },
+        },
+      },
+      {
+        ...structuredClone(state),
+        version: state.version + 1,
+        data: { ...structuredClone(state.data), profile: { ...state.data.profile, avatar: image } },
+      },
+    ];
+    for (let i = 0; i < cases.length; i++) {
+      assert.equal(
+        (await f.call('/api/admin/import', 'POST', cases[i])).response.status,
+        i === 2 ? 409 : 400,
+      );
+      assert.deepEqual(await readdir(path.join(f.directory, 'uploads')), [path.basename(original)]);
+      assert.deepEqual(f.database.read(), state);
+    }
   } finally {
     await f.cleanup();
   }

@@ -1,3 +1,4 @@
+import { uiLabel } from './i18n.ts';
 import type { Content, Kind } from './schema.ts';
 import { projectSchema, postSchema, itemSchema } from './schema.ts';
 export const normalizedName = (value: string) =>
@@ -15,6 +16,21 @@ export function repositoryIdentity(value: string) {
     return '';
   }
 }
+const builtinSections = [
+  'Giới thiệu',
+  'Nổi bật',
+  'Kinh nghiệm',
+  'Dự án',
+  'Kỹ năng',
+  'Học vấn',
+  'Chứng chỉ',
+  'Hoạt động',
+];
+const normalizedSection = (value: string) => {
+  const name = normalizedName(value);
+  const builtin = builtinSections.find((key) => normalizedName(key) === name);
+  return builtin ? normalizedName(uiLabel(builtin, 'en')) : name;
+};
 function counts(values: string[]) {
   const result = new Map<string, number>();
   for (const key of values) if (key) result.set(key, (result.get(key) || 0) + 1);
@@ -28,10 +44,10 @@ export function duplicateContent(next: Content, previous: Content): string | nul
     return [...a].some(([key, count]) => count > Math.max(1, b.get(key) || 0));
   };
   if (
-    increased(next.sections.map(normalizedName), previous.sections.map(normalizedName)) ||
+    increased(next.sections.map(normalizedSection), previous.sections.map(normalizedSection)) ||
     increased(
-      next.sections.map((key) => normalizedName(next.sectionTitles[key] || key)),
-      previous.sections.map((key) => normalizedName(previous.sectionTitles[key] || key)),
+      next.sections.map((key) => normalizedSection(next.sectionTitles[key] || key)),
+      previous.sections.map((key) => normalizedSection(previous.sectionTitles[key] || key)),
     )
   )
     return 'section';

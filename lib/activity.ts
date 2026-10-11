@@ -3,15 +3,19 @@ import { readRichText, type RichNode } from './rich-text.ts';
 import { publicationStatus } from './schema.ts';
 
 export function activityPosts(posts: Post[], status = 'public', filter = 'all', now = Date.now()) {
+  return sortPosts(
+    posts.filter((post) => publicationStatus(post, now) === status && postMatches(post, filter)),
+  );
+}
+
+export function sortPosts(posts: Post[]) {
   const timestamp = (value?: string) => (value ? Date.parse(value) || 0 : 0);
-  return posts
-    .filter((post) => publicationStatus(post, now) === status && postMatches(post, filter))
-    .sort(
-      (a, b) =>
-        timestamp(b.displayAt || b.createdAt) - timestamp(a.displayAt || a.createdAt) ||
-        timestamp(b.createdAt) - timestamp(a.createdAt) ||
-        a.id.localeCompare(b.id),
-    );
+  return [...posts].sort(
+    (a, b) =>
+      timestamp(b.displayAt || b.createdAt) - timestamp(a.displayAt || a.createdAt) ||
+      timestamp(b.createdAt) - timestamp(a.createdAt) ||
+      a.id.localeCompare(b.id),
+  );
 }
 
 export const postTypes = ['Bài viết', 'Cập nhật dự án', 'Media', 'Liên kết'] as const;

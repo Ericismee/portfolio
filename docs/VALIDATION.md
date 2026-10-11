@@ -286,3 +286,15 @@ Production build passed. In the running preview on port 3001, checked 360, 390, 
 - Added tests for every private read endpoint against anonymous/forged sessions, absence of confidential markers in public JSON, upload publication/revocation/logout/traversal, upload boundaries and language helpers. All 45 automated tests, lint, strict types and the production build passed. Existing tests also cover encrypted credentials, tampering/missing keys, private GitHub imports, XSS and unsafe rich/Markdown URLs.
 - Isolated production preview on port 3002 verified public HTML (including embedded server props) and JSON for profile/projects/activity/contact/GitHub/search contain no private fixture markers, private post details return 404, and live 20 MiB/20 MiB+1 uploads return 201/413. Browser QA verified English initial UI, Vietnamese translation and persistence after reload, and different private-state colors in light/dark modes. No owner content, connection or sessions were changed. Temporary tabs and preview server were closed.
 - These checks cover the tested paths and are not a guarantee against every possible vulnerability.
+
+
+## Shared previews, content management and system audit — 11 October 2026
+
+- Shared Edit/Preview Markdown forms, .md import into rendered preview, project manual-mode preservation, accessible tab keyboard controls and compact theme labels.
+- Individual skill lists with add/edit/hide/delete, inline section/entry management, shared trash, and server-side duplicate detection with bilingual built-in section aliases. Hidden skills are filtered from public data.
+- Retired the obsolete server entrypoint, unified the old administrator CLI, persisted abuse limits across restarts and corrected the Node/Next CI workflow.
+- All 55 automated tests, lint, strict types, formatting and production build passed. Production HTTP checks against isolated QA data verified authorization, sensitive-path denials, headers and private-marker absence. Browser exercised .md import/preview/save/reopen, plain and Markdown project previews, duplicate skill feedback and recoverable entry deletion.
+- Current browser testing established desktop and approximately 777 CSS-pixel layouts. Exact 390-pixel emulation was unavailable; it is explicitly not counted as verified.
+- Detailed scope, role/resource matrix, findings, reproduction conditions and remaining deployment checks are recorded in [SECURITY-AUDIT-2026-10-11.md](SECURITY-AUDIT-2026-10-11.md).
+
+- Rejected embedded-asset imports now roll back only files created by that request. Regression verifies schema failure, partial asset failure and stale version rejection preserve existing uploads/content.
