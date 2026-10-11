@@ -1175,7 +1175,7 @@ function AdminDashboard() {
                   <p className="admin-eyebrow">{t('Quản lý nội dung', 'Content management')}</p>
                   <h2>{labels[tab]}</h2>
                 </div>
-                {['profile', 'skills', 'settings', 'github'].includes(tab) && (
+                {['profile', 'settings', 'github'].includes(tab) && (
                   <button
                     className="btn primary"
                     type="submit"

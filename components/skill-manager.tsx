@@ -48,6 +48,8 @@ export function SkillManager({
     }
   }
   function apply() {
+    setNotice('');
+    setError('');
     const name = value.trim();
     if (!name) {
       setError(t('Nhập tên kỹ năng.', 'Enter a skill name.'));
@@ -89,7 +91,7 @@ export function SkillManager({
         <button type="button" className="btn primary" disabled={busy} onClick={apply}>
           {editing ? t('Lưu', 'Save') : t('Thêm', 'Add')}
         </button>
-        {editing && (
+        {(editing || value) && (
           <button
             type="button"
             className="btn neutral"
@@ -97,6 +99,8 @@ export function SkillManager({
             onClick={() => {
               setEditing(null);
               setValue('');
+              setError('');
+              setNotice('');
             }}
           >
             {t('Hủy', 'Cancel')}

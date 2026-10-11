@@ -26,6 +26,7 @@ export function MarkdownEditor({
   const [view, setView] = useState<'edit' | 'preview'>('edit');
   const [error, setError] = useState('');
   const tabs = useRef<Array<HTMLButtonElement | null>>([]);
+  const fileInput = useRef<HTMLInputElement | null>(null);
   return (
     <div className="markdown-editor">
       <div className="markdown-editor-header">
@@ -60,9 +61,17 @@ export function MarkdownEditor({
           ))}
         </div>
         {!plain && (
-          <label className="markdown-file-import">
-            {t('Mở file .md', 'Open .md file')}
+          <div className="markdown-file-import">
+            <button
+              type="button"
+              className="btn neutral"
+              onClick={() => fileInput.current?.click()}
+            >
+              {t('Mở file .md', 'Open .md file')}
+            </button>
             <input
+              ref={fileInput}
+              hidden
               type="file"
               accept=".md,.markdown,text/markdown,text/plain"
               onChange={async (event) => {
@@ -92,7 +101,7 @@ export function MarkdownEditor({
                 }
               }}
             />
-          </label>
+          </div>
         )}
       </div>
       {error && (
