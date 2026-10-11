@@ -1,14 +1,15 @@
 import { MAX_UPLOAD_BYTES } from './upload-limits.ts';
 import { put } from '@vercel/blob/client';
-async function jsonPost(url: string, body: unknown, csrf: string) {
+import { RequestError } from './client.ts';
+async function jsonPost(url: string, body: unknown, csrf: string, method = 'POST') {
   const response = await fetch(url, {
-    method: 'POST',
+    method,
     headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(120000),
   });
   const result = await response.json();
-  if (!response.ok) throw Error(result.error || 'Upload failed');
+  if (!response.ok) throw new RequestError(result.error || 'Upload failed', response.status);
   return result;
 }
 async function directUpload(file: Blob, mime: string, csrf: string): Promise<string | null> {
@@ -46,6 +47,16 @@ export async function importContent(data: unknown, version: number, csrf: string
   return id
     ? jsonPost('/api/admin/import-blob', { id, version }, csrf)
     : jsonPost('/api/admin/import', { data, version }, csrf);
+}
+export async function saveLargeContent(data: unknown, version: number, csrf: string) {
+  const id = await directUpload(
+    new Blob([JSON.stringify(data)], { type: 'application/json' }),
+    'application/json',
+    csrf,
+  );
+  return id
+    ? jsonPost('/api/admin/content-blob', { id, version }, csrf)
+    : jsonPost('/api/admin/content', { data, version }, csrf, 'PUT');
 }
 export async function uploadMime(file: File): Promise<string> {
   const pdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);

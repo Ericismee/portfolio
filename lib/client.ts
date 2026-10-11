@@ -12,10 +12,21 @@ export async function request<T>(
   body?: unknown,
   csrf = '',
 ): Promise<T> {
+  const serialized = body === undefined ? undefined : JSON.stringify(body);
+  if (
+    url === '/api/admin/content' &&
+    method === 'PUT' &&
+    serialized &&
+    new Blob([serialized]).size > 3 * 1024 * 1024
+  ) {
+    const { saveLargeContent } = await import('./upload-client.ts');
+    const input = body as { data: unknown; version: number };
+    return saveLargeContent(input.data, input.version, csrf) as Promise<T>;
+  }
   const response = await fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: serialized,
     cache: 'no-store',
   });
   const json: unknown = await response.json();

@@ -49,7 +49,11 @@ try {
         'Configure DATABASE_URL and private BLOB_READ_WRITE_TOKEN in a private environment file.',
       );
     const target = await openCloudDatabase();
-    const sql = postgres(process.env.DATABASE_URL, { ssl: 'require', max: 1, prepare: false });
+    const sql = postgres(process.env.DATABASE_URL, {
+      ssl: { rejectUnauthorized: true },
+      max: 1,
+      prepare: false,
+    });
     try {
       const populated = await sql`SELECT username FROM admins LIMIT 1`;
       const current = await target.read();

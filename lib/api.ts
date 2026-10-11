@@ -137,7 +137,10 @@ export function createApi(database: Database, production = false, origin?: strin
           const { bytes, mime } = await consumeCloudUpload(database, session.username, id);
           return send({ url: await storeUpload(database.directory, bytes, mime) }, 201);
         }
-        if (pathname === '/api/admin/import-blob' && method === 'POST') {
+        if (
+          ['/api/admin/import-blob', '/api/admin/content-blob'].includes(pathname) &&
+          method === 'POST'
+        ) {
           if (database.directory !== 'cloud') throw new HttpError(404, 'Not found');
           const { id, version } = z
             .object({ id: z.string().max(50), version: z.number().int().positive() })
@@ -150,6 +153,8 @@ export function createApi(database: Database, production = false, origin?: strin
           } catch {
             throw new HttpError(400, 'Invalid JSON');
           }
+          if (pathname === '/api/admin/content-blob')
+            return send(await database.write(input, version));
           const created: string[] = [];
           try {
             return send(

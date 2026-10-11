@@ -25,6 +25,21 @@ export const intentInput = z.object({
   ]),
   size: z.number().int().positive().max(MAX_UPLOAD_BYTES),
 });
+// Clean abandoned staging files after their short-lived client tokens expire.
+// Keep rows on a storage failure so a later upload can retry the cleanup.
+async function cleanupExpiredUploads(database: Database, services: typeof blobServices) {
+  const expired = (await database.db
+    .prepare('SELECT id FROM upload_intents WHERE expires<? LIMIT 100')
+    .all(Date.now() - 60_000)) as { id: string }[];
+  if (!expired.length) return;
+  try {
+    await services.del(expired.map(({ id }) => 'pending/' + id));
+    for (const { id } of expired)
+      await database.db.prepare('DELETE FROM upload_intents WHERE id=?').run(id);
+  } catch {
+    // Maintenance cannot prevent a new upload; no sensitive provider error is logged.
+  }
+}
 export async function startCloudUpload(
   database: Database,
   username: string,
@@ -32,6 +47,7 @@ export async function startCloudUpload(
   services = blobServices,
 ) {
   const { mime, size } = intentInput.parse(input);
+  await cleanupExpiredUploads(database, services);
   const id = randomUUID() + '.' + mimeExtensions[mime];
   const expires = Date.now() + 10 * 60_000;
   await database.db

@@ -10,3 +10,6 @@ coverage/
 *.sqlite*
 .next/
 *.tsbuildinfo
+
+.vercel
+.env*

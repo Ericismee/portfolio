@@ -2,7 +2,7 @@
 
 A personal profile and publishing website built with **Next.js, React, strict TypeScript and Node.js**. It combines a familiar professional profile layout with a private administration area for managing content without editing code.
 
-**Production:** not deployed. No hosting account or production environment has been configured yet.
+**Production:** Vercel deployment preparation is in progress. The cloud adapter is implemented; provisioning and migration must complete before the site is live.
 
 **Local website:** [localhost:3001](http://localhost:3001) · **Administration:** [localhost:3001/admin](http://localhost:3001/admin)
 
@@ -14,7 +14,7 @@ A personal profile and publishing website built with **Next.js, React, strict Ty
 - Experience, education, certifications and custom profile sections with editable entries.
 - Search, project filters, grid/list presentation, reorder controls and individual visibility settings.
 - Authenticated administration with server-side authorization, CSRF checks and HttpOnly session cookies.
-- Persistent SQLite content and uploaded files. Redeployments preserve them when `DATA_DIR` is on persistent storage.
+- Persistent SQLite and disk uploads locally, or PostgreSQL and private Vercel Blob storage in the cloud. Cloud data survives redeployments.
 - Deleted entries can be restored from trash as drafts. The last 30 document revisions are available for full recovery.
 - Contact form that saves real messages to the private administration inbox.
 - English by default with a remembered Vietnamese/English interface choice, light/dark themes, readable accent colors, density and standard/wide layout settings.
@@ -39,7 +39,7 @@ Screenshots are captured from the local production build using an isolated QA da
 - CSS design tokens, local Plus Jakarta Sans and JetBrains Mono fonts.
 - ESLint, Prettier, Node's test runner and a browser QA script.
 
-SQLite fits this single-instance personal website. The current persistence layer requires a writable persistent disk. An ephemeral serverless deployment needs a separate durable database and object-storage adapter.
+Local deployments use SQLite on persistent disk. Vercel deployments use the PostgreSQL adapter and private Vercel Blob storage; Vercel refuses to start without `DATABASE_URL` instead of silently writing to ephemeral disk.
 
 ## Local setup
 

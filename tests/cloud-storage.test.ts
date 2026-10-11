@@ -74,6 +74,16 @@ test('Postgres persistence preserves authorization, atomic versions, rate limits
       (await handle(new Request('https://profile.example/api/admin/content'))).status,
       401,
     );
+    for (const route of ['upload-init', 'upload-finish', 'import-blob', 'content-blob']) {
+      const rejected = await handle(
+        new Request('https://profile.example/api/admin/' + route, {
+          method: 'POST',
+          headers: { origin: 'https://profile.example', 'content-type': 'application/json' },
+          body: '{}',
+        }),
+      );
+      assert.equal(rejected.status, 403, 'anonymous cloud mutations fail before storage access');
+    }
     const state = await database.read();
     state.data.profile.summary = 'Cloud persistence test';
     const saved = await call('/api/admin/content', 'PUT', state);
@@ -149,6 +159,55 @@ test('Postgres persistence preserves authorization, atomic versions, rate limits
     await assert.rejects(() => consumeCloudUpload(database, 'owner', intent.id, services), {
       status: 404,
     });
+    const mismatch = await startCloudUpload(
+      database,
+      'owner',
+      { mime: 'application/pdf', size: 5 },
+      services,
+    );
+    await assert.rejects(
+      () =>
+        consumeCloudUpload(database, 'owner', mismatch.id, {
+          ...services,
+          get: async (pathname, options) => {
+            const result = await services.get(pathname, options);
+            if (result?.statusCode === 200) result.blob.contentType = 'text/html';
+            return result;
+          },
+        }),
+      { status: 400 },
+    );
+    const expired = await startCloudUpload(
+      database,
+      'owner',
+      { mime: 'application/pdf', size: 5 },
+      services,
+    );
+    await database.db
+      .prepare('UPDATE upload_intents SET expires=? WHERE id=?')
+      .run(Date.now() - 120_000, expired.id);
+    const beforeExpired = requests.length;
+    await assert.rejects(() => consumeCloudUpload(database, 'owner', expired.id, services), {
+      status: 404,
+    });
+    assert.equal(requests.length, beforeExpired, 'expired tokens cannot read staged files');
+    const removed: string[] = [];
+    await startCloudUpload(
+      database,
+      'owner',
+      { mime: 'application/pdf', size: 5 },
+      {
+        ...services,
+        del: async (paths) => {
+          removed.push(...(Array.isArray(paths) ? paths : [paths]));
+        },
+      },
+    );
+    assert(removed.includes('pending/' + expired.id));
+    assert.equal(
+      await database.db.prepare('SELECT id FROM upload_intents WHERE id=?').get(expired.id),
+      undefined,
+    );
     await assert.rejects(() =>
       startCloudUpload(database, 'owner', { mime: 'text/html', size: 5 }, services),
     );

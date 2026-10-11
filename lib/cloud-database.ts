@@ -30,7 +30,7 @@ export async function openCloudDatabase(url = process.env.DATABASE_URL!): Promis
   const parsed = new URL(url);
   if (!['postgres:', 'postgresql:'].includes(parsed.protocol)) throw Error('Invalid database URL');
   const sql = postgres(url, {
-    ssl: 'require',
+    ssl: { rejectUnauthorized: true },
     max: 2,
     idle_timeout: 20,
     connect_timeout: 15,
