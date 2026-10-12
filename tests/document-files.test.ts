@@ -45,7 +45,7 @@ test('Documents validate their bytes and reject binary text, malformed DOCX, ZIP
   assert.throws(() => uploadExtension(Buffer.from([0, 255]), 'text/plain'), { status: 400 });
   assert.throws(() => uploadExtension(Buffer.from('not zip'), documentTypes.docx), { status: 400 });
   assert.throws(() => docxText(docx({ 'word/vbaProject.bin': strToU8('macro') })));
-  assert.throws(() => docxText(docx({ large: new Uint8Array(8 * 1024 * 1024 + 1) })));
+  assert.throws(() => docxText(docx({ large: new Uint8Array(40 * 1024 * 1024 + 1) })));
   assert.throws(() => uploadExtension(Buffer.alloc(20 * 1024 * 1024 + 1), 'text/plain'), {
     status: 413,
   });

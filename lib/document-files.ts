@@ -51,6 +51,10 @@ export function validateSvg(bytes: Uint8Array) {
   const attrs = new Set([
     'xmlns',
     'xmlns:xlink',
+    'version',
+    'xml:space',
+    'color',
+    'vector-effect',
     'id',
     'viewBox',
     'width',
@@ -131,23 +135,32 @@ export function docxText(bytes: Uint8Array) {
   // Inspect every central-directory entry before allocating its expanded contents.
   let expanded = 0,
     count = 0;
+  const names = new Set<string>();
   const entries = unzipSync(bytes, {
     filter: (entry) => {
+      const selected = ['[Content_Types].xml', 'word/document.xml'].includes(entry.name);
       expanded += entry.originalSize;
       if (
         ++count > 512 ||
         expanded > 40 * 1024 * 1024 ||
-        entry.originalSize > 8 * 1024 * 1024 ||
+        (selected && entry.originalSize > 8 * 1024 * 1024) ||
+        names.has(entry.name) ||
         /(?:^|\/)\.\.(?:\/|$)|\\|vbaProject|activeX|embeddings/i.test(entry.name)
       )
         throw invalid();
-      return ['[Content_Types].xml', 'word/document.xml'].includes(entry.name);
+      names.add(entry.name);
+      return selected;
     },
   });
   if (!entries['[Content_Types].xml'] || !entries['word/document.xml']) throw invalid();
   const types = xml(utf8(entries['[Content_Types].xml']));
   if (
-    !Array.from(types.getElementsByTagName('Override')).some(
+    !Array.from(
+      types.getElementsByTagNameNS(
+        'http://schemas.openxmlformats.org/package/2006/content-types',
+        'Override',
+      ),
+    ).some(
       (n) =>
         n.getAttribute('PartName') === '/word/document.xml' &&
         n.getAttribute('ContentType') ===

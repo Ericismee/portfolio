@@ -10,7 +10,7 @@ A personal portfolio and publishing platform built with **Next.js, React and Typ
 
 - **Profile and projects** — cover, avatar, introduction, skills, custom sections, project details and searchable content.
 - **Publishing** — rich text or Markdown with Edit / Preview, scheduled posts, visibility controls, duplicate checks and recoverable trash.
-- **Administration** — inline editing, mobile full-screen forms, image framing, PDF previews and uploads up to 20 MiB.
+- **Administration** — inline editing, mobile full-screen forms, image framing and upload progress. Attach PDF, DOCX, TXT, Markdown and images with previews; uploads support up to 20 MiB (static SVG: 1 MiB). DOCX previews show text; download for original formatting. Text files use UTF-8.
 - **GitHub integration** — public repositories, contributions and activity; authenticated imports stay private until explicitly published.
 - **Analytics** — daily trends, country/device/browser breakdowns, filters and viewing duration. Visitor details are admin-only; the public counter exposes a total.
 - **Presentation** — English by default, Vietnamese translation, light/dark themes and responsive layouts. Background updates pause while editing or when the tab is hidden.

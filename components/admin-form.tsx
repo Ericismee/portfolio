@@ -213,7 +213,12 @@ export function FieldsForm({
                 label={field.label}
                 base={String(values.detailsBase || '')}
                 change={update}
-                upload={(file, done) => upload(field.key, file, done)}
+                upload={(file, done) =>
+                  upload(field.key, file, (url) => {
+                    setValues((v) => ({ ...v, detailsFormat: 'markdown' }));
+                    done(url);
+                  })
+                }
                 plain={
                   !projectUsesMarkdown({
                     detailsFormat: String(values.detailsFormat || 'auto'),
