@@ -9,7 +9,15 @@ import { FileDocument } from './file-document';
 import { useLanguage } from './language';
 import type { useInlineEdit } from './inline-edit';
 
-export function PublicHeader({ editing }: { editing: ReturnType<typeof useInlineEdit> }) {
+export function PublicHeader({
+  editing,
+  refresh,
+  refreshing,
+}: {
+  editing: ReturnType<typeof useInlineEdit>;
+  refresh: () => void;
+  refreshing: boolean;
+}) {
   const { t, language, toggle } = useLanguage();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -94,7 +102,14 @@ export function PublicHeader({ editing }: { editing: ReturnType<typeof useInline
           <Link
             className={'logo' + (profile.logo ? ' has-image' : '')}
             href="/"
-            aria-label={profile.name}
+            aria-label={t('Cập nhật trang', 'Refresh page') + ' · ' + profile.name}
+            title={t('Cập nhật trang', 'Refresh page')}
+            aria-busy={refreshing}
+            onClick={(event) => {
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+              event.preventDefault();
+              refresh();
+            }}
           >
             {profile.logo ? (
               <img src={profile.logo} alt={profile.name} />

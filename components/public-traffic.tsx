@@ -1,4 +1,5 @@
 'use client';
+import { useBackgroundRefresh } from './use-background-refresh';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Icon } from './icon';
@@ -11,6 +12,14 @@ export function PublicTraffic({ visible = true }: { visible?: boolean }) {
   const path = usePathname(),
     { t, language } = useLanguage();
   const [views, setViews] = useState<number | null>(null);
+  useBackgroundRefresh(
+    async (isCurrent) => {
+      const next = await request<TrafficReceipt>('/api/traffic');
+      if (isCurrent()) setViews(next.views);
+    },
+    true,
+    60_000,
+  );
   useEffect(() => {
     let active = true;
     let token = '';

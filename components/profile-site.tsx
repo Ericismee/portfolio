@@ -13,6 +13,7 @@ import { PublicSkeleton } from './skeleton';
 import { SocialLogo, socialLabels } from './social-logo';
 import { useLanguage } from './language';
 import { usePublicEditing } from './public-shell';
+import { useBackgroundRefresh } from './use-background-refresh';
 import type { GithubSkills } from '../lib/github-skills';
 import { GithubSkillsCard } from './github-skills';
 import { PostBody } from './post-body';
@@ -87,6 +88,16 @@ function Site({
   }, [initialGithubSkills, page]);
   const editing = usePublicEditing(content),
     data = editing.data;
+  useBackgroundRefresh(
+    async (isCurrent) => {
+      const response = await fetch('/api/github?view=skills', { cache: 'no-store' });
+      if (!response.ok) throw Error('GitHub unavailable');
+      const result = await response.json();
+      if (isCurrent()) setGithubSkills(result.stats);
+    },
+    data.github.showSidebar && page !== 'github',
+    60_000,
+  );
   const { language, t } = useLanguage(),
     router = useRouter(),
     [toast, setToast] = useState(''),
@@ -631,6 +642,24 @@ function Site({
               <p>{item.organization}</p>
               <p className="muted">{item.period}</p>
               <p className="preserve">{item.description}</p>
+              {item.image && (
+                <ImagePreview src={item.image} alt={item.title} className="entry-image" />
+              )}
+              <div className="entry-attachments">
+                {item.link && (
+                  <a
+                    className="btn neutral"
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t('Xem liên kết', 'View credential')} <Icon name="external" />
+                  </a>
+                )}
+                {item.file && (
+                  <FileDocument url={item.file} name={item.title} showDownload={false} />
+                )}
+              </div>
               {editing.button(t('Sửa nội dung', 'Edit content'), () =>
                 editing.item('items', name, item.id),
               )}
@@ -725,10 +754,28 @@ function Site({
                   {data.hidden.includes(s.name) && (
                     <span className="badge">{t('Đã ẩn', 'Hidden')}</span>
                   )}
-                  {editing.button(t('Chỉnh sửa', 'Edit'), () => editing.section(s.name))}
-                  {editing.button(t('Thiết lập mục', 'Section settings'), () =>
-                    editing.sectionSettings(s.name),
-                  )}
+                  <details className="section-control">
+                    <summary
+                      aria-label={t('Quản lý mục', 'Manage section')}
+                      title={t('Quản lý mục', 'Manage section')}
+                    >
+                      <Icon name="more" />
+                    </summary>
+                    <div
+                      className="section-control-menu"
+                      onClick={(event) => {
+                        if ((event.target as HTMLElement).closest('button'))
+                          event.currentTarget.parentElement?.removeAttribute('open');
+                      }}
+                    >
+                      {editing.button(t('Chỉnh sửa', 'Edit'), () => editing.section(s.name), true)}
+                      {editing.button(
+                        t('Thiết lập mục', 'Section settings'),
+                        () => editing.sectionSettings(s.name),
+                        true,
+                      )}
+                    </div>
+                  </details>
                 </div>
               )}
             </div>

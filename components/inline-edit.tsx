@@ -285,6 +285,9 @@ export function useInlineEdit(publicData: Content) {
         field('organization', t('Tổ chức', 'Organization')),
         field('period', t('Thời gian', 'Period')),
         field('description', t('Mô tả', 'Description'), 'textarea'),
+        field('link', t('Link xác minh / liên kết', 'Verification link / website'), 'url'),
+        field('image', t('Ảnh đính kèm', 'Attachment image'), 'image'),
+        field('file', t('Tài liệu đính kèm', 'Attached document'), 'pdf'),
       );
     fields.push(
       {

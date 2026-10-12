@@ -11,6 +11,59 @@ import { uploadResponse } from '../lib/upload-response.ts';
 import { documentTypes } from '../lib/file-types.ts';
 import { uploadMime } from '../lib/upload-client.ts';
 import { markdownUrl } from '../lib/markdown.ts';
+import { itemSchema, publicContent } from '../lib/schema.ts';
+
+test('Certificate links and attachments persist, remain private in drafts and revoke when hidden', async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'eric-certificate-'));
+  const database = openDatabase(directory);
+  try {
+    const file = await storeUpload(directory, Buffer.from('Certificate document'), 'text/plain');
+    const image = await storeUpload(
+      directory,
+      Buffer.from(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0h1v1H0z"/></svg>',
+      ),
+      'image/svg+xml',
+    );
+    const entry = itemSchema.parse({
+      id: 'certificate',
+      title: 'Certificate',
+      organization: 'Issuer',
+      link: 'https://example.com/verify/123',
+      file,
+      image,
+      visibility: 'draft',
+    });
+    let state = database.read();
+    state.data.items['Chứng chỉ'] = [entry];
+    state = database.write(state.data, state.version);
+    const status = async (url: string) =>
+      (
+        await uploadResponse(
+          database,
+          new Request('http://localhost:3001' + url),
+          path.basename(url),
+        )
+      ).status;
+    assert.equal(await status(file), 404);
+    assert.equal(await status(image), 404);
+    assert.deepEqual(publicContent(state.data).items['Chứng chỉ'], []);
+    state.data.items['Chứng chỉ'][0].visibility = 'public';
+    state = database.write(state.data, state.version);
+    assert.equal(await status(file), 200);
+    assert.equal(await status(image), 200);
+    assert.equal(publicContent(state.data).items['Chứng chỉ'][0].link, entry.link);
+    state.data.hidden.push('Chứng chỉ');
+    state = database.write(state.data, state.version);
+    assert.equal(await status(file), 404);
+    assert.equal(await status(image), 404);
+    assert.throws(() => itemSchema.parse({ ...entry, link: 'javascript:alert(1)' }));
+    assert.equal(itemSchema.parse({ id: 'legacy', title: 'Old entry' }).file, '');
+  } finally {
+    database.db.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 
 function docx(extra: Record<string, Uint8Array> = {}) {
   return zipSync({

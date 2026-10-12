@@ -109,6 +109,9 @@ export function FileDocument({
           aria-label={name}
           tabIndex={-1}
           onClose={() => setOpen(false)}
+          onClick={(event) => {
+            if (image && event.target === event.currentTarget) dialog.current?.close();
+          }}
         >
           {!pdf && (
             <div className="cv-viewer-head">

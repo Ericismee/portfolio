@@ -73,6 +73,9 @@ export const itemSchema = z.object({
   organization: text(200),
   period: text(200),
   description: text(30000),
+  link: url,
+  image: url,
+  file: url,
 });
 export const trashSchema = z.discriminatedUnion('kind', [
   z.object({

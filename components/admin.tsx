@@ -339,6 +339,9 @@ function AdminDashboard() {
         field('organization', t('Tổ chức / đơn vị', 'Organization')),
         field('period', t('Thời gian', 'Period')),
         field('description', t('Nội dung', 'Description'), 'textarea'),
+        field('link', t('Link xác minh / liên kết', 'Verification link / website'), 'url'),
+        field('image', t('Ảnh đính kèm', 'Attachment image'), 'image'),
+        field('file', t('Tài liệu đính kèm', 'Attached document'), 'pdf'),
       );
     fields.push(
       select('visibility', t('Trạng thái xuất bản', 'Publishing status'), [

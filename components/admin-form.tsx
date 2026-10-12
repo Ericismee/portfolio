@@ -11,6 +11,7 @@ import { MarkdownEditor } from './markdown-editor';
 import { uploadMime, uploadFile } from '../lib/upload-client';
 import { RequestError } from '../lib/client';
 import { CvDocument } from './cv-document';
+import { FileDocument } from './file-document';
 import { PasswordInput } from './password-input';
 import { LocationInput } from './location-input';
 import { DOCUMENT_ACCEPT } from '../lib/file-types';
@@ -367,12 +368,19 @@ export function FieldsForm({
               )}
               {field.help && <small className="admin-help">{field.help}</small>}
             </label>
-            {field.type === 'pdf' && value && (
-              <CvDocument
-                url={String(value)}
-                name={String(values[field.key + 'Name'] || 'CV.pdf')}
-              />
-            )}
+            {field.type === 'pdf' &&
+              value &&
+              (field.key === 'file' ? (
+                <FileDocument
+                  url={String(value)}
+                  name={String(values.title || t('Tài liệu', 'Document'))}
+                />
+              ) : (
+                <CvDocument
+                  url={String(value)}
+                  name={String(values[field.key + 'Name'] || 'CV.pdf')}
+                />
+              ))}
             {['image', 'pdf'].includes(field.type || '') && value && (
               <button type="button" className="btn neutral" onClick={() => update('')}>
                 {t('Gỡ file', 'Remove file')}

@@ -1,4 +1,5 @@
 'use client';
+import { PAGE_REFRESH_EVENT, type PageRefreshRequest } from '../lib/page-refresh';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GithubSkills } from '../lib/github-skills';
@@ -106,10 +107,15 @@ export function GithubProfile({
       }
     };
     document.addEventListener('visibilitychange', visible);
+    const manual = (event: Event) => {
+      (event as CustomEvent<PageRefreshRequest>).detail.tasks.push(refresh());
+    };
+    window.addEventListener(PAGE_REFRESH_EVENT, manual);
     return () => {
       stopped = true;
       clearTimeout(timer);
       document.removeEventListener('visibilitychange', visible);
+      window.removeEventListener(PAGE_REFRESH_EVENT, manual);
       request.current?.abort();
       request.current = null;
     };
