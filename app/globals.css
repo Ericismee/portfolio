@@ -5083,3 +5083,87 @@ html:has(.page-refresh-status) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* A consistent action row, with one primary action. */
+.profile-intro .profile-body > .profile-actions {
+  gap: 10px;
+  align-items: center;
+}
+.profile-intro .profile-actions > .btn,
+.profile-intro .profile-actions > .file-document > .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: none;
+  font-weight: 600;
+  line-height: 1.2;
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+.profile-intro .profile-actions > .btn.primary {
+  background: var(--accent);
+  color: var(--primary-ink);
+  border-color: var(--accent);
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.profile-intro .profile-actions > .btn:hover,
+.profile-intro .profile-actions > .file-document > .btn:hover {
+  transform: none;
+  background: var(--surface);
+  border-color: var(--muted);
+  box-shadow: none;
+}
+.profile-intro .profile-actions > .btn.primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  filter: brightness(1.05);
+}
+.profile-intro .profile-actions > .btn:active {
+  transform: translateY(1px);
+}
+.profile-intro .profile-actions svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+.profile-intro .profile-action-icon {
+  display: inline-flex;
+}
+@media (max-width: 600px) {
+  .profile-intro .profile-actions > .profile-share {
+    flex-basis: 46px;
+    width: 46px;
+    padding: 0;
+  }
+  .profile-intro .profile-actions > .btn {
+    padding-inline: 10px;
+  }
+  .profile-intro
+    .profile-actions:not(.profile-actions-header-cv):not(.profile-actions-editing)
+    .profile-action-icon {
+    display: none;
+  }
+  .profile-intro
+    .profile-actions:not(.profile-actions-header-cv):not(.profile-actions-editing)
+    .btn {
+    padding-inline: 6px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .profile-intro .profile-actions .btn {
+    transition: none;
+  }
+}
+
+.profile-intro .profile-actions > .profile-share svg {
+  display: block;
+}

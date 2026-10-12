@@ -862,11 +862,17 @@ function Site({
                 true,
               )}
               <Link className="btn primary" href="/projects">
+                <span className="profile-action-icon" aria-hidden="true">
+                  <Icon name="projects" />
+                </span>
                 <span className="profile-action-label-full">{t('Xem dự án', 'View projects')}</span>
                 <span className="profile-action-label-short">{t('Dự án', 'Projects')}</span>
               </Link>
               {!editing.enabled && (
                 <Link className="btn neutral" href="/contact">
+                  <span className="profile-action-icon" aria-hidden="true">
+                    <Icon name="contact" />
+                  </span>
                   {t('Liên hệ', 'Contact')}
                 </Link>
               )}
