@@ -58,6 +58,7 @@ function Site({
   query: Record<string, string>;
 }) {
   const [githubSkills, setGithubSkills] = useState(initialGithubSkills);
+  const [certificatesExpanded, setCertificatesExpanded] = useState(false);
   const [githubLoading, setGithubLoading] = useState(
     !initialGithubSkills.updatedAt && !!initialGithubSkills.username,
   );
@@ -738,7 +739,11 @@ function Site({
     );
     const renderSection = (s: (typeof sections)[number], compact = false) => (
       <section
-        className={compact ? 'card pad profile-certificates' : 'card pad'}
+        className={
+          compact
+            ? 'card pad profile-certificates' + (certificatesExpanded ? ' is-expanded' : '')
+            : 'card pad' + (s.name === 'Giới thiệu' ? ' profile-about' : '')
+        }
         id={'section-' + sections.indexOf(s)}
         tabIndex={-1}
         aria-label={title(s.name)}
@@ -746,6 +751,23 @@ function Site({
       >
         <div className="section-heading">
           {compact ? <h3>{title(s.name)}</h3> : <h2>{title(s.name)}</h2>}
+          {compact && (
+            <button
+              type="button"
+              className="credential-toggle"
+              aria-expanded={certificatesExpanded}
+              aria-controls={'credential-body-' + sections.indexOf(s)}
+              aria-label={
+                certificatesExpanded
+                  ? t('Thu gọn chứng chỉ', 'Collapse certifications')
+                  : t('Mở rộng chứng chỉ', 'Expand certifications')
+              }
+              onClick={() => setCertificatesExpanded((expanded) => !expanded)}
+            >
+              <span>{certificatesExpanded ? t('Thu gọn', 'Show less') : t('Xem', 'Show')}</span>
+              <Icon name="next" />
+            </button>
+          )}
           {editing.enabled && (
             <div className="inline-section-actions">
               {data.hidden.includes(s.name) && (
@@ -776,7 +798,13 @@ function Site({
             </div>
           )}
         </div>
-        {compact ? data.items[s.name]?.map((item) => credentialRow(item, s.name)) : s.body}
+        {compact ? (
+          <div id={'credential-body-' + sections.indexOf(s)} hidden={!certificatesExpanded}>
+            {data.items[s.name]?.map((item) => credentialRow(item, s.name))}
+          </div>
+        ) : (
+          s.body
+        )}
       </section>
     );
     return shell(
@@ -858,7 +886,10 @@ function Site({
             </div>
           </div>
         </section>
-        {sections.filter((s) => !credentialNames.includes(s.name)).map((s) => renderSection(s))}
+        {sections
+          .filter((s) => !credentialNames.includes(s.name))
+          .sort((a, b) => (a.name === 'Giới thiệu' ? -1 : b.name === 'Giới thiệu' ? 1 : 0))
+          .map((s) => renderSection(s))}
       </>,
       <>
         {card(t('Liên kết', 'Links'), links(), 'profile-links-card')}

@@ -4859,19 +4859,19 @@ html:has(.page-refresh-status) {
     order: 0;
   }
   .profile-layout > .sidebar > .profile-links-card {
-    order: 1;
-  }
-  .profile-layout > .sidebar > .profile-certificates {
-    order: 2;
-  }
-  .profile-layout > .main > .card:not(.profile-intro) {
-    order: 4;
-  }
-  .profile-layout > .sidebar > .github-skills-card {
     order: 3;
   }
-  .profile-layout > .sidebar > .footer {
+  .profile-layout > .sidebar > .profile-certificates {
+    order: 4;
+  }
+  .profile-layout > .main > .card:not(.profile-intro) {
+    order: 2;
+  }
+  .profile-layout > .sidebar > .github-skills-card {
     order: 5;
+  }
+  .profile-layout > .sidebar > .footer {
+    order: 6;
   }
   .profile-links-card .social-link {
     min-height: 44px;
@@ -5002,5 +5002,38 @@ html:has(.page-refresh-status) {
     margin: 0;
     padding-bottom: 0;
     border-bottom: 0;
+  }
+}
+
+.credential-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 12px;
+  margin-left: auto;
+}
+.credential-toggle svg {
+  width: 16px;
+  height: 16px;
+  transform: rotate(90deg);
+}
+.is-expanded > .section-heading .credential-toggle svg {
+  transform: rotate(-90deg);
+}
+.layout.profile-layout .profile-certificates:not(.is-expanded) .section-heading {
+  margin: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+@media (max-width: 800px) {
+  .layout.profile-layout > .main > .card.profile-about {
+    order: 1;
   }
 }
