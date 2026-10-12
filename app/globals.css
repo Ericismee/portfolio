@@ -4280,6 +4280,9 @@ html {
     flex-wrap: nowrap;
     gap: 6px;
   }
+  .profile-actions-header-cv > .file-document {
+    display: none;
+  }
   .profile-actions:not(.profile-actions-editing) > :is(.btn, .file-document) {
     flex: 1 1 0;
     min-width: 0;

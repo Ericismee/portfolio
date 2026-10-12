@@ -672,7 +672,9 @@ function Site({
             </div>
             <div
               className={
-                'actions profile-actions' + (editing.enabled ? ' profile-actions-editing' : '')
+                'actions profile-actions' +
+                (editing.enabled ? ' profile-actions-editing' : '') +
+                (data.showHeaderCv ? ' profile-actions-header-cv' : '')
               }
             >
               {editing.button(
