@@ -1126,7 +1126,7 @@
   .layout > .sidebar:has(.github-skills-card) {
     display: block;
   }
-  .layout > .sidebar:has(.github-skills-card) > :not(.github-skills-card) {
+  .layout:not(.profile-layout) > .sidebar:has(.github-skills-card) > :not(.github-skills-card) {
     display: none;
   }
 }
@@ -4726,5 +4726,171 @@ html:has(.page-refresh-status) {
   }
   .page-refresh-status {
     transition: none;
+  }
+}
+
+/* Compact profile details and sidebar. */
+.profile-links-card,
+.profile-certificates {
+  padding: 16px;
+}
+.profile-links-card .section-heading,
+.profile-certificates .section-heading {
+  margin-bottom: 6px;
+  padding-bottom: 10px;
+  align-items: center;
+}
+.profile-certificates .section-heading h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.profile-links-card .social-link {
+  min-height: 46px;
+  padding: 8px 0;
+}
+.credential-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  min-width: 0;
+}
+.credential-row + .credential-row {
+  border-top: 1px solid var(--border-subtle);
+}
+.credential-copy {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.credential-copy strong {
+  font-weight: 600;
+}
+.credential-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 2px;
+}
+.credential-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.credential-icon:hover {
+  background: var(--surface);
+}
+.credential-icon svg {
+  width: 17px;
+  height: 17px;
+}
+.credential-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.credential-description {
+  position: relative;
+}
+.credential-description > summary {
+  list-style: none;
+}
+.credential-description > summary::-webkit-details-marker {
+  display: none;
+}
+.credential-description > p {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  top: 36px;
+  width: min(240px, 70vw);
+  padding: 12px;
+  margin: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 4px 16px #0002;
+  font-size: 12px;
+}
+.profile-education {
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 8px;
+}
+.profile-education .credential-row {
+  padding: 0;
+}
+.profile-education .credential-copy {
+  font-size: 13px;
+}
+.profile-education > .inline-edit-button {
+  flex-shrink: 0;
+}
+@media (max-width: 800px) {
+  .layout.profile-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .layout.profile-layout > .main,
+  .layout.profile-layout > .sidebar {
+    display: contents;
+  }
+  .profile-layout > .main > .card,
+  .profile-layout > .sidebar > .card {
+    margin: 0;
+  }
+  .profile-layout > .main > .profile-intro {
+    order: 0;
+  }
+  .profile-layout > .sidebar > .profile-links-card {
+    order: 1;
+  }
+  .profile-layout > .sidebar > .profile-certificates {
+    order: 2;
+  }
+  .profile-layout > .main > .card:not(.profile-intro) {
+    order: 4;
+  }
+  .profile-layout > .sidebar > .github-skills-card {
+    order: 3;
+  }
+  .profile-layout > .sidebar > .footer {
+    order: 5;
+  }
+  .profile-links-card .social-link {
+    min-height: 44px;
+  }
+  .credential-icon {
+    height: 44px;
+    min-width: 34px;
+  }
+  .profile-links-card {
+    padding: 12px 16px;
+  }
+  .profile-links-card .social-link {
+    display: inline-flex;
+    width: 50%;
+    gap: 8px;
+    border: 0;
+  }
+  .profile-links-card .social-link > span:last-child {
+    margin-left: auto;
+    margin-right: 10px;
   }
 }

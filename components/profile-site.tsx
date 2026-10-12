@@ -157,8 +157,8 @@ function Site({
       )}
     </div>
   );
-  const card = (heading: string, body: ReactNode) => (
-    <section className="card pad">
+  const card = (heading: string, body: ReactNode, className = '') => (
+    <section className={'card pad ' + className}>
       <div className="section-heading">
         <h2>{heading}</h2>
         {heading === t('Liên kết', 'Links') &&
@@ -183,7 +183,7 @@ function Site({
       className={
         'layout ' +
         (data.layout === 'wide' ? 'layout-wide ' : '') +
-        (page === 'contact' ? 'contact-layout' : '')
+        (page === 'contact' ? 'contact-layout' : page === 'profile' ? 'profile-layout' : '')
       }
     >
       <div className="main">{main}</div>
@@ -639,9 +639,9 @@ function Site({
             </div>
             <div className="entry-body">
               <h3>{item.title}</h3>
-              <p>{item.organization}</p>
-              <p className="muted">{item.period}</p>
-              <p className="preserve">{item.description}</p>
+              {item.organization && item.organization !== item.title && <p>{item.organization}</p>}
+              {item.period && <p className="muted">{item.period}</p>}
+              {item.description && <p className="preserve">{item.description}</p>}
               {item.image && (
                 <ImagePreview src={item.image} alt={item.title} className="entry-image" />
               )}
@@ -668,6 +668,117 @@ function Site({
         ));
       if (body) sections.push({ name, body });
     }
+    const credentialNames = ['Học vấn', 'Chứng chỉ'];
+    const credentialRow = (item: (typeof data.items)[string][number], name: string) => (
+      <article className="credential-row" key={item.id}>
+        <div className="credential-copy">
+          <strong>{item.title}</strong>
+          {item.organization && item.organization !== item.title && (
+            <span> · {item.organization}</span>
+          )}
+          {item.period && <span> – {item.period}</span>}
+          {name === 'Học vấn' && item.description && <span> · {item.description}</span>}
+        </div>
+        <div className="credential-actions">
+          {item.link && (
+            <a
+              className="credential-icon"
+              href={item.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t('Xem liên kết', 'View credential') + ': ' + item.title}
+              title={t('Xem liên kết', 'View credential')}
+            >
+              <Icon name="external" />
+            </a>
+          )}
+          {item.image && (
+            <FileDocument
+              url={item.image}
+              name={item.title}
+              image
+              showDownload={false}
+              triggerClassName="credential-icon"
+              trigger={<Icon name="camera" />}
+            />
+          )}
+          {item.file && (
+            <FileDocument
+              url={item.file}
+              name={item.title}
+              showDownload={false}
+              triggerClassName="credential-icon"
+              trigger={
+                <>
+                  <Icon name="feed" />
+                  <span className="credential-label">
+                    {t('Xem tệp', 'Preview file') + ': ' + item.title}
+                  </span>
+                </>
+              }
+            />
+          )}
+          {name !== 'Học vấn' && item.description && (
+            <details className="credential-description">
+              <summary
+                className="credential-icon"
+                aria-label={t('Thông tin thêm', 'More information')}
+                title={t('Thông tin thêm', 'More information')}
+              >
+                <Icon name="eye" />
+              </summary>
+              <p className="preserve">{item.description}</p>
+            </details>
+          )}
+          {editing.button(t('Sửa nội dung', 'Edit content'), () =>
+            editing.item('items', name, item.id),
+          )}
+        </div>
+      </article>
+    );
+    const renderSection = (s: (typeof sections)[number], compact = false) => (
+      <section
+        className={compact ? 'card pad profile-certificates' : 'card pad'}
+        id={'section-' + sections.indexOf(s)}
+        tabIndex={-1}
+        aria-label={title(s.name)}
+        key={s.name}
+      >
+        <div className="section-heading">
+          {compact ? <h3>{title(s.name)}</h3> : <h2>{title(s.name)}</h2>}
+          {editing.enabled && (
+            <div className="inline-section-actions">
+              {data.hidden.includes(s.name) && (
+                <span className="badge">{t('Đã ẩn', 'Hidden')}</span>
+              )}
+              <details className="section-control">
+                <summary
+                  aria-label={t('Quản lý mục', 'Manage section')}
+                  title={t('Quản lý mục', 'Manage section')}
+                >
+                  <Icon name="more" />
+                </summary>
+                <div
+                  className="section-control-menu"
+                  onClick={(event) => {
+                    if ((event.target as HTMLElement).closest('button'))
+                      event.currentTarget.parentElement?.removeAttribute('open');
+                  }}
+                >
+                  {editing.button(t('Chỉnh sửa', 'Edit'), () => editing.section(s.name), true)}
+                  {editing.button(
+                    t('Thiết lập mục', 'Section settings'),
+                    () => editing.sectionSettings(s.name),
+                    true,
+                  )}
+                </div>
+              </details>
+            </div>
+          )}
+        </div>
+        {compact ? data.items[s.name]?.map((item) => credentialRow(item, s.name)) : s.body}
+      </section>
+    );
     return shell(
       <>
         <section className="card profile-intro">
@@ -698,6 +809,14 @@ function Site({
               <h1>{profile.name}</h1>
               <div className="headline">{profile.headline}</div>
               {profile.summary && <p className="profile-summary">{profile.summary}</p>}
+              {sections.some((s) => s.name === 'Học vấn') && (
+                <div className="profile-education" aria-label={title('Học vấn')}>
+                  {data.items['Học vấn']?.map((item) => credentialRow(item, 'Học vấn'))}
+                  {editing.button(t('Thiết lập học vấn', 'Manage education'), () =>
+                    editing.section('Học vấn'),
+                  )}
+                </div>
+              )}
               <div className="muted">
                 {profile.location && profile.location + ' · '}
                 <Link href="/contact">{t('Thông tin liên hệ', 'Contact information')}</Link>
@@ -739,52 +858,11 @@ function Site({
             </div>
           </div>
         </section>
-        {sections.map((s, i) => (
-          <section
-            className="card pad"
-            id={'section-' + i}
-            tabIndex={-1}
-            aria-label={title(s.name)}
-            key={s.name}
-          >
-            <div className="section-heading">
-              <h2>{title(s.name)}</h2>
-              {editing.enabled && (
-                <div className="inline-section-actions">
-                  {data.hidden.includes(s.name) && (
-                    <span className="badge">{t('Đã ẩn', 'Hidden')}</span>
-                  )}
-                  <details className="section-control">
-                    <summary
-                      aria-label={t('Quản lý mục', 'Manage section')}
-                      title={t('Quản lý mục', 'Manage section')}
-                    >
-                      <Icon name="more" />
-                    </summary>
-                    <div
-                      className="section-control-menu"
-                      onClick={(event) => {
-                        if ((event.target as HTMLElement).closest('button'))
-                          event.currentTarget.parentElement?.removeAttribute('open');
-                      }}
-                    >
-                      {editing.button(t('Chỉnh sửa', 'Edit'), () => editing.section(s.name), true)}
-                      {editing.button(
-                        t('Thiết lập mục', 'Section settings'),
-                        () => editing.sectionSettings(s.name),
-                        true,
-                      )}
-                    </div>
-                  </details>
-                </div>
-              )}
-            </div>
-            {s.body}
-          </section>
-        ))}
+        {sections.filter((s) => !credentialNames.includes(s.name)).map((s) => renderSection(s))}
       </>,
       <>
-        {card(t('Liên kết', 'Links'), links())}
+        {card(t('Liên kết', 'Links'), links(), 'profile-links-card')}
+        {sections.filter((s) => s.name === 'Chứng chỉ').map((s) => renderSection(s, true))}
         {data.github.showSidebar && (
           <GithubSkillsCard
             stats={githubSkills}
@@ -793,29 +871,6 @@ function Site({
             loading={githubLoading}
           />
         )}
-        {sections.length > 1 &&
-          card(
-            t('Đi đến nhanh', 'Jump to a section'),
-            <>
-              <p className="profile-jump-help">
-                {t(
-                  'Chọn một mục để cuộn đến nội dung trên trang này.',
-                  'Choose a section to jump to its content on this page.',
-                )}
-              </p>
-              <nav
-                className="profile-jump-nav"
-                aria-label={t('Đi đến các phần hồ sơ', 'Jump to profile sections')}
-              >
-                {sections.map((s, i) => (
-                  <a className="toc-link" href={'#section-' + i} key={s.name}>
-                    <span>{title(s.name)}</span>
-                    <span aria-hidden="true">↓</span>
-                  </a>
-                ))}
-              </nav>
-            </>,
-          )}
         <div className="footer">
           {t('Thông tin do chủ hồ sơ cung cấp', 'Information provided by the profile owner')}
         </div>
