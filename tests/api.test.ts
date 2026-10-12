@@ -861,7 +861,7 @@ test('Public contact rate limits remain effective across API reloads and expire 
       });
     assert.equal((await createApi(f.database)(request())).status, 429);
     assert.equal(f.database.db.prepare('SELECT count(*) AS n FROM messages').get()!.n, 30);
-    f.database.db.prepare('UPDATE rate_limits SET until=0 WHERE key=?').run('contact');
+    f.database.db.prepare("UPDATE rate_limits SET until=0 WHERE key LIKE 'contact%'").run();
     assert.equal((await createApi(f.database)(request())).status, 201);
     assert.equal(f.database.db.prepare('SELECT count(*) AS n FROM messages').get()!.n, 31);
   } finally {

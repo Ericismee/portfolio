@@ -1,6 +1,27 @@
 .admin-page label.admin-mobile-navigation {
   display: none;
 }
+.form-feedback {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  grid-column: 1 / -1;
+  padding: 12px;
+  margin-bottom: 16px;
+  background: var(--card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: 0 3px 12px #0001;
+}
+.form-feedback .form-error {
+  margin: 0;
+}
+.form-feedback progress {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  accent-color: var(--accent);
+}
 .admin-page {
   background: var(--bg);
   color: var(--ink);
@@ -1930,6 +1951,15 @@
 .analytics-trend .analytics-chart-empty {
   min-height: 290px;
 }
-.admin-brand-mark:has(img) { background: transparent; }
-.admin-brand-mark img { display: block; width: 100%; height: 100%; object-fit: contain; }
-[data-theme='dark'] .admin-brand-mark img { filter: brightness(0) invert(1); }
+.admin-brand-mark:has(img) {
+  background: transparent;
+}
+.admin-brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+[data-theme='dark'] .admin-brand-mark img {
+  filter: brightness(0) invert(1);
+}

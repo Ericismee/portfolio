@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLanguage } from './language';
 import { documentKind, LOCAL_FILE } from '../lib/file-types';
 import { DocumentPreview } from './document-preview';
@@ -9,10 +9,16 @@ export function FileDocument({
   url,
   name = 'Document',
   cv = false,
+  trigger,
+  triggerClassName = 'btn neutral',
+  showDownload = true,
 }: {
   url: string;
   name?: string;
   cv?: boolean;
+  trigger?: ReactNode;
+  triggerClassName?: string;
+  showDownload?: boolean;
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -32,24 +38,27 @@ export function FileDocument({
   }, [open]);
   return (
     <span className="file-document">
-      <button type="button" className="btn neutral" onClick={() => setOpen(true)} title={name}>
-        {cv ? (
-          t('Xem CV', 'View CV')
-        ) : (
-          <>
-            {name} · {t('Xem trước', 'Preview')}
-          </>
-        )}
+      <button type="button" className={triggerClassName} onClick={() => setOpen(true)} title={name}>
+        {trigger ||
+          (cv ? (
+            t('Xem CV', 'View CV')
+          ) : (
+            <>
+              {name} · {t('Xem trước', 'Preview')}
+            </>
+          ))}
       </button>
-      <a
-        className="btn neutral"
-        href={download}
-        download={name}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {cv ? t('Tải CV', 'Download CV') : t('Tải xuống', 'Download')}
-      </a>
+      {showDownload && (
+        <a
+          className="btn neutral"
+          href={download}
+          download={name}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {cv ? t('Tải CV', 'Download CV') : t('Tải xuống', 'Download')}
+        </a>
+      )}
       {open && (
         <dialog ref={dialog} className="cv-viewer" aria-label={name} onClose={() => setOpen(false)}>
           <div className="cv-viewer-head">

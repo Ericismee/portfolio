@@ -7,6 +7,8 @@ import { featuredGithubRepos } from '../lib/github-display';
 import type { Content, GithubSettings } from '../lib/schema';
 import { useLanguage } from './language';
 import { TechnologyChips, TechLogo } from './tech-logo';
+import { Skeleton } from './skeleton';
+import { responsiveImage } from '../lib/image-variants';
 
 type Tab = 'overview' | 'repositories' | 'activity';
 export function GithubProfile({
@@ -135,6 +137,7 @@ export function GithubProfile({
   const popular = featuredGithubRepos(stats, settings);
   const calendar = activity?.calendar?.year === year ? activity.calendar : null;
   const profile = stats.profile;
+  const loadingProfile = !stats.updatedAt && !error;
   const repoCards = (items: GithubSkills['repos']) => (
     <div className="gh-repo-grid">
       {items.map((repo) => (
@@ -197,10 +200,27 @@ export function GithubProfile({
   };
   return (
     <div className="gh-profile-layout">
-      <aside className="gh-identity card pad">
+      <aside
+        className={'gh-identity card pad' + (loadingProfile ? ' is-loading' : '')}
+        aria-busy={loadingProfile}
+      >
+        {loadingProfile && (
+          <div className="gh-identity-placeholder" aria-hidden="true">
+            <Skeleton className="skeleton-avatar" />
+            <Skeleton className="skeleton-title" />
+            <Skeleton className="skeleton-line" />
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-field" />
+            <Skeleton className="skeleton-field" />
+          </div>
+        )}
         <div className="avatar gh-profile-avatar">
           {profile?.avatarUrl || owner.avatar ? (
-            <img src={profile?.avatarUrl || owner.avatar} alt="" />
+            <img
+              {...responsiveImage(profile?.avatarUrl || owner.avatar, '120px')}
+              alt=""
+              decoding="async"
+            />
           ) : (
             owner.name.slice(0, 1)
           )}
@@ -346,51 +366,56 @@ export function GithubProfile({
                     </select>
                   </label>
                 </div>
-                {calendar ? (
-                  <>
-                    <p className="gh-calendar-total">
-                      <strong>{number(calendar.total)}</strong>{' '}
-                      {t('đóng góp trong năm ', 'contributions in ')}
-                      {year}
-                    </p>
-                    <ContributionCalendar
-                      days={calendar.days}
-                      year={year}
-                      language={language}
-                      onSelect={setSelectedDay}
-                    />
-                    <div className="gh-calendar-footer">
-                      <span role="status">
-                        {selectedDay
-                          ? selectedDay.date +
-                            ' · ' +
-                            number(selectedDay.count) +
-                            ' ' +
-                            t('đóng góp', 'contributions')
+                <div className="gh-calendar-content" aria-busy={!calendar && checking}>
+                  {calendar ? (
+                    <>
+                      <p className="gh-calendar-total">
+                        <strong>{number(calendar.total)}</strong>{' '}
+                        {t('đóng góp trong năm ', 'contributions in ')}
+                        {year}
+                      </p>
+                      <ContributionCalendar
+                        days={calendar.days}
+                        year={year}
+                        language={language}
+                        onSelect={setSelectedDay}
+                      />
+                      <div className="gh-calendar-footer">
+                        <span role="status">
+                          {selectedDay
+                            ? selectedDay.date +
+                              ' · ' +
+                              number(selectedDay.count) +
+                              ' ' +
+                              t('đóng góp', 'contributions')
+                            : t(
+                                'Chọn một ngày để xem số đóng góp.',
+                                'Select a day to see contributions.',
+                              )}
+                        </span>
+                        <span className="gh-legend">
+                          {t('Ít', 'Less')}
+                          {[0, 1, 2, 3, 4].map((level) => (
+                            <i className={'gh-day level-' + level} key={level} />
+                          ))}
+                          {t('Nhiều', 'More')}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="gh-calendar-placeholder">
+                      <Skeleton className="skeleton-field" />
+                      <p className="muted" role="status">
+                        {checking
+                          ? t('Đang tải lịch đóng góp…', 'Loading contribution calendar…')
                           : t(
-                              'Chọn một ngày để xem số đóng góp.',
-                              'Select a day to see contributions.',
+                              'Chưa lấy được lịch đóng góp từ GitHub.',
+                              'Could not load the contribution calendar from GitHub.',
                             )}
-                      </span>
-                      <span className="gh-legend">
-                        {t('Ít', 'Less')}
-                        {[0, 1, 2, 3, 4].map((level) => (
-                          <i className={'gh-day level-' + level} key={level} />
-                        ))}
-                        {t('Nhiều', 'More')}
-                      </span>
+                      </p>
                     </div>
-                  </>
-                ) : (
-                  <p className="muted">
-                    {checking
-                      ? t('Đang tải lịch đóng góp…', 'Loading contribution calendar…')
-                      : t(
-                          'Chưa lấy được lịch đóng góp từ GitHub.',
-                          'Could not load the contribution calendar from GitHub.',
-                        )}
-                  </p>
-                )}
+                  )}
+                </div>
                 <p className="github-skills-note">
                   {t(
                     'Nguồn: lịch công khai GitHub. Đóng góp bao gồm nhiều loại hoạt động, không chỉ commit.',
@@ -412,8 +437,20 @@ export function GithubProfile({
                     </button>
                   )}
                 </div>
-                {repoCards(popular)}
-                {!popular.length && (
+                {loadingProfile ? (
+                  <div className="gh-repo-grid" aria-busy="true">
+                    {Array.from({ length: 6 }, (_, index) => (
+                      <div key={index} className="gh-repo-card" aria-hidden="true">
+                        <Skeleton className="skeleton-title" />
+                        <Skeleton className="skeleton-line" />
+                        <Skeleton className="skeleton-field" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  repoCards(popular)
+                )}
+                {!loadingProfile && !popular.length && (
                   <p className="muted">
                     {t('Chưa có kho mã nổi bật.', 'No featured repositories yet.')}
                   </p>

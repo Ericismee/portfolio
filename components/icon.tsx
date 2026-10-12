@@ -1,5 +1,6 @@
 export function Icon({ name }: { name: string }) {
   const paths: Record<string, React.ReactNode> = {
+    filters: <path d="M4 6h16M7 12h10M10 18h4" />,
     download: <path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4" />,
     close: <path d="m6 6 12 12M18 6 6 18" />,
     previous: <path d="m15 5-7 7 7 7" />,

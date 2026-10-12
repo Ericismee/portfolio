@@ -1,17 +1,13 @@
 'use client';
 import Link from 'next/link';
-import { LanguageProvider, useLanguage } from '../components/language';
+import { useLanguage } from '../components/language';
 export default function NotFound() {
-  return (
-    <LanguageProvider>
-      <Message />
-    </LanguageProvider>
-  );
+  return <Message />;
 }
 function Message() {
   const { t } = useLanguage();
   return (
-    <main className="card pad public-error">
+    <main id="view" className="card pad public-error">
       <p className="badge">404</p>
       <h1>{t('Không tìm thấy trang', 'Page not found')}</h1>
       <p>

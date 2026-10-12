@@ -349,23 +349,20 @@ export async function recordTrafficDuration(
     .run(input.instance, input.durationMs, Date.now(), input.durationMs, Date.now(), id);
   return true;
 }
-export async function trafficDetails(
-  database: Database,
-  page: number,
-  query: string,
-  input: TrafficFilters = {},
-) {
+function trafficQuery(database: Database, query: string, input: TrafficFilters) {
   const filters = trafficFilterSchema.parse(input);
   const key = credentialKey(database.directory, true);
   const since = filters.from ? Date.parse(filters.from + 'T00:00:00+07:00') : 0;
   const until = filters.to ? Date.parse(filters.to + 'T00:00:00+07:00') + day : Date.now() + 1;
   const pattern = '%' + query.toLowerCase().replace(/[\\%_]/g, '') + '%';
-  const conditions = [
-    `v.created_at>=?`,
-    `v.created_at<?`,
-    `(LOWER(v.path) LIKE ? OR LOWER(v.browser) LIKE ? OR LOWER(v.device) LIKE ? OR LOWER(v.os) LIKE ? OR LOWER(COALESCE(c.country,'')) LIKE ?)`,
-  ];
-  const values: (number | string)[] = [since, until, pattern, pattern, pattern, pattern, pattern];
+  const conditions = [`v.created_at>=?`, `v.created_at<?`];
+  const values: (number | string)[] = [since, until];
+  if (query) {
+    conditions.push(
+      `(LOWER(v.path) LIKE ? OR LOWER(v.browser) LIKE ? OR LOWER(v.device) LIKE ? OR LOWER(v.os) LIKE ? OR LOWER(COALESCE(c.country,'')) LIKE ?)`,
+    );
+    values.push(pattern, pattern, pattern, pattern, pattern);
+  }
   for (const column of ['browser', 'device', 'os', 'path'] as const)
     if (filters[column]) {
       conditions.push('COALESCE(NULLIF(v.' + column + ",''),'Unknown')=?");
@@ -381,6 +378,84 @@ export async function trafficDetails(
   }
   const filter = conditions.join(' AND ');
   const source = 'traffic_visits v LEFT JOIN traffic_context c ON c.visit_id=v.id';
+  return { filters, key, filter, source, values };
+}
+export function trafficCsv(database: Database, query: string, input: TrafficFilters = {}) {
+  const { key, filter, source, values } = trafficQuery(database, query, input);
+  let cursor: { created_at: number; id: string } | undefined;
+  let header = true,
+    done = false;
+  const encoder = new TextEncoder();
+  const csv = (value: unknown) => {
+    let text = String(value ?? '');
+    // Prevent spreadsheet formula execution, including leading whitespace.
+    if (/^[\s]*[=+@-]/.test(text)) text = "'" + text;
+    return '"' + text.replaceAll('"', '""') + '"';
+  };
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        if (header) {
+          header = false;
+          controller.enqueue(
+            encoder.encode(
+              '\uFEFFtime_utc,page,ip,country,browser,device,os,duration_ms,context_json\r\n',
+            ),
+          );
+          return;
+        }
+        if (done) {
+          controller.close();
+          return;
+        }
+        const after = cursor ? ' AND (v.created_at<? OR (v.created_at=? AND v.id>?))' : '';
+        const extra = cursor ? [cursor.created_at, cursor.created_at, cursor.id] : [];
+        const rows = (await database.db
+          .prepare(
+            "SELECT v.*,COALESCE(c.country,'') AS country,COALESCE(c.details,'') AS details, (SELECT SUM(duration_ms) FROM traffic_durations d WHERE d.visit_id=v.id) AS duration FROM " +
+              source +
+              ' WHERE ' +
+              filter +
+              after +
+              ' ORDER BY v.created_at DESC,v.id LIMIT 200',
+          )
+          .all(...values, ...extra)) as Array<Record<string, string | number>>;
+        if (!rows.length) {
+          controller.close();
+          return;
+        }
+        const lines = rows.map((row) =>
+          [
+            new Date(Number(row.created_at)).toISOString(),
+            row.path,
+            decryptIp(key, String(row.ip)),
+            row.country,
+            row.browser,
+            row.device,
+            row.os,
+            row.duration,
+            row.details ? decryptIp(key, String(row.details), 'profile-traffic-context:v1') : '',
+          ]
+            .map(csv)
+            .join(','),
+        );
+        const last = rows[rows.length - 1];
+        cursor = { created_at: Number(last.created_at), id: String(last.id) };
+        done = rows.length < 200;
+        controller.enqueue(encoder.encode(lines.join('\r\n') + '\r\n'));
+      } catch {
+        controller.error(new Error('Traffic export failed'));
+      }
+    },
+  });
+}
+export async function trafficDetails(
+  database: Database,
+  page: number,
+  query: string,
+  input: TrafficFilters = {},
+) {
+  const { filters, key, filter, source, values } = trafficQuery(database, query, input);
   const plain = !query && !Object.values(filters).some(Boolean);
   if (plain) await refreshTrafficDaily(database);
   const count = (await database.db

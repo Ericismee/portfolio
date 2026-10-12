@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { request } from '../lib/client';
 import { useLanguage } from './language';
 import { localizedError } from '../lib/i18n';
+import { Icon } from './icon';
 export function MfaSettings({
   csrf,
   onSessionChange,
@@ -35,6 +36,7 @@ export function MfaSettings({
   return (
     <section className="mfa-settings">
       <div className="account-action-row">
+        <Icon name="lock" />
         <div>
           <strong>{t('Xác thực hai bước', 'Two-factor authentication')}</strong>
           <p>

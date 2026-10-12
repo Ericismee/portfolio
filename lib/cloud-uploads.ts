@@ -90,9 +90,13 @@ export async function consumeCloudUpload(
   try {
     const result = await services.get('pending/' + id, { access: 'private', useCache: false });
     if (!result || result.statusCode !== 200) throw new HttpError(400, 'Upload not complete');
+    // Blob get() reports zero when Content-Length is absent. For encoded
+    // responses the header describes compressed bytes, not the decoded stream.
+    // Enforce the exact authorized size while reading below in both cases.
+    const encoding = result.headers.get('content-encoding');
+    const reportedSize = encoding && encoding !== 'identity' ? 0 : result.blob.size;
     if (
-      result.blob.size !== intent.size ||
-      result.blob.size > MAX_UPLOAD_BYTES ||
+      (reportedSize > 0 && reportedSize !== intent.size) ||
       result.blob.contentType !== intent.mime
     ) {
       await result.stream.cancel();

@@ -993,6 +993,11 @@ function AdminDashboard() {
               field('logo', t('Logo website', 'Website logo'), 'image'),
               field('accent', t('Màu chủ đạo', 'Accent color'), 'color'),
               field(
+                'showHeaderCv',
+                t('Hiển thị nút Xem CV trên header mobile', 'Show View CV in the mobile header'),
+                'checkbox',
+              ),
+              field(
                 'showVisitorCount',
                 t('Hiển thị bộ đếm lượt truy cập công khai', 'Show public visitor counter'),
                 'checkbox',
@@ -1015,6 +1020,7 @@ function AdminDashboard() {
               accent: d.accent,
               theme: d.theme,
               showVisitorCount: d.showVisitorCount,
+              showHeaderCv: d.showHeaderCv,
               density: d.density,
               layout: d.layout,
             }}
@@ -1024,6 +1030,7 @@ function AdminDashboard() {
                 d.accent = String(v.accent);
                 d.theme = v.theme === 'dark' ? 'dark' : 'light';
                 d.showVisitorCount = !!v.showVisitorCount;
+                d.showHeaderCv = !!v.showHeaderCv;
                 d.density = v.density === 'compact' ? 'compact' : 'comfortable';
                 d.layout = v.layout === 'wide' ? 'wide' : 'standard';
               })

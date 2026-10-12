@@ -48,8 +48,12 @@ function run() {
     .split('\0')
     .filter(Boolean);
   const findings = [];
+  const deleted = new Set(git(['ls-files', '--deleted', '-z']).toString().split('\0'));
   for (const filename of files) {
     if (privateSourcePath(filename)) findings.push({ file: filename, kind: 'private file' });
+    // Git still lists tracked files removed during an in-progress change.
+    // Historical blobs are checked separately below.
+    if (deleted.has(filename)) continue;
     const bytes = readFileSync(filename);
     if (!bytes.subarray(0, 8000).includes(0))
       for (const finding of sourceSecretFindings(filename, bytes.toString()))

@@ -48,6 +48,7 @@ For Vercel, configure these **server-only** environment variables:
 - `BLOB_READ_WRITE_TOKEN` — a private Vercel Blob store.
 - `GITHUB_CREDENTIAL_KEY` — a persistent 32-byte encryption key, encoded as 64 hexadecimal characters.
 - `PUBLIC_ORIGIN` — the exact canonical HTTPS origin, without a trailing slash.
+- `BACKUP_ENCRYPTION_KEY` and `CRON_SECRET` — independent random secrets for encrypted daily backups and the authenticated scheduler; see [backup and recovery](docs/BACKUPS.md).
 
 Never use a `NEXT_PUBLIC_` prefix for credentials. Keep preview and production resources separate, and back up the database, uploaded files and encryption key independently.
 
@@ -67,6 +68,8 @@ Server tests cover authentication, CSRF, access boundaries, upload privacy, conc
 ## Security and privacy
 
 Administrative reads require a server-validated session; writes also check Origin and CSRF. Session cookies are HttpOnly and Secure in production. Passwords use scrypt, while GitHub credentials and visitor IP/details are encrypted at rest.
+
+Optional authenticator-based two-factor authentication includes single-use recovery codes. Enable it from Account & security. Login and contact requests have separate per-IP limits. Responsive WebP images retain publication checks, and SEO includes canonical URLs, a sitemap and genuine HTTP 404 responses. The original locally hosted fonts are preserved.
 
 Visitor history is retained until explicitly removed through operational maintenance; there is no automatic retention expiry. IP-based locations are approximate, and browser-based tracking can be blocked or omitted. This dashboard is not a replacement for hosting access logs or firewall logs.
 

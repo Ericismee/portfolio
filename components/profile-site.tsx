@@ -3,16 +3,16 @@ import { uiLabel, localizedError } from '../lib/i18n';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import type { Content, Project, Post } from '../lib/schema';
 import { publicationStatus } from '../lib/schema';
-import { applyTheme, readTheme, saveTheme } from '../lib/theme';
 import { Icon } from './icon';
 import { responsiveImage } from '../lib/image-variants';
-import { PublicTraffic } from './traffic';
+import { PublicTraffic } from './public-traffic';
+import { PublicSkeleton } from './skeleton';
 import { SocialLogo, socialLabels } from './social-logo';
-import { LanguageProvider, useLanguage } from './language';
-import { useInlineEdit } from './inline-edit';
+import { useLanguage } from './language';
+import { usePublicEditing } from './public-shell';
 import type { GithubSkills } from '../lib/github-skills';
 import { GithubSkillsCard } from './github-skills';
 import { PostBody } from './post-body';
@@ -26,8 +26,9 @@ import {
   projectTechnologies,
   normalizeSearch,
 } from '../lib/search';
-const GithubProfile = dynamic(() =>
-  import('./github-profile').then((module) => module.GithubProfile),
+const GithubProfile = dynamic(
+  () => import('./github-profile').then((module) => module.GithubProfile),
+  { loading: () => <PublicSkeleton /> },
 );
 
 export function ProfileSite(props: {
@@ -37,11 +38,7 @@ export function ProfileSite(props: {
   id?: string;
   query: Record<string, string>;
 }) {
-  return (
-    <LanguageProvider>
-      <Site {...props} />
-    </LanguageProvider>
-  );
+  return <Site {...props} />;
 }
 function Site({
   content,
@@ -85,24 +82,18 @@ function Site({
       controller.abort();
     };
   }, [initialGithubSkills, page]);
-  const editing = useInlineEdit(content),
+  const editing = usePublicEditing(content),
     data = editing.data;
-  const { language, t, toggle } = useLanguage(),
+  const { language, t } = useLanguage(),
     router = useRouter(),
-    [menu, setMenu] = useState(false),
     [toast, setToast] = useState(''),
     [filter, setFilter] = useState('all'),
-    [feedStatus, setFeedStatus] = useState('public'),
-    menuButton = useRef<HTMLButtonElement>(null),
-    menuPanel = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const theme = readTheme(data.theme);
-    applyTheme(data.accent, theme);
-    document.body.classList.toggle('compact', data.density === 'compact');
-    return () => {
-      document.body.classList.remove('compact');
-    };
-  }, [data.accent, data.theme, data.density]);
+    [projectSearch, setProjectSearch] = useState(query.q || ''),
+    [projectFiltersOpen, setProjectFiltersOpen] = useState(
+      !!(query.tech || query.status || query.sort),
+    ),
+    [feedStatus, setFeedStatus] = useState('public');
+  useEffect(() => setProjectSearch(query.q || ''), [page, query.q]);
   useEffect(() => {
     const legacy = () => {
       const hash = location.hash.slice(1);
@@ -122,36 +113,10 @@ function Site({
     return () => window.removeEventListener('hashchange', legacy);
   }, [router]);
   useEffect(() => {
-    setMenu(false);
-  }, [page, id]);
-  useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(''), 4000);
     return () => clearTimeout(timer);
   }, [toast]);
-  useEffect(() => {
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && menu) {
-        setMenu(false);
-        menuButton.current?.focus();
-      }
-    };
-    document.addEventListener('keydown', key);
-    return () => document.removeEventListener('keydown', key);
-  }, [menu]);
-  useEffect(() => {
-    if (!menu) return;
-    menuPanel.current?.querySelector<HTMLButtonElement>('button')?.focus();
-    const outside = (event: PointerEvent) => {
-      if (
-        !menuPanel.current?.contains(event.target as Node) &&
-        !menuButton.current?.contains(event.target as Node)
-      )
-        setMenu(false);
-    };
-    document.addEventListener('pointerdown', outside);
-    return () => document.removeEventListener('pointerdown', outside);
-  }, [menu]);
   const profile = data.profile;
   const names: Record<string, string> = {
     'Giới thiệu': t('Giới thiệu', 'About'),
@@ -168,7 +133,11 @@ function Site({
   const avatar = (size = 'small') => (
     <div className={'avatar ' + size}>
       {profile.avatar ? (
-        <img {...responsiveImage(profile.avatar, '120px')} alt={t('Ảnh đại diện', 'Avatar') + ' ' + profile.name} decoding="async" />
+        <img
+          {...responsiveImage(profile.avatar, '120px')}
+          alt={t('Ảnh đại diện', 'Avatar') + ' ' + profile.name}
+          decoding="async"
+        />
       ) : (
         Array.from(profile.name)[0]
       )}
@@ -255,32 +224,7 @@ function Site({
       </>,
     );
   }
-  const nav = () =>
-    [
-      ['/', 'profile', t('Hồ sơ', 'Profile')],
-      ['/projects', 'projects', t('Dự án', 'Projects')],
-      ['/activity', 'feed', t('Hoạt động', 'Activity')],
-      ['/contact', 'contact', t('Liên hệ', 'Contact')],
-    ].map(([href, icon, label]) => (
-      <Link
-        className={
-          'nav-item ' +
-          ((page === 'feed' ? 'activity' : page) === (href === '/' ? 'profile' : href.slice(1))
-            ? 'active'
-            : '')
-        }
-        aria-current={
-          (page === 'feed' ? 'activity' : page) === (href === '/' ? 'profile' : href.slice(1))
-            ? 'page'
-            : undefined
-        }
-        href={href}
-        key={href}
-      >
-        <Icon name={icon} />
-        <span>{label}</span>
-      </Link>
-    ));
+
   async function share(path?: string) {
     const url = path ? new URL(path, location.origin).href : location.href;
     try {
@@ -292,6 +236,9 @@ function Site({
   }
   function projectCard(p: Project) {
     const index = data.projects.indexOf(p);
+    const technologies = (p.technologies.length ? p.technologies : p.tech.split(','))
+      .map((tech) => tech.trim())
+      .filter(Boolean);
     return (
       <article
         className="project"
@@ -306,7 +253,15 @@ function Site({
           >
             {p.thumbnail ? (
               <span className="project-image">
-                <img {...responsiveImage(p.thumbnail, '(max-width: 600px) 90vw, 320px')} alt={p.name} loading="lazy" decoding="async" />
+                <img
+                  {...responsiveImage(
+                    p.thumbnail,
+                    '(max-width: 600px) ' + (query.view === 'list' ? '76px' : '42vw') + ', 320px',
+                  )}
+                  alt={p.name}
+                  loading="lazy"
+                  decoding="async"
+                />
               </span>
             ) : (
               <>
@@ -324,13 +279,22 @@ function Site({
           {editing.button(t('Sửa dự án', 'Edit project'), () => editing.item('projects', '', p.id))}
           <p className="project-description">{p.description}</p>
           <div className="tags project-technologies">
-            {(p.technologies.length ? p.technologies : p.tech.split(','))
-              .filter(Boolean)
-              .map((tech) => (
-                <span className="tag" key={tech}>
-                  {tech.trim()}
-                </span>
-              ))}
+            {technologies.map((tech) => (
+              <span className="tag" key={tech}>
+                {tech}
+              </span>
+            ))}
+            {technologies.length > 3 && (
+              <span
+                className="tag project-more-technologies"
+                aria-label={
+                  t('Công nghệ khác', 'More technologies') + ': ' + technologies.slice(3).join(', ')
+                }
+                title={technologies.slice(3).join(', ')}
+              >
+                +{technologies.length - 3}
+              </span>
+            )}
           </div>
           <div className="project-card-actions">
             <span className="badge">{uiLabel(p.status, language)}</span>
@@ -537,8 +501,10 @@ function Site({
         {p.image && (
           <img
             className="post-image"
-            src={p.image}
+            {...responsiveImage(p.image, '(max-width: 700px) 100vw, 760px')}
             alt={t('Ảnh đính kèm bài viết', 'Post image')}
+            loading="lazy"
+            decoding="async"
           />
         )}
         {p.link && (
@@ -785,7 +751,8 @@ function Site({
     );
   }
   function projectsPage() {
-    const { q = '', tech = '', status = '', sort = '', view = '' } = query;
+    const { tech = '', status = '', sort = '', view = '' } = query;
+    const q = projectSearch;
     let list = data.projects.filter(
       (p) =>
         (!q.trim() || projectMatchesSearch(p, q)) &&
@@ -813,73 +780,119 @@ function Site({
               () => editing.item('projects', ''),
               true,
             )}
-            <button
-              className="btn neutral"
-              onClick={() => {
-                const p = new URLSearchParams(query);
-                if (view === 'list') p.delete('view');
-                else p.set('view', 'list');
-                router.push('/projects?' + p);
-              }}
-            >
-              {view === 'list' ? t('Dạng lưới', 'Grid view') : t('Dạng danh sách', 'List view')}
-            </button>
           </div>
         </div>
         <form
-          className="filters"
+          className="filters project-filters"
           key={JSON.stringify(query)}
           onSubmit={(e) => {
             e.preventDefault();
             update(e.currentTarget);
           }}
         >
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder={t('Tìm dự án…', 'Search projects…')}
-            aria-label={t('Tìm dự án', 'Search projects')}
-          />
-          <select
-            name="tech"
-            defaultValue={tech}
-            aria-label={t('Công nghệ', 'Technology')}
-            onChange={(e) => update(e.currentTarget.form!)}
+          <div className="project-search-row">
+            <input
+              name="q"
+              value={q}
+              onChange={(event) => setProjectSearch(event.target.value)}
+              placeholder={t('Tìm dự án…', 'Search projects…')}
+              aria-label={t('Tìm dự án', 'Search projects')}
+            />
+            <button
+              type="button"
+              className="btn neutral project-filter-toggle"
+              aria-label={t('Bộ lọc', 'Filters')}
+              title={t('Bộ lọc', 'Filters')}
+              aria-expanded={projectFiltersOpen}
+              aria-controls="project-filter-fields"
+              onClick={() => setProjectFiltersOpen(!projectFiltersOpen)}
+            >
+              <Icon name="filters" />
+              {!!(tech || status || sort) && (
+                <span className="project-filter-count">
+                  {[tech, status, sort].filter(Boolean).length}
+                </span>
+              )}
+            </button>
+            <div
+              className="project-view-switch"
+              role="group"
+              aria-label={t('Kiểu hiển thị', 'Display view')}
+            >
+              {(['grid', 'list'] as const).map((mode) => {
+                const selected = mode === (view === 'list' ? 'list' : 'grid');
+                const label =
+                  mode === 'grid' ? t('Dạng lưới', 'Grid view') : t('Dạng danh sách', 'List view');
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    className="btn neutral project-view-button"
+                    aria-label={label}
+                    title={label}
+                    aria-pressed={selected}
+                    onClick={() => {
+                      if (selected) return;
+                      const params = new URLSearchParams(query);
+                      if (q) params.set('q', q);
+                      else params.delete('q');
+                      if (mode === 'grid') params.delete('view');
+                      else params.set('view', 'list');
+                      router.push('/projects' + (params.size ? '?' + params : ''));
+                    }}
+                  >
+                    <Icon name={mode === 'grid' ? 'sections' : 'feed'} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div
+            className="project-filter-fields"
+            id="project-filter-fields"
+            hidden={!projectFiltersOpen}
           >
-            <option value="">{t('Tất cả công nghệ', 'All technologies')}</option>
-            {[...new Set(data.projects.flatMap(projectTechnologies))]
-              .sort((a, b) => a.localeCompare(b, language))
-              .map((v) => (
-                <option key={v}>{v}</option>
+            <select
+              name="tech"
+              defaultValue={tech}
+              aria-label={t('Công nghệ', 'Technology')}
+              onChange={(e) => update(e.currentTarget.form!)}
+            >
+              <option value="">{t('Tất cả công nghệ', 'All technologies')}</option>
+              {[...new Set(data.projects.flatMap(projectTechnologies))]
+                .sort((a, b) => a.localeCompare(b, language))
+                .map((v) => (
+                  <option key={v}>{v}</option>
+                ))}
+            </select>
+            <select
+              name="status"
+              defaultValue={status}
+              aria-label={t('Trạng thái', 'Status')}
+              onChange={(e) => update(e.currentTarget.form!)}
+            >
+              <option value="">{t('Tất cả trạng thái', 'All statuses')}</option>
+              {[...new Set(data.projects.map((p) => p.status))].map((v) => (
+                <option key={v} value={v}>
+                  {uiLabel(v, language)}
+                </option>
               ))}
-          </select>
-          <select
-            name="status"
-            defaultValue={status}
-            aria-label={t('Trạng thái', 'Status')}
-            onChange={(e) => update(e.currentTarget.form!)}
-          >
-            <option value="">{t('Tất cả trạng thái', 'All statuses')}</option>
-            {[...new Set(data.projects.map((p) => p.status))].map((v) => (
-              <option key={v} value={v}>
-                {uiLabel(v, language)}
-              </option>
-            ))}
-          </select>
-          <select
-            name="sort"
-            defaultValue={sort}
-            aria-label={t('Sắp xếp', 'Sort')}
-            onChange={(e) => update(e.currentTarget.form!)}
-          >
-            <option value="">{t('Thứ tự đã chọn', 'Curated order')}</option>
-            <option value="name">A–Z</option>
-            <option value="reverse">{t('Đảo thứ tự', 'Reverse order')}</option>
-          </select>
-          <button className="btn neutral">{t('Tìm', 'Search')}</button>
+            </select>
+            <select
+              name="sort"
+              defaultValue={sort}
+              aria-label={t('Sắp xếp', 'Sort')}
+              onChange={(e) => update(e.currentTarget.form!)}
+            >
+              <option value="">{t('Thứ tự đã chọn', 'Curated order')}</option>
+              <option value="name">A–Z</option>
+              <option value="reverse">{t('Đảo thứ tự', 'Reverse order')}</option>
+            </select>
+          </div>
           {(q || tech || status || sort) && (
             <Link
               className="btn neutral"
+              onClick={() => setProjectSearch('')}
               href={view ? '/projects?view=' + encodeURIComponent(view) : '/projects'}
             >
               {t('Xóa bộ lọc', 'Clear filters')}
@@ -912,7 +925,11 @@ function Site({
         </div>
         {p.imageFrame !== 'none' && (
           <div className="project-art project-detail-art" data-frame={p.imageFrame}>
-            {p.thumbnail ? <img {...responsiveImage(p.thumbnail)} alt={p.name} loading="lazy" decoding="async" /> : p.name}
+            {p.thumbnail ? (
+              <img {...responsiveImage(p.thumbnail)} alt={p.name} loading="lazy" decoding="async" />
+            ) : (
+              p.name
+            )}
           </div>
         )}
         <div className="pad">
@@ -1148,98 +1165,6 @@ function Site({
     );
   return (
     <>
-      <a className="skip-link" href="#view">
-        {t('Đến nội dung chính', 'Skip to main content')}
-      </a>
-      <header>
-        <div className="header-inner">
-          <Link
-            className={'logo' + (profile.logo ? ' has-image' : '')}
-            href="/"
-            aria-label={profile.name}
-          >
-            {profile.logo ? (
-              <img src={profile.logo} alt={profile.name} />
-            ) : (
-              Array.from(profile.name)[0]
-            )}
-          </Link>
-          <form
-            className="search"
-            action="/search"
-            onSubmit={(e) => {
-              e.preventDefault();
-              router.push(
-                '/search?q=' +
-                  encodeURIComponent(String(new FormData(e.currentTarget).get('q') || '')),
-              );
-            }}
-          >
-            <Icon name="search" />
-            <input
-              name="q"
-              id="global-search"
-              key={page + ':' + (query.q || '')}
-              defaultValue={page === 'search' ? query.q || '' : ''}
-              placeholder={t('Tìm kiếm', 'Search')}
-              aria-label={t('Tìm kiếm', 'Search')}
-            />
-          </form>
-          <nav aria-label={t('Điều hướng chính', 'Main navigation')}>{nav()}</nav>
-          <button
-            className="icon-btn avatar-menu-button"
-            aria-label={t('Cài đặt', 'Settings')}
-            title={t('Cài đặt', 'Settings')}
-            aria-expanded={menu}
-            aria-controls="site-menu"
-            ref={menuButton}
-            onClick={() => setMenu(!menu)}
-          >
-            {avatar('tiny')}
-          </button>
-          {menu && (
-            <div
-              className="site-menu"
-              id="site-menu"
-              ref={menuPanel}
-              onClick={(event) => {
-                if ((event.target as HTMLElement).closest('button,a')) setMenu(false);
-              }}
-            >
-              <strong className="settings-title">{t('Cài đặt', 'Settings')}</strong>
-              <button
-                className="theme-menu-action"
-                onClick={() => {
-                  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-                  saveTheme(data.accent, next);
-                }}
-              >
-                <Icon name="moon" />
-                {t('Sáng / Tối', 'Dark / Light')}
-              </button>
-              <span className="settings-label">
-                {t('Ngôn ngữ giao diện', 'Interface language')}
-              </span>
-              <button onClick={toggle}>{language === 'vi' ? 'English' : 'Tiếng Việt'}</button>
-              {editing.isAdmin && (
-                <button
-                  className="theme-menu-action"
-                  onClick={() => editing.setGuestPreview(!editing.guestPreview)}
-                >
-                  <Icon name={editing.guestPreview ? 'edit' : 'eye'} />
-                  {editing.guestPreview
-                    ? t('Quay lại quản trị', 'Return to admin')
-                    : t('Xem như khách', 'View as guest')}
-                </button>
-              )}
-              {editing.settings}
-              <div className="settings-divider" />
-              <Link href="/github">GitHub ↗</Link>
-              <button onClick={() => window.print()}>{t('In hồ sơ', 'Print profile')}</button>
-            </div>
-          )}
-        </div>
-      </header>
       <main id="view" tabIndex={-1}>
         {editing.guestPreview && (
           <div className="guest-preview-bar" role="status">
@@ -1255,11 +1180,6 @@ function Site({
         {body}
         <PublicTraffic visible={data.showVisitorCount} />
       </main>
-      {editing.dialog}
-      {editing.notice}
-      <nav className="bottom-nav" aria-label={t('Điều hướng trên điện thoại', 'Mobile navigation')}>
-        {nav()}
-      </nav>
       {toast && (
         <div className="site-toast" role="status">
           {toast}

@@ -195,6 +195,37 @@ test('Postgres persistence preserves authorization, atomic versions, rate limits
       },
     );
     assert.equal(resultUrl, '/' + copied[0]);
+    // Streaming/compressed storage responses can omit the decoded byte length.
+    // Unknown metadata must never bypass actual stream length validation.
+    for (const [reportedSize, encoding, body, valid] of [
+      [0, '', '%PDF-', true],
+      [3, 'gzip', '%PDF-', true],
+      [0, '', '%PDF', false],
+      [0, '', '%PDF-extra', false],
+      [3, 'gzip', '%PDF', false],
+      [4, '', '%PDF-', false],
+    ] as const) {
+      const streamed = await startCloudUpload(
+        database,
+        'owner',
+        { mime: 'application/pdf', size: 5 },
+        services,
+      );
+      const task = consumeCloudUpload(database, 'owner', streamed.id, {
+        ...services,
+        get: async (pathname, options) => {
+          const result = await services.get(pathname, options);
+          if (result?.statusCode === 200) {
+            result.blob.size = reportedSize;
+            if (encoding) result.headers.set('content-encoding', encoding);
+            result.stream = new Response(body).body!;
+          }
+          return result;
+        },
+      });
+      if (valid) assert.equal((await task).bytes.toString(), body);
+      else await assert.rejects(task, { status: body.length > 5 ? 413 : 400 });
+    }
     const bad = await startCloudUpload(
       database,
       'owner',

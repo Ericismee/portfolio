@@ -1,17 +1,13 @@
 'use client';
 import Link from 'next/link';
-import { LanguageProvider, useLanguage } from '../components/language';
+import { useLanguage } from '../components/language';
 export default function ErrorPage({ reset }: { reset: () => void }) {
-  return (
-    <LanguageProvider>
-      <Message reset={reset} />
-    </LanguageProvider>
-  );
+  return <Message reset={reset} />;
 }
 function Message({ reset }: { reset: () => void }) {
   const { t } = useLanguage();
   return (
-    <main className="card pad public-error">
+    <main id="view" className="card pad public-error">
       <h1>{t('Chưa tải được trang', 'Unable to load this page')}</h1>
       <p>{t('Vui lòng thử lại sau giây lát.', 'Please try again in a moment.')}</p>
       <div className="actions">

@@ -8,7 +8,7 @@
   --line: #20243a;
   --radius: 9px;
   --gap: 20px;
-  --font-ui: 'Plus Jakarta Sans',Arial,Helvetica,sans-serif;
+  --font-ui: var(--font-ui-loaded, 'Plus Jakarta Sans'),Arial,Helvetica,sans-serif;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -22,7 +22,7 @@
   --shadow-card: 3px 3px 0 #29354b;
   --shadow-overlay: 5px 5px 0 #29354b;
   --link-color: #4264da;
-  --font-code: 'JetBrains Mono',Consolas,monospace;
+  --font-code: var(--font-code-loaded, 'JetBrains Mono'),Consolas,monospace;
   --edge: #29354b;
   --border-subtle: #cbd3e0;
   --inverse: #fffefa;

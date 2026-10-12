@@ -9,6 +9,7 @@ import { applyGithubFields, applyGithubPostFields } from '../lib/github-project-
 import { projectUsesMarkdown } from '../lib/markdown';
 import { MarkdownEditor } from './markdown-editor';
 import { uploadMime, uploadFile } from '../lib/upload-client';
+import { RequestError } from '../lib/client';
 import { CvDocument } from './cv-document';
 import { PasswordInput } from './password-input';
 import { LocationInput } from './location-input';
@@ -90,6 +91,7 @@ export function FieldsForm({
   }, [blocked, onBusyChange]);
   async function upload(key: string, file: File, done?: (url: string) => void) {
     setUploading((n) => n + 1);
+    setUploadProgress(0);
     setError('');
     try {
       const mime = await uploadMime(file);
@@ -107,15 +109,20 @@ export function FieldsForm({
       return true;
     } catch (e) {
       setError(
-        e instanceof TypeError ||
-          (e instanceof Error && ['TimeoutError', 'AbortError'].includes(e.name))
+        e instanceof RequestError && (e.status === 401 || e.status === 403)
           ? t(
-              'Kết nối tải file bị gián đoạn. Dữ liệu biểu mẫu vẫn được giữ; hãy chọn lại file để thử lại.',
-              'Upload connection interrupted. Your form is preserved; select the file again to retry.',
+              'Phiên đăng nhập đã hết hạn hoặc thay đổi. Đăng nhập lại trang quản trị, rồi chọn lại file. Nội dung biểu mẫu vẫn được giữ.',
+              'Your session expired or changed. Sign in to administration again, then select the file again. Your form is preserved.',
             )
-          : e instanceof Error
-            ? e.message
-            : t('Không tải được file', 'Unable to upload'),
+          : e instanceof TypeError ||
+              (e instanceof Error && ['TimeoutError', 'AbortError'].includes(e.name))
+            ? t(
+                'Kết nối tải file bị gián đoạn. Dữ liệu biểu mẫu vẫn được giữ; hãy chọn lại file để thử lại.',
+                'Upload connection interrupted. Your form is preserved; select the file again to retry.',
+              )
+            : e instanceof Error
+              ? e.message
+              : t('Không tải được file', 'Unable to upload'),
       );
       return false;
     } finally {
@@ -150,6 +157,30 @@ export function FieldsForm({
   }
   return (
     <form id={formId} onSubmit={save} className="admin-form" aria-busy={blocked}>
+      {(error || uploadProgress !== null) && (
+        <div className="form-feedback">
+          {error && (
+            <p className="form-error" role="alert">
+              {localizedError(error, language)}
+            </p>
+          )}
+          {uploadProgress !== null && (
+            <div className="upload-progress" role="status" aria-live="polite">
+              <span>
+                {uploadProgress >= 95
+                  ? t('Đang kiểm tra file…', 'Validating file…')
+                  : t('Đang tải lên…', 'Uploading…')}{' '}
+                {uploadProgress}%
+              </span>
+              <progress
+                value={uploadProgress}
+                max={100}
+                aria-label={t('Tiến trình tải file', 'Upload progress')}
+              />
+            </div>
+          )}
+        </div>
+      )}
       {githubUsername && (
         <GithubProjectPicker
           kind={fields.some((f) => f.key === 'richText') ? 'posts' : 'projects'}
@@ -350,24 +381,6 @@ export function FieldsForm({
           </div>
         );
       })}
-      <p className="form-error" role="alert">
-        {localizedError(error, language)}
-      </p>
-      {uploadProgress !== null && (
-        <div className="upload-progress" role="status">
-          <span>
-            {uploadProgress >= 95
-              ? t('Đang kiểm tra file…', 'Validating file…')
-              : t('Đang tải lên…', 'Uploading…')}{' '}
-            {uploadProgress}%
-          </span>
-          <progress
-            value={uploadProgress}
-            max={100}
-            aria-label={t('Tiến trình tải file', 'Upload progress')}
-          />
-        </div>
-      )}
       {!footer && (busy || uploading > 0) && (
         <p role="status">
           {uploading ? t('Đang tải file…', 'Uploading…') : t('Đang lưu…', 'Saving…')}

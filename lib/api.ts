@@ -20,6 +20,7 @@ import {
   trafficSchema,
   trafficSummary,
   trafficDetails,
+  trafficCsv,
   recordTraffic,
   trafficIp,
   trafficClientSchema,
@@ -289,7 +290,10 @@ export function createApi(database: Database, production = false, origin?: strin
             'Set-Cookie': rotated.cookie,
           });
         }
-        if (pathname === '/api/admin/traffic' && method === 'GET') {
+        if (
+          (pathname === '/api/admin/traffic' || pathname === '/api/admin/traffic/export') &&
+          method === 'GET'
+        ) {
           const params = new URL(request.url).searchParams;
           const page = z.coerce
             .number()
@@ -308,6 +312,17 @@ export function createApi(database: Database, production = false, origin?: strin
                 .map((key) => [key, params.get(key)]),
             ),
           );
+          if (pathname.endsWith('/export')) {
+            await rate('traffic-export:' + session.username, 10);
+            return new Response(trafficCsv(database, query, filters), {
+              headers: {
+                'Content-Type': 'text/csv; charset=utf-8',
+                'Content-Disposition': 'attachment; filename="traffic.csv"',
+                'Cache-Control': 'private, no-store',
+                'X-Content-Type-Options': 'nosniff',
+              },
+            });
+          }
           return send(await trafficDetails(database, page, query, filters));
         }
         if (pathname === '/api/admin/upload-init' && method === 'POST') {

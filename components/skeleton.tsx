@@ -17,11 +17,6 @@ function CardSkeleton({ cover = false }: { cover?: boolean }) {
 export function PublicSkeleton() {
   return (
     <div role="status" aria-label="Loading page" aria-busy="true" className="public-skeleton">
-      <div className="skeleton-site-header">
-        <Skeleton className="skeleton-avatar" />
-        <Skeleton className="skeleton-search" />
-        <Skeleton className="skeleton-menu" />
-      </div>
       <div className="layout">
         <div className="main">
           <CardSkeleton cover />

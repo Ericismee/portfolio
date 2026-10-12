@@ -1,7 +1,6 @@
 import { visibleGithubStats } from '../../lib/github-display';
 import { notFound } from 'next/navigation';
-import { readServerContent } from '../../lib/server-content';
-import { publicContent } from '../../lib/schema';
+import { readPublicServerContent, readServerContent } from '../../lib/server-content';
 import { ProfileSite } from '../../components/profile-site';
 import type { Metadata } from 'next';
 import { githubSkillsSnapshot } from '../../lib/github-skills';
@@ -13,7 +12,7 @@ export async function generateMetadata({
   params: Promise<{ segments?: string[] }>;
 }): Promise<Metadata> {
   const { segments = [] } = await params;
-  const content = publicContent((await readServerContent()).data);
+  const content = await readPublicServerContent();
   const { profile } = content;
   const titles: Record<string, string> = {
     '': 'Home',
@@ -81,7 +80,7 @@ export default async function PublicPage({
     notFound();
   const query = await searchParams;
   const source = (await readServerContent()).data;
-  const content = publicContent(source);
+  const content = await readPublicServerContent();
   if (
     segments[1] &&
     !(segments[0] === 'projects' ? content.projects : content.posts).some(

@@ -138,6 +138,7 @@ export const contentSchema = z
     }),
     theme: z.enum(['light', 'dark']).default('light'),
     showVisitorCount: z.boolean().default(true),
+    showHeaderCv: z.boolean().default(true),
     accent: z.string().regex(/^#[a-f0-9]{6}$/i),
     density: z.enum(['compact', 'comfortable']).default('comfortable'),
     layout: z.enum(['standard', 'wide']).default('standard'),
