@@ -13,6 +13,7 @@ export function markdownSummary(value: string) {
 }
 
 export function markdownUrl(value: string, base = '', image = false): string {
+  if (/^\/uploads\/[a-f0-9-]+\.(png|jpg|gif|webp|pdf|docx|txt|md|svg)$/.test(value)) return value;
   if (value.startsWith('#') && (image || !base)) return image ? '' : value;
   try {
     const resolved = new URL(value, base || 'https://invalid.local');

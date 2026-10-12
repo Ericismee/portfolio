@@ -1,17 +1,14 @@
 # Durable Vercel deployment
 
-## Current deployment — 2026-10-11
+## Deployment overview
 
-- Vercel project: `nhain2508-gmailcoms-projects/eric-profile`; canonical production: `https://ericisme.cloud`.
-- Dedicated Neon database `eric-profile-data` and **private** Blob store `eric-profile-files`, both in Singapore. Resources use free plans and are connected only to production.
-- Migration verified content version 77, one administrator, 30 revisions, no inbox messages and 34 files. Original local data remains intact. Existing administrator password hashes are retained; sessions and GitHub credentials are not copied.
-- Production public JSON matches the local public projection. Six published file responses matched source bytes; 28 unpublished/unreferenced files returned 404. Four administrator read endpoints returned 401 anonymously. A forged-origin mutation returned 403.
-- The owner configured iNET DNS-only records: `@ A 76.76.21.21` and `www CNAME 33662806d70b3314.vercel-dns-017.com.`. Vercel verifies both domains. The apex uses Vercel's supported single-IP alternative because iNET rejected duplicate-name A edits; Vercel reports an optional DNS upgrade recommendation, not an invalid configuration. Email/MX/TXT records remain separate; the MX still resolves to `gw.oxmail.vn`.
-- Production `PUBLIC_ORIGIN` is `https://ericisme.cloud`. Vercel redirects `www.ericisme.cloud` to the canonical domain with HTTP 308, so administration consistently uses one origin. After future domain changes, update this environment variable and redeploy.
-- Reconnect GitHub after signing into production. The cloud encryption key is configured as a production secret. A verified local recovery copy in ignored `.data/cloud-recovery/github-credential.key` is protected by Windows DPAPI for the current Windows user. Temporary plaintext cloud environment and key files were removed after migration. DPAPI recovery requires the Windows user's protection context; plan an independent secure recovery method before replacing this computer.
-- All 60 automated tests, lint, type checking, formatting and the production build passed. The production dependency audit reported zero known vulnerabilities. A second production deployment retained the migrated public content; profile, projects, activity and administration returned HTTP 200. The configured Vercel origin reached login validation while a forged origin was rejected.
+The reference website uses Vercel with PostgreSQL and private Blob storage in Singapore. A fork must create its own project, stores, credentials and administrator rather than reuse the reference site's resources.
 
-Actual administrator sign-in, browser upload and editing on production still need a check with the owner's session. No new administrator credentials were created for testing.
+The canonical origin is `https://ericisme.cloud`. DNS currently points directly to Vercel: `@ A 76.76.21.21` and `www CNAME 33662806d70b3314.vercel-dns-017.com.`. Vercel redirects `www` to the canonical origin. These records are public infrastructure information, not application credentials. For another project, copy the exact records shown in its Vercel Domains settings; keep mail records separate.
+
+Keep a verified, independent backup of the encryption key outside Git and outside the database backup. A Windows DPAPI-protected local copy requires the same user's protection context and is not, by itself, a portable disaster-recovery backup. GitHub credentials must be reconnected if they were not migrated.
+
+Production is the authoritative data copy after migration. Local SQLite changes do not automatically synchronize to it. Verify sign-in, upload, editing, published and unpublished file access after provisioning your own environment.
 
 The application supports PostgreSQL for content, administrators, sessions, revisions, messages, rate limits and encrypted GitHub credentials. Private Vercel Blob stores uploads. PostgreSQL connections require TLS with certificate verification.
 

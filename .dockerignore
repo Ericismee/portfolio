@@ -8,3 +8,14 @@ node_modules
 .qa-*
 qa*.png
 coverage
+*.sqlite*
+*.db
+*.db-*
+*.key
+*.pem
+*.p12
+*.pfx
+*.sql
+*.sql.gz
+backups
+exports

@@ -17,12 +17,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm run security:source -- --history
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run build
         env:

@@ -1,6 +1,7 @@
 {
   "name": "eric-profile",
   "version": "1.0.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,6 +11,7 @@
     "lint": "eslint app components lib scripts/*.ts tests --no-warn-ignored",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.ts tests/*.test.mjs",
+    "security:source": "node scripts/check-public-source.mjs",
     "check": "npm run lint && npm run typecheck && npm test",
     "format": "prettier --write app components lib tests/*.ts scripts/*.ts next.config.ts tsconfig.json",
     "format:check": "prettier --check app components lib tests/*.ts scripts/*.ts next.config.ts tsconfig.json",
@@ -35,6 +37,8 @@
     "@tiptap/react": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.4",
     "@vercel/blob": "^2.8.1",
+    "@xmldom/xmldom": "^0.9.12",
+    "fflate": "^0.8.3",
     "next": "^16.4.0",
     "pdfjs-dist": "^6.4.299",
     "postgres": "^3.4.9",

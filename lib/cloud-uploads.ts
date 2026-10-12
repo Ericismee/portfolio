@@ -1,11 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { get, del } from '@vercel/blob';
+import { get, del, copy } from '@vercel/blob';
+import { documentTypes } from './file-types.ts';
+import { uploadExtension } from './uploads.ts';
 import { generateClientTokenFromReadWriteToken } from '@vercel/blob/client';
 import { HttpError, type Database } from './database.ts';
 import { MAX_UPLOAD_BYTES } from './upload-limits.ts';
 
 const mimeExtensions: Record<string, string> = {
+  ...Object.fromEntries(Object.entries(documentTypes).map(([ext, mime]) => [mime, ext])),
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/webp': 'webp',
@@ -22,6 +25,10 @@ export const intentInput = z.object({
     'image/gif',
     'application/pdf',
     'application/json',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+    'text/markdown',
+    'image/svg+xml',
   ]),
   size: z.number().int().positive().max(MAX_UPLOAD_BYTES),
 });
@@ -69,8 +76,9 @@ export async function consumeCloudUpload(
   username: string,
   id: string,
   services = blobServices,
+  validated?: (bytes: Buffer, mime: string) => Promise<void>,
 ) {
-  if (!/^[a-f0-9-]{36}\.(png|jpg|webp|gif|pdf|json)$/.test(id))
+  if (!/^[a-f0-9-]{36}\.(png|jpg|webp|gif|pdf|docx|txt|md|svg|json)$/.test(id))
     throw new HttpError(400, 'Invalid upload');
   const intent = (await database.db
     .prepare(
@@ -104,8 +112,22 @@ export async function consumeCloudUpload(
       chunks.push(value);
     }
     if (total !== intent.size) throw new HttpError(400, 'Incomplete upload');
-    return { bytes: Buffer.concat(chunks), mime: intent.mime };
+    const bytes = Buffer.concat(chunks);
+    await validated?.(bytes, intent.mime);
+    return { bytes, mime: intent.mime };
   } finally {
     await services.del('pending/' + id).catch(() => undefined);
   }
+}
+
+// Validate once, then copy within the private store instead of uploading all bytes again.
+export async function finishCloudUpload(database: Database, username: string, id: string, services = blobServices, copyBlob = copy) {
+  let url = '';
+  await consumeCloudUpload(database, username, id, services, async (bytes, mime) => {
+    const ext = uploadExtension(bytes, mime);
+    const name = randomUUID() + '.' + ext;
+    await copyBlob('pending/' + id, 'uploads/' + name, { access: 'private', contentType: mime, addRandomSuffix: false, allowOverwrite: false });
+    url = '/uploads/' + name;
+  });
+  return url;
 }

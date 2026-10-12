@@ -15,7 +15,7 @@ export const url = z
   .trim()
   .max(2048)
   .refine((v) => {
-    if (!v || /^\/uploads\/[a-f0-9-]+\.(png|jpg|webp|gif|pdf)$/.test(v)) return true;
+    if (!v || /^\/uploads\/[a-f0-9-]+\.(png|jpg|webp|gif|pdf|docx|txt|md|svg)$/.test(v)) return true;
     try {
       const u = new URL(v);
       return ['http:', 'https:'].includes(u.protocol) && !u.username && !u.password;

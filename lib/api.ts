@@ -14,7 +14,7 @@ import { getDatabase, HttpError, isHttpError, accountSchema, type Database } fro
 import { authService, passwordHash, verifyPassword } from './auth.ts';
 import { publicContent } from './schema.ts';
 import { migrateAssets, storeUpload, removeUpload } from './uploads.ts';
-import { startCloudUpload, consumeCloudUpload } from './cloud-uploads.ts';
+import { startCloudUpload, consumeCloudUpload, finishCloudUpload } from './cloud-uploads.ts';
 import {
   trafficSchema,
   trafficSummary,
@@ -258,8 +258,7 @@ export function createApi(database: Database, production = false, origin?: strin
         if (pathname === '/api/admin/upload-finish' && method === 'POST') {
           if (database.directory !== 'cloud') throw new HttpError(404, 'Not found');
           const { id } = z.object({ id: z.string().max(50) }).parse(await json(request, 4096));
-          const { bytes, mime } = await consumeCloudUpload(database, session.username, id);
-          return send({ url: await storeUpload(database.directory, bytes, mime) }, 201);
+          return send({ url: await finishCloudUpload(database, session.username, id) }, 201);
         }
         if (
           ['/api/admin/import-blob', '/api/admin/content-blob'].includes(pathname) &&

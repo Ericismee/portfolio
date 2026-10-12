@@ -3,7 +3,10 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile, readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { HttpError } from './database.ts';
+import { documentTypes } from './file-types.ts';
+import { docxText, utf8, validateSvg } from './document-files.ts';
 export const mimeTypes: Record<string, string> = {
+  ...documentTypes,
   png: 'image/png',
   jpg: 'image/jpeg',
   webp: 'image/webp',
@@ -18,6 +21,19 @@ const signatures: Record<string, (b: Buffer) => boolean> = {
   pdf: (b) => b.subarray(0, 5).toString() === '%PDF-',
 };
 export function uploadExtension(bytes: Buffer, mime: string) {
+  if (bytes.length > MAX_UPLOAD_BYTES) throw new HttpError(413, 'File too large / File quá lớn');
+  const document = Object.entries(documentTypes).find(([ext, type]) => ext !== 'pdf' && type === mime)?.[0];
+  if (document) {
+    try {
+      if (!bytes.length) throw Error('Empty file');
+      if (document === 'docx') docxText(bytes);
+      else if (document === 'svg') validateSvg(bytes);
+      else utf8(bytes);
+      return document;
+    } catch {
+      throw new HttpError(400, 'Invalid document. SVG must be static and up to 1 MB; text must be UTF-8. / Tài liệu không hợp lệ. SVG phải là ảnh tĩnh tối đa 1 MB; văn bản phải dùng UTF-8.');
+    }
+  }
   const ext = Object.keys(signatures).find((k) => signatures[k](bytes));
   if (!ext || mimeTypes[ext] !== mime)
     throw new HttpError(400, 'Unsupported or invalid file / File không hợp lệ');

@@ -7,7 +7,7 @@ export type RichNode = {
 };
 export function safeMediaUrl(value: unknown): string | undefined {
   if (typeof value !== 'string') return;
-  if (/^\/uploads\/[a-f0-9-]+\.(png|jpg|gif|webp)$/.test(value)) return value;
+  if (/^\/uploads\/[a-f0-9-]+\.(png|jpg|gif|webp|pdf|docx|txt|md|svg)$/.test(value)) return value;
   try {
     const url = new URL(value);
     if (['https:', 'http:'].includes(url.protocol) && !url.username && !url.password)
