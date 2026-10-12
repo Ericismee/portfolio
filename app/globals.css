@@ -1301,9 +1301,9 @@
   margin-left: auto;
 }
 .gh-content-actions > .btn {
-  min-height: 40px;
-  padding: 8px 12px;
-  font-size: 13px;
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: 12px;
 }
 .gh-tabs {
   margin: 0;
@@ -1319,9 +1319,9 @@
   border: 0;
   border-bottom: 3px solid transparent;
   box-shadow: none;
-  min-height: 48px;
-  padding: 8px 14px;
-  font-size: 13px;
+  min-height: 36px;
+  padding: 6px 10px;
+  font-size: 12px;
   border-radius: 0;
 }
 .gh-tabs button.active {
@@ -1676,7 +1676,7 @@ button.gh-day:hover {
   }
   .gh-tabs button {
     flex: 1;
-    padding: 8px 5px;
+    padding: 6px 5px;
     font-size: 12px;
   }
   .gh-stats {
@@ -5226,7 +5226,6 @@ body .icon-btn,
 body
   :is(
     .tabs,
-    .gh-tabs,
     .feed-status-tabs,
     .repo-visibility-tabs,
     .markdown-view-tabs,
@@ -5249,7 +5248,6 @@ body .btn.btn[aria-pressed='true'],
 body
   :is(
     .tabs,
-    .gh-tabs,
     .feed-status-tabs,
     .repo-visibility-tabs,
     .markdown-view-tabs,
@@ -5274,7 +5272,6 @@ body .icon-btn:hover,
 body
   :is(
     .tabs,
-    .gh-tabs,
     .feed-status-tabs,
     .repo-visibility-tabs,
     .markdown-view-tabs,
@@ -5290,7 +5287,6 @@ body .btn.btn[aria-pressed='true']:hover,
 body
   :is(
     .tabs,
-    .gh-tabs,
     .feed-status-tabs,
     .repo-visibility-tabs,
     .markdown-view-tabs,
@@ -5305,7 +5301,6 @@ body .icon-btn:active,
 body
   :is(
     .tabs,
-    .gh-tabs,
     .feed-status-tabs,
     .repo-visibility-tabs,
     .markdown-view-tabs,
@@ -5330,7 +5325,6 @@ body .icon-btn:disabled {
   body
     :is(
       .tabs,
-      .gh-tabs,
       .feed-status-tabs,
       .repo-visibility-tabs,
       .markdown-view-tabs,
