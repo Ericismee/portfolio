@@ -1,15 +1,120 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useLanguage } from './language';
 import { Icon } from './icon';
 
+type PageSize = { width: number; height: number };
+
+function PdfPage({
+  document,
+  number,
+  width,
+  zoom,
+  root,
+  initialSize,
+}: {
+  document: PDFDocumentProxy;
+  number: number;
+  width: number;
+  zoom: number;
+  root: RefObject<HTMLDivElement | null>;
+  initialSize: PageSize;
+}) {
+  const { t } = useLanguage();
+  const container = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const [nearby, setNearby] = useState(false);
+  const [size, setSize] = useState(initialSize);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    if (!container.current || !root.current) return;
+    const observer = new IntersectionObserver(([entry]) => setNearby(entry.isIntersecting), {
+      root: root.current,
+      rootMargin: '600px 0px',
+    });
+    observer.observe(container.current);
+    return () => observer.disconnect();
+  }, [root]);
+  useEffect(() => {
+    if (!nearby || !canvas.current) return;
+    let disposed = false;
+    let render: { cancel: () => void } | undefined;
+    const element = canvas.current;
+    setLoading(true);
+    setError(false);
+    void document
+      .getPage(number)
+      .then(async (pdfPage) => {
+        if (disposed) return;
+        const natural = pdfPage.getViewport({ scale: 1 });
+        setSize({ width: natural.width, height: natural.height });
+        const viewport = pdfPage.getViewport({
+          scale: Math.min(1.4, width / natural.width) * zoom,
+        });
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        element.width = Math.floor(viewport.width * ratio);
+        element.height = Math.floor(viewport.height * ratio);
+        element.style.width = `${viewport.width}px`;
+        const rendering = pdfPage.render({
+          canvas: element,
+          viewport,
+          transform: [ratio, 0, 0, ratio, 0, 0],
+        });
+        render = rendering;
+        await rendering.promise;
+        if (!disposed) setLoading(false);
+      })
+      .catch(() => {
+        if (!disposed) {
+          setError(true);
+          setLoading(false);
+        }
+      });
+    return () => {
+      disposed = true;
+      render?.cancel();
+    };
+  }, [document, number, nearby, width, zoom]);
+  return (
+    <div
+      ref={container}
+      className="pdf-page"
+      data-pdf-page={number}
+      style={{
+        width: Math.min(1.4, width / size.width) * zoom * size.width,
+        aspectRatio: `${size.width} / ${size.height}`,
+      }}
+      aria-busy={nearby && loading}
+    >
+      {nearby && (
+        <canvas
+          ref={canvas}
+          role="img"
+          aria-label={t(`Trang PDF ${number}`, `PDF page ${number}`)}
+        />
+      )}
+      {nearby && loading && !error && (
+        <span className="pdf-page-status" role="status">
+          {t('Đang đọc PDF…', 'Loading PDF…')}
+        </span>
+      )}
+      {error && (
+        <span className="pdf-page-status" role="alert">
+          {t('Không thể hiển thị trang PDF', 'Cannot render PDF page')}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function PdfPreview({ url }: { url: string }) {
   const { t } = useLanguage();
-  const canvas = useRef<HTMLCanvasElement>(null);
   const pages = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(800);
   const [document, setDocument] = useState<PDFDocumentProxy>();
+  const [initialSize, setInitialSize] = useState<PageSize>({ width: 595, height: 842 });
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [error, setError] = useState('');
@@ -36,7 +141,13 @@ export function PdfPreview({ url }: { url: string }) {
         const loadingTask = pdfjs.getDocument({ url });
         task = loadingTask;
         const pdf = await loadingTask.promise;
-        if (!disposed) setDocument(pdf);
+        const first = await pdf.getPage(1);
+        const natural = first.getViewport({ scale: 1 });
+        if (!disposed) {
+          setInitialSize({ width: natural.width, height: natural.height });
+          setDocument(pdf);
+          setLoading(false);
+        }
       })
       .catch(() => {
         if (!disposed) {
@@ -49,54 +160,42 @@ export function PdfPreview({ url }: { url: string }) {
       void task?.destroy();
     };
   }, [url]);
-  useEffect(() => {
-    if (!document || !canvas.current) return;
-    let disposed = false;
-    let render: { cancel: () => void } | undefined;
-    const element = canvas.current;
-    void document
-      .getPage(page)
-      .then(async (pdfPage) => {
-        if (disposed) return;
-        const natural = pdfPage.getViewport({ scale: 1 });
-        const viewport = pdfPage.getViewport({
-          scale: Math.min(1.4, width / natural.width) * zoom,
-        });
-        const ratio = Math.min(window.devicePixelRatio || 1, 2);
-        element.width = Math.floor(viewport.width * ratio);
-        element.height = Math.floor(viewport.height * ratio);
-        element.style.width = `${viewport.width}px`;
-        element.style.height = `${viewport.height}px`;
-        const rendering = pdfPage.render({
-          canvas: element,
-          viewport,
-          transform: [ratio, 0, 0, ratio, 0, 0],
-        });
-        render = rendering;
-        await rendering.promise;
-        if (!disposed) setLoading(false);
-      })
-      .catch(() => {
-        if (!disposed) {
-          setError('render');
-          setLoading(false);
-        }
-      });
-    return () => {
-      disposed = true;
-      render?.cancel();
-    };
-  }, [document, page, zoom, width]);
+  const scrollFrame = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(scrollFrame.current), []);
+  const updatePage = () => {
+    cancelAnimationFrame(scrollFrame.current);
+    scrollFrame.current = requestAnimationFrame(() => {
+      const root = pages.current;
+      if (!root) return;
+      const marker = root.getBoundingClientRect().top + root.clientHeight / 2;
+      let nearest = 1;
+      for (const element of root.querySelectorAll<HTMLElement>('[data-pdf-page]')) {
+        if (element.getBoundingClientRect().top > marker) break;
+        nearest = Number(element.dataset.pdfPage);
+      }
+      setPage(nearest);
+    });
+  };
+  const goToPage = (number: number) => {
+    const root = pages.current;
+    const target = root?.querySelector<HTMLElement>(`[data-pdf-page="${number}"]`);
+    if (!root || !target) return;
+    root.scrollTo({
+      top:
+        root.scrollTop + target.getBoundingClientRect().top - root.getBoundingClientRect().top - 20,
+    });
+    setPage(number);
+  };
   return (
     <div className="pdf-preview">
-      <div className="pdf-toolbar">
+      <div className="pdf-toolbar" role="group" aria-label={t('Điều khiển PDF', 'PDF controls')}>
         <button
           type="button"
-          className="btn neutral"
+          className="btn neutral pdf-nav"
           aria-label={t('Trang trước', 'Previous page')}
           title={t('Trang trước', 'Previous page')}
           disabled={!document || page <= 1}
-          onClick={() => setPage((p) => p - 1)}
+          onClick={() => goToPage(page - 1)}
         >
           <Icon name="previous" />
         </button>
@@ -112,15 +211,15 @@ export function PdfPreview({ url }: { url: string }) {
         </span>
         <button
           type="button"
-          className="btn neutral"
+          className="btn neutral pdf-nav"
           aria-label={t('Trang sau', 'Next page')}
           title={t('Trang sau', 'Next page')}
           disabled={!document || page >= document.numPages}
-          onClick={() => setPage((p) => p + 1)}
+          onClick={() => goToPage(page + 1)}
         >
           <Icon name="next" />
         </button>
-        <label className="pdf-zoom" title={t('Thu phóng PDF', 'PDF zoom')}>
+        <label className="pdf-zoom" title={t('Thu phóng PDF', 'PDF zoom') + ` · ${zoom * 100}%`}>
           <Icon name="zoom" />
           <select
             aria-label={t('Thu phóng PDF', 'PDF zoom')}
@@ -134,7 +233,15 @@ export function PdfPreview({ url }: { url: string }) {
           </select>
         </label>
       </div>
-      <div className="pdf-pages" ref={pages} aria-busy={loading}>
+      <div
+        className="pdf-pages"
+        ref={pages}
+        aria-busy={loading}
+        onScroll={updatePage}
+        tabIndex={0}
+        role="region"
+        aria-label={t('Các trang PDF · Cuộn để đọc', 'PDF pages · Scroll to read')}
+      >
         {loading && !error && <p role="status">{t('Đang đọc PDF…', 'Loading PDF…')}</p>}
         {error && (
           <p role="alert">
@@ -143,11 +250,18 @@ export function PdfPreview({ url }: { url: string }) {
               : t('Không thể hiển thị trang PDF', 'Cannot render PDF page')}
           </p>
         )}
-        <canvas
-          ref={canvas}
-          role="img"
-          aria-label={t(`Nội dung CV PDF, trang ${page}`, `PDF CV document, page ${page}`)}
-        />
+        {document &&
+          Array.from({ length: document.numPages }, (_, index) => (
+            <PdfPage
+              key={index + 1}
+              document={document}
+              number={index + 1}
+              width={width}
+              zoom={zoom}
+              root={pages}
+              initialSize={initialSize}
+            />
+          ))}
       </div>
     </div>
   );
