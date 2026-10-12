@@ -588,7 +588,7 @@ function Site({
             </p>
             <div className="project-grid featured-grid">{featured.map(projectCard)}</div>
             <Link className="btn neutral all-projects" href="/projects">
-              {t('Xem tất cả dự án →', 'View all projects →')}
+              {t('Tất cả dự án', 'All projects')} <Icon name="next" />
             </Link>
           </>
         );
@@ -617,7 +617,7 @@ function Site({
               </Link>
             ))}
             <Link className="btn neutral all-projects" href="/projects">
-              {t('Xem tất cả dự án →', 'View all projects →')}
+              {t('Tất cả dự án', 'All projects')} <Icon name="next" />
             </Link>
           </div>
         );
