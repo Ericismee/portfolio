@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLanguage } from './language';
-import { documentKind, LOCAL_FILE } from '../lib/file-types';
+import { documentKind, isImageFile, LOCAL_FILE } from '../lib/file-types';
 import { DocumentPreview } from './document-preview';
 import { Icon } from './icon';
 
@@ -12,7 +12,7 @@ export function FileDocument({
   trigger,
   triggerClassName = 'btn neutral',
   showDownload = true,
-  image = false,
+  image: imageRequested = false,
 }: {
   url: string;
   name?: string;
@@ -26,12 +26,16 @@ export function FileDocument({
   const [open, setOpen] = useState(false);
   const [imageState, setImageState] = useState<'loading' | 'ready' | 'error'>('loading');
   const dialog = useRef<HTMLDialogElement>(null);
-  const local = LOCAL_FILE.test(url),
-    previewable = local || url.startsWith('blob:');
-  const download =
-    local || (image && /^\/uploads\/[a-f0-9-]+\.[a-z]+$/.test(url)) ? url + '?download=1' : url;
-  const pdf =
-    !image && previewable && (documentKind(local ? url : name) || documentKind(url)) === 'pdf';
+  const kind = documentKind(url) || documentKind(name);
+  const image = imageRequested || isImageFile(url) || (!documentKind(url) && isImageFile(name));
+  const path = url.split(/[?#]/)[0];
+  const local = LOCAL_FILE.test(path);
+  const previewable = local || url.startsWith('blob:');
+  const uploaded = local || (image && /^\/uploads\/[a-f0-9-]+\.[a-z]+$/i.test(path));
+  const download = uploaded
+    ? url.split('#')[0] + (url.includes('?') ? '&' : '?') + 'download=1'
+    : url;
+  const pdf = !image && previewable && kind === 'pdf';
   const viewerActions = (
     <>
       <a
@@ -153,7 +157,7 @@ export function FileDocument({
           ) : previewable ? (
             <DocumentPreview
               url={url}
-              name={local ? url : name}
+              name={documentKind(url) ? url : name}
               pdfActions={viewerActions}
               pdfTitle={name}
             />

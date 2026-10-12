@@ -49,7 +49,8 @@ export async function uploadResponse(database: Database, request: Request, filen
         'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff',
         'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
-        ...(['pdf', 'docx', 'txt', 'md', 'svg'].includes(filename.split('.').pop()!)
+        ...(new URL(request.url).searchParams.get('download') === '1' ||
+        ['pdf', 'docx', 'txt', 'md', 'svg'].includes(filename.split('.').pop()!)
           ? {
               'Content-Disposition': `${new URL(request.url).searchParams.get('download') === '1' || mime.includes('wordprocessingml') ? 'attachment' : 'inline'}; filename="document.${filename.split('.').pop()}"; filename*=UTF-8''${encodeURIComponent(content.cv?.url === url ? content.cv.name : 'document.' + filename.split('.').pop())}`,
             }

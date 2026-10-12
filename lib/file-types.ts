@@ -16,3 +16,7 @@ export function documentKind(name: string) {
       ? (ext as keyof typeof documentTypes)
       : undefined;
 }
+
+export function isImageFile(name: string) {
+  return /\.(png|jpe?g|webp|gif|avif|bmp|ico|svg)$/i.test(name.split(/[?#]/)[0]);
+}

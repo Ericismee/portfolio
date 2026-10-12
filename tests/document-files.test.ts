@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import sharp from 'sharp';
 import assert from 'node:assert/strict';
 import { zipSync, strToU8 } from 'fflate';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -20,10 +21,10 @@ test('Certificate links and attachments persist, remain private in drafts and re
     const file = await storeUpload(directory, Buffer.from('Certificate document'), 'text/plain');
     const image = await storeUpload(
       directory,
-      Buffer.from(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0h1v1H0z"/></svg>',
-      ),
-      'image/svg+xml',
+      await sharp({ create: { width: 2, height: 2, channels: 3, background: '#fff' } })
+        .png()
+        .toBuffer(),
+      'image/png',
     );
     const entry = itemSchema.parse({
       id: 'certificate',
@@ -52,6 +53,20 @@ test('Certificate links and attachments persist, remain private in drafts and re
     state = database.write(state.data, state.version);
     assert.equal(await status(file), 200);
     assert.equal(await status(image), 200);
+    const imageDownload = await uploadResponse(
+      database,
+      new Request('http://localhost:3001' + image + '?download=1'),
+      path.basename(image),
+    );
+    assert.match(imageDownload.headers.get('Content-Disposition') || '', /^attachment;/);
+    assert.equal(imageDownload.headers.get('Content-Type'), 'image/png');
+    const imagePreview = await uploadResponse(
+      database,
+      new Request('http://localhost:3001' + image),
+      path.basename(image),
+    );
+    assert.equal(imagePreview.headers.get('Content-Disposition'), null);
+
     assert.equal(publicContent(state.data).items['Chứng chỉ'][0].link, entry.link);
     state.data.hidden.push('Chứng chỉ');
     state = database.write(state.data, state.version);

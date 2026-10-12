@@ -19,7 +19,7 @@ import { GithubSkillsCard } from './github-skills';
 import { PostBody } from './post-body';
 import { ImagePreview } from './image-preview';
 import { FileDocument } from './file-document';
-import { LOCAL_FILE } from '../lib/file-types';
+import { isImageFile, LOCAL_FILE } from '../lib/file-types';
 import { CvDocument } from './cv-document';
 import { MarkdownContent } from './markdown-content';
 import { projectUsesMarkdown } from '../lib/markdown';
@@ -710,7 +710,7 @@ function Site({
               triggerClassName="credential-icon"
               trigger={
                 <>
-                  <Icon name="feed" />
+                  <Icon name={isImageFile(item.file) ? 'camera' : 'feed'} />
                   <span className="credential-label">
                     {t('Xem tệp', 'Preview file') + ': ' + item.title}
                   </span>
