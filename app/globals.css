@@ -4580,7 +4580,7 @@ html {
     min-height: 44px;
     padding: 6px 2px;
     font-size: clamp(10px, 2.4vw, 11px);
-    border-radius: 8px;
+    border-radius: 10px;
   }
 }
 @media (min-width: 400px) and (max-width: 600px) {
@@ -5217,4 +5217,121 @@ html:has(.page-refresh-status) {
 .profile-intro .profile-body .profile-actions > .file-document > .btn {
   border: 1.5px solid var(--edge);
   box-shadow: 2px 2px 0 var(--edge);
+}
+
+/* Shared action treatment for public pages, filters, and admin forms. */
+body .btn.btn,
+body .btn.btn.neutral,
+body .icon-btn,
+body
+  :is(
+    .tabs,
+    .feed-status-tabs,
+    .repo-visibility-tabs,
+    .markdown-view-tabs,
+    .analytics-range-tabs,
+    .analytics-chart-tabs
+  )
+  button {
+  border: 1.5px solid var(--edge);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 2px 2px 0 var(--edge);
+  transition:
+    background-color 150ms,
+    box-shadow 150ms,
+    transform 150ms;
+}
+body .btn.btn.primary,
+body .btn.btn[aria-pressed='true'],
+body
+  :is(
+    .tabs,
+    .feed-status-tabs,
+    .repo-visibility-tabs,
+    .markdown-view-tabs,
+    .analytics-range-tabs,
+    .analytics-chart-tabs
+  )
+  button:is(.active, [aria-pressed='true']) {
+  background: var(--accent);
+  color: var(--primary-ink);
+  border-color: var(--edge);
+}
+body .btn.btn.danger {
+  color: #a52424;
+  border-color: currentColor;
+}
+[data-theme='dark'] .btn.btn.danger {
+  color: #ffb7b7;
+}
+body .btn.btn:hover,
+body .btn.btn.neutral:hover,
+body .icon-btn:hover,
+body
+  :is(
+    .tabs,
+    .feed-status-tabs,
+    .repo-visibility-tabs,
+    .markdown-view-tabs,
+    .analytics-range-tabs,
+    .analytics-chart-tabs
+  )
+  button:hover {
+  background: var(--surface);
+  box-shadow: 2px 2px 0 var(--edge);
+}
+body .btn.btn.primary:hover,
+body .btn.btn[aria-pressed='true']:hover,
+body
+  :is(
+    .tabs,
+    .feed-status-tabs,
+    .repo-visibility-tabs,
+    .markdown-view-tabs,
+    .analytics-range-tabs,
+    .analytics-chart-tabs
+  )
+  button:is(.active, [aria-pressed='true']):hover {
+  background: var(--accent);
+}
+body .btn.btn:active,
+body .icon-btn:active,
+body
+  :is(
+    .tabs,
+    .feed-status-tabs,
+    .repo-visibility-tabs,
+    .markdown-view-tabs,
+    .analytics-range-tabs,
+    .analytics-chart-tabs
+  )
+  button:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+body .btn.btn:disabled,
+body .icon-btn:disabled {
+  box-shadow: none;
+  transform: none;
+}
+.layout.profile-layout .all-projects.btn {
+  border-radius: 10px;
+}
+@media (prefers-reduced-motion: reduce) {
+  body .btn.btn,
+  body .icon-btn,
+  body
+    :is(
+      .tabs,
+      .feed-status-tabs,
+      .repo-visibility-tabs,
+      .markdown-view-tabs,
+      .analytics-range-tabs,
+      .analytics-chart-tabs
+    )
+    button {
+    transition: none;
+  }
 }

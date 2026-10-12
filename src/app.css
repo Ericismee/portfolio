@@ -4429,9 +4429,9 @@ body {
 }
 
 .btn.btn {
-  border: 1px solid var(--border-subtle);
-  box-shadow: none;
-  border-radius: 5px;
+  border: 1.5px solid var(--edge);
+  box-shadow: 2px 2px 0 var(--edge);
+  border-radius: 10px;
   background: var(--card);
   color: var(--ink);
 }
@@ -4456,13 +4456,13 @@ body {
 
 .btn.btn:hover {
   border-color: var(--edge);
-  background: var(--yellow);
-  box-shadow: none;
+  background: var(--surface);
+  box-shadow: 2px 2px 0 var(--edge);
 }
 
 .btn.btn.primary:hover {
   background: var(--accent);
-  box-shadow: 2px 3px 0 var(--edge);
+  box-shadow: 2px 2px 0 var(--edge);
 }
 
 .btn.btn:active {
