@@ -891,7 +891,11 @@ function Site({
           .map((s) => renderSection(s))}
       </>,
       <>
-        {card(t('Liên kết', 'Links'), links(), 'profile-links-card')}
+        {card(
+          t('Liên kết', 'Links'),
+          <div className="profile-social-grid">{links()}</div>,
+          'profile-links-card',
+        )}
         {sections.filter((s) => s.name === 'Chứng chỉ').map((s) => renderSection(s, true))}
         {data.github.showSidebar && (
           <GithubSkillsCard
