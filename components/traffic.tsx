@@ -15,7 +15,7 @@ const pending = new Map<string, Promise<TrafficReceipt>>();
 function analyticsToday() {
   return new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
 }
-export function PublicTraffic() {
+export function PublicTraffic({ visible = true }: { visible?: boolean }) {
   const path = usePathname(),
     { t, language } = useLanguage();
   const [views, setViews] = useState<number | null>(null);
@@ -98,6 +98,7 @@ export function PublicTraffic() {
       window.removeEventListener('pageshow', pageShow);
     };
   }, [path]);
+  if (!visible) return null;
   return (
     <footer className="site-traffic">
       {

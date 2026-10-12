@@ -1,5 +1,10 @@
 export function Icon({ name }: { name: string }) {
   const paths: Record<string, React.ReactNode> = {
+    download: <path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4" />,
+    close: <path d="m6 6 12 12M18 6 6 18" />,
+    previous: <path d="m15 5-7 7 7 7" />,
+    next: <path d="m9 5 7 7-7 7" />,
+    zoom: <><circle cx="10" cy="10" r="6" /><path d="m15 15 6 6M7 10h6m-3-3v6" /></>,
     sections: (
       <>
         <rect x="3" y="3" width="7" height="7" rx="1" />

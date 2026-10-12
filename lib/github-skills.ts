@@ -102,10 +102,11 @@ const cachedSkills = z.object({
 // Public GitHub data only. Deduplicate page requests and keep anonymous API
 // traffic bounded: paginated public repositories and four language requests at a time.
 export async function getGithubSkills(username: string): Promise<GithubSkills> {
-  const key = username.toLowerCase() + '-' + githubIdentity((await githubCredential()).token);
+  const token = (await githubCredential()).token;
+  const key = username.toLowerCase() + '-' + githubIdentity(token);
   const existing = cache.get(key);
   if (existing && existing.expires > Date.now()) return existing.value;
-  const value = loadCachedSkills(username);
+  const value = loadCachedSkills(username, token);
   cache.set(key, { expires: Date.now() + 60 * 60 * 1000, value });
   void value.then((result) => {
     if (snapshots.size >= 20) snapshots.delete(snapshots.keys().next().value!);
@@ -119,12 +120,12 @@ export async function getGithubSkills(username: string): Promise<GithubSkills> {
   return value;
 }
 
-async function loadCachedSkills(username: string): Promise<GithubSkills> {
-  if (!/^[a-zA-Z0-9-]{1,39}$/.test(username)) return loadSkills(username);
+async function loadCachedSkills(username: string, token: string): Promise<GithubSkills> {
+  if (!/^[a-zA-Z0-9-]{1,39}$/.test(username)) return loadSkills(username, token);
   const folder = path.resolve(process.env.DATA_DIR || '.data', 'github-cache');
   const filename = path.join(
     folder,
-    username.toLowerCase() + '-' + githubIdentity((await githubCredential()).token) + '.json',
+    username.toLowerCase() + '-' + githubIdentity(token) + '.json',
   );
   try {
     const saved = cachedSkills.parse(JSON.parse(await readFile(filename, 'utf8')));
@@ -137,7 +138,7 @@ async function loadCachedSkills(username: string): Promise<GithubSkills> {
   } catch {
     /* Missing or incomplete cache is safe to refresh from GitHub. */
   }
-  const result = await loadSkills(username);
+  const result = await loadSkills(username, token);
   try {
     await mkdir(folder, { recursive: true });
     await writeFile(filename, JSON.stringify({ ...result, format: 2 }));
@@ -147,7 +148,7 @@ async function loadCachedSkills(username: string): Promise<GithubSkills> {
   return result;
 }
 
-async function loadSkills(username: string): Promise<GithubSkills> {
+async function loadSkills(username: string, token: string): Promise<GithubSkills> {
   const result: GithubSkills = {
     username,
     profile: null,
@@ -162,7 +163,6 @@ async function loadSkills(username: string): Promise<GithubSkills> {
   // One deadline covers all requests, so an unreachable service cannot hold a
   // page open indefinitely. Never trust an API-supplied URL for outbound fetches.
   const signal = AbortSignal.timeout(12000);
-  const token = (await githubCredential()).token;
   let rateLimited = false;
   async function read(path: string) {
     if (rateLimited) throw Error('GitHub rate limit reached');
@@ -177,9 +177,9 @@ async function loadSkills(username: string): Promise<GithubSkills> {
     if (!response.ok) throw Error('GitHub unavailable');
     return response.json() as Promise<unknown>;
   }
-  try {
-    const userPath = '/users/' + encodeURIComponent(username);
-    // User profile failure does not discard a successfully fetched repository list.
+  const userPath = '/users/' + encodeURIComponent(username);
+  // Profile and repository discovery run concurrently under the same deadline.
+  const profileTask = (async () => {
     try {
       const user = (await read(userPath)) as Record<string, unknown>;
       result.profile = profileSchema.parse({
@@ -200,6 +200,8 @@ async function loadSkills(username: string): Promise<GithubSkills> {
     } catch {
       result.partial = true;
     }
+  })();
+  try {
     const all: Repository[] = [];
     for (let page = 1; page <= 10; page++) {
       try {
@@ -220,6 +222,7 @@ async function loadSkills(username: string): Promise<GithubSkills> {
         break;
       }
     }
+    await profileTask;
     result.repos = all.map((repo) =>
       repoSchema.parse({
         name: repo.name,
@@ -235,36 +238,21 @@ async function loadSkills(username: string): Promise<GithubSkills> {
     );
     const selected = all.filter((repo) => !repo.fork && repo.size > 0);
     const groups: Record<string, number>[] = [];
-    for (let start = 0; start < selected.length; start += 4) {
-      const batch = await Promise.allSettled(
-        selected.slice(start, start + 4).map(async (repo) => {
-          const input = await read(
-            '/repos/' +
-              encodeURIComponent(username) +
-              '/' +
-              encodeURIComponent(repo.name) +
-              '/languages',
-          );
-          if (!input || typeof input !== 'object' || Array.isArray(input))
-            throw Error('Invalid languages');
-          return Object.fromEntries(
-            Object.entries(input).filter(
-              (entry): entry is [string, number] => typeof entry[1] === 'number',
-            ),
-          );
-        }),
-      );
-      for (const item of batch) {
-        if (item.status === 'fulfilled') {
-          groups.push(item.value);
+    let next = 0;
+    async function worker() {
+      while (next < selected.length && !signal.aborted && !rateLimited) {
+        const repo = selected[next++];
+        try {
+          const input = await read('/repos/' + encodeURIComponent(username) + '/' + encodeURIComponent(repo.name) + '/languages');
+          if (!input || typeof input !== 'object' || Array.isArray(input)) throw Error('Invalid languages');
+          groups.push(Object.fromEntries(Object.entries(input).filter((entry): entry is [string, number] => typeof entry[1] === 'number')));
           result.repositories++;
-        } else result.partial = true;
-      }
-      if (signal.aborted || rateLimited) {
-        result.partial = true;
-        break;
+        } catch { result.partial = true; }
       }
     }
+    // Keep four requests in flight without waiting for the slowest member of each batch.
+    await Promise.all(Array.from({ length: Math.min(4, selected.length) }, () => worker()));
+    if (next < selected.length) result.partial = true;
     result.languages = rankLanguages(groups);
     result.status =
       result.languages.length || result.repos.length || result.profile
@@ -275,5 +263,6 @@ async function loadSkills(username: string): Promise<GithubSkills> {
   } catch {
     result.status = 'unavailable';
   }
+  await profileTask;
   return result;
 }

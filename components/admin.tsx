@@ -992,6 +992,7 @@ function AdminDashboard() {
             fields={[
               field('logo', t('Logo website', 'Website logo'), 'image'),
               field('accent', t('Màu chủ đạo', 'Accent color'), 'color'),
+              field('showVisitorCount', t('Hiển thị bộ đếm lượt truy cập công khai', 'Show public visitor counter'), 'checkbox'),
               select('theme', t('Giao diện', 'Theme'), [
                 ['light', t('Sáng', 'Light')],
                 ['dark', t('Tối', 'Dark')],
@@ -1009,6 +1010,7 @@ function AdminDashboard() {
               logo: d.profile.logo,
               accent: d.accent,
               theme: d.theme,
+              showVisitorCount: d.showVisitorCount,
               density: d.density,
               layout: d.layout,
             }}
@@ -1017,6 +1019,7 @@ function AdminDashboard() {
                 d.profile.logo = String(v.logo || '');
                 d.accent = String(v.accent);
                 d.theme = v.theme === 'dark' ? 'dark' : 'light';
+                d.showVisitorCount = !!v.showVisitorCount;
                 d.density = v.density === 'compact' ? 'compact' : 'comfortable';
                 d.layout = v.layout === 'wide' ? 'wide' : 'standard';
               })

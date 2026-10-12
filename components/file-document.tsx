@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLanguage } from './language';
 import { documentKind, LOCAL_FILE } from '../lib/file-types';
 import { DocumentPreview } from './document-preview';
+import { Icon } from './icon';
 
 export function FileDocument({
   url,
@@ -58,21 +59,24 @@ export function FileDocument({
             </div>
             <div className="cv-actions">
               <a
-                className="btn neutral"
+                className="btn neutral icon-action"
                 href={download}
                 download={name}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={t('Tải xuống', 'Download')}
+                title={t('Tải xuống', 'Download')}
               >
-                {t('Tải xuống', 'Download')}
+                <Icon name="download" />
               </a>
               <button
                 type="button"
-                className="btn neutral"
+                className="btn neutral icon-action"
                 onClick={() => dialog.current?.close()}
                 aria-label={t('Đóng bản xem trước', 'Close preview')}
+                title={t('Đóng bản xem trước', 'Close preview')}
               >
-                ×
+                <Icon name="close" />
               </button>
             </div>
           </div>

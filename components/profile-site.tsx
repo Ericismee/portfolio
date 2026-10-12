@@ -1252,7 +1252,7 @@ function Site({
           </div>
         )}
         {body}
-        <PublicTraffic />
+        <PublicTraffic visible={data.showVisitorCount} />
       </main>
       {editing.dialog}
       {editing.notice}

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useLanguage } from './language';
+import { Icon } from './icon';
 
 export function PdfPreview({ url }: { url: string }) {
   const { t } = useLanguage();
@@ -92,22 +93,28 @@ export function PdfPreview({ url }: { url: string }) {
         <button
           type="button"
           className="btn neutral"
+          aria-label={t('Trang trước', 'Previous page')}
+          title={t('Trang trước', 'Previous page')}
           disabled={!document || page <= 1}
           onClick={() => setPage((p) => p - 1)}
         >
-          {t('Trang trước', 'Previous page')}
+          <Icon name="previous" />
         </button>
-        <span>
-          {t('Trang', 'Page')} {page} / {document?.numPages || '…'}
+        <span className="pdf-page-count" aria-live="polite" aria-label={t(`Trang ${page} trên ${document?.numPages || '…'}`, `Page ${page} of ${document?.numPages || '…'}`)}>
+          {page} / {document?.numPages || '…'}
         </span>
         <button
           type="button"
           className="btn neutral"
+          aria-label={t('Trang sau', 'Next page')}
+          title={t('Trang sau', 'Next page')}
           disabled={!document || page >= document.numPages}
           onClick={() => setPage((p) => p + 1)}
         >
-          {t('Trang sau', 'Next page')}
+          <Icon name="next" />
         </button>
+        <label className="pdf-zoom" title={t('Thu phóng PDF', 'PDF zoom')}>
+        <Icon name="zoom" />
         <select
           aria-label={t('Thu phóng PDF', 'PDF zoom')}
           value={zoom}
@@ -118,6 +125,7 @@ export function PdfPreview({ url }: { url: string }) {
           <option value={1.25}>125%</option>
           <option value={1.5}>150%</option>
         </select>
+        </label>
       </div>
       <div className="pdf-pages" ref={pages} aria-busy={loading}>
         {loading && !error && <p role="status">{t('Đang đọc PDF…', 'Loading PDF…')}</p>}
