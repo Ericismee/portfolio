@@ -10,10 +10,12 @@ export function DocumentPreview({
   url,
   name,
   pdfActions,
+  pdfTitle,
 }: {
   url: string;
   name: string;
   pdfActions?: ReactNode;
+  pdfTitle?: string;
 }) {
   const kind = documentKind(name) || documentKind(url);
   const { t } = useLanguage();
@@ -85,7 +87,7 @@ export function DocumentPreview({
       controller.abort();
     };
   }, [url, kind]);
-  if (kind === 'pdf') return <PdfPreview url={url} actions={pdfActions} />;
+  if (kind === 'pdf') return <PdfPreview url={url} actions={pdfActions} title={pdfTitle || name} />;
   if (!kind)
     return (
       <div className="document-preview">

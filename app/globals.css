@@ -2682,30 +2682,79 @@ button.gh-day:hover {
   padding: 8px 12px;
   border-bottom: 1px solid var(--line);
 }
-.cv-viewer-pdf .cv-viewer-head {
-  padding: 6px 12px 0;
-  border-bottom: 0;
-}
-.cv-viewer-pdf .cv-viewer-head > div {
-  width: 100%;
-}
-.cv-viewer-pdf .cv-viewer-head strong {
-  display: block;
+.pdf-title {
+  flex: 1;
+  min-width: 0;
+  order: -1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 20px;
 }
+.cv-viewer-pdf {
+  width: 100dvw;
+  max-width: 100dvw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border: 0;
+  border-radius: 0;
+}
 .cv-viewer-pdf .pdf-toolbar {
-  gap: 4px;
-  padding: 4px 8px 6px;
+  position: relative;
+  gap: 2px;
+  padding: calc(4px + env(safe-area-inset-top, 0px)) 6px 4px;
 }
 .pdf-file-actions {
-  display: inline-flex;
+  display: contents;
+}
+.pdf-file-actions > button {
+  order: -2;
+}
+.cv-viewer-pdf .pdf-toolbar .icon-action {
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  box-shadow: none;
+}
+.pdf-options {
+  position: relative;
+  flex: 0 0 44px;
+  order: 1;
+}
+.pdf-options > summary {
+  display: flex;
   align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  list-style: none;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.pdf-options > summary::-webkit-details-marker {
+  display: none;
+}
+.pdf-options > summary:hover,
+.pdf-options[open] > summary,
+.cv-viewer-pdf .pdf-toolbar .icon-action:hover {
+  background: var(--blue);
+}
+.pdf-options-panel {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  top: calc(100% + 8px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 6px 24px #10213a24;
 }
 .cv-viewer .icon-action,
 .cv-viewer .pdf-nav {
@@ -2767,13 +2816,14 @@ button.gh-day:hover {
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  padding: 20px;
-  background: #525966;
+  padding: 0 0 env(safe-area-inset-bottom, 0px);
+  background: white;
   text-align: center;
 }
 .pdf-page {
   position: relative;
   margin: 0 auto 20px;
+  box-shadow: none;
   background: white;
   color: #172b4d;
 }

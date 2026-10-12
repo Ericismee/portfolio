@@ -47,7 +47,7 @@ export function FileDocument({
         aria-label={t('Đóng bản xem trước', 'Close preview')}
         title={t('Đóng bản xem trước', 'Close preview')}
       >
-        <Icon name="close" />
+        <Icon name={pdf ? 'previous' : 'close'} />
       </button>
     </>
   );
@@ -91,17 +91,24 @@ export function FileDocument({
           aria-label={name}
           onClose={() => setOpen(false)}
         >
-          <div className="cv-viewer-head">
-            <div>
-              <strong title={name}>{name}</strong>
-              {!pdf && (
-                <small>{(documentKind(url) || documentKind(name) || 'file').toUpperCase()}</small>
-              )}
+          {!pdf && (
+            <div className="cv-viewer-head">
+              <div>
+                <strong title={name}>{name}</strong>
+                {!pdf && (
+                  <small>{(documentKind(url) || documentKind(name) || 'file').toUpperCase()}</small>
+                )}
+              </div>
+              {!pdf && <div className="cv-actions">{viewerActions}</div>}
             </div>
-            {!pdf && <div className="cv-actions">{viewerActions}</div>}
-          </div>
+          )}
           {previewable ? (
-            <DocumentPreview url={url} name={local ? url : name} pdfActions={viewerActions} />
+            <DocumentPreview
+              url={url}
+              name={local ? url : name}
+              pdfActions={viewerActions}
+              pdfTitle={name}
+            />
           ) : (
             <p className="document-preview">
               {t(

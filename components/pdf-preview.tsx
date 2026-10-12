@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type RefObject, type ReactNode } from 'rea
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useLanguage } from './language';
 import { PdfIcon } from './pdf-icon';
+import { Icon } from './icon';
 
 type PageSize = { width: number; height: number };
 
@@ -109,7 +110,15 @@ function PdfPage({
   );
 }
 
-export function PdfPreview({ url, actions }: { url: string; actions?: ReactNode }) {
+export function PdfPreview({
+  url,
+  actions,
+  title,
+}: {
+  url: string;
+  actions?: ReactNode;
+  title?: string;
+}) {
   const { t } = useLanguage();
   const pages = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(800);
@@ -122,7 +131,7 @@ export function PdfPreview({ url, actions }: { url: string; actions?: ReactNode 
   useEffect(() => {
     if (!pages.current) return;
     const element = pages.current;
-    const measure = () => setWidth(Math.max(200, element.clientWidth - 40));
+    const measure = () => setWidth(Math.max(200, element.clientWidth));
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
@@ -182,57 +191,77 @@ export function PdfPreview({ url, actions }: { url: string; actions?: ReactNode 
     if (!root || !target) return;
     root.scrollTo({
       top:
-        root.scrollTop + target.getBoundingClientRect().top - root.getBoundingClientRect().top - 20,
+        root.scrollTop + target.getBoundingClientRect().top - root.getBoundingClientRect().top,
     });
     setPage(number);
   };
   return (
     <div className="pdf-preview">
       <div className="pdf-toolbar" role="group" aria-label={t('Điều khiển PDF', 'PDF controls')}>
-        <button
-          type="button"
-          className="btn neutral pdf-nav"
-          aria-label={t('Trang trước', 'Previous page')}
-          title={t('Trang trước', 'Previous page')}
-          disabled={!document || page <= 1}
-          onClick={() => goToPage(page - 1)}
-        >
-          <PdfIcon name="previous" />
-        </button>
-        <span
-          className="pdf-page-count"
-          aria-live="polite"
-          aria-label={t(
-            `Trang ${page} trên ${document?.numPages || '…'}`,
-            `Page ${page} of ${document?.numPages || '…'}`,
-          )}
-        >
-          {page} / {document?.numPages || '…'}
-        </span>
-        <button
-          type="button"
-          className="btn neutral pdf-nav"
-          aria-label={t('Trang sau', 'Next page')}
-          title={t('Trang sau', 'Next page')}
-          disabled={!document || page >= document.numPages}
-          onClick={() => goToPage(page + 1)}
-        >
-          <PdfIcon name="next" />
-        </button>
-        <label className="pdf-zoom" title={t('Thu phóng PDF', 'PDF zoom') + ` · ${zoom * 100}%`}>
-          <PdfIcon name="zoom" />
-          <select
-            aria-label={t('Thu phóng PDF', 'PDF zoom')}
-            value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))}
-          >
-            <option value={0.7}>70%</option>
-            <option value={1}>100%</option>
-            <option value={1.25}>125%</option>
-            <option value={1.5}>150%</option>
-          </select>
-        </label>
+        <strong className="pdf-title" title={title}>
+          {title || 'PDF'}
+        </strong>
         {actions && <span className="pdf-file-actions">{actions}</span>}
+        <details className="pdf-options">
+          <summary
+            aria-label={t('Tùy chọn xem PDF', 'PDF viewing options')}
+            title={t('Chuyển trang và thu phóng', 'Pages and zoom')}
+          >
+            <Icon name="filters" />
+          </summary>
+          <div
+            className="pdf-options-panel"
+            role="group"
+            aria-label={t('Chuyển trang và thu phóng', 'Pages and zoom')}
+          >
+            <button
+              type="button"
+              className="btn neutral pdf-nav"
+              aria-label={t('Trang trước', 'Previous page')}
+              title={t('Trang trước', 'Previous page')}
+              disabled={!document || page <= 1}
+              onClick={() => goToPage(page - 1)}
+            >
+              <PdfIcon name="previous" />
+            </button>
+            <span
+              className="pdf-page-count"
+              aria-live="polite"
+              aria-label={t(
+                `Trang ${page} trên ${document?.numPages || '…'}`,
+                `Page ${page} of ${document?.numPages || '…'}`,
+              )}
+            >
+              {page} / {document?.numPages || '…'}
+            </span>
+            <button
+              type="button"
+              className="btn neutral pdf-nav"
+              aria-label={t('Trang sau', 'Next page')}
+              title={t('Trang sau', 'Next page')}
+              disabled={!document || page >= document.numPages}
+              onClick={() => goToPage(page + 1)}
+            >
+              <PdfIcon name="next" />
+            </button>
+            <label
+              className="pdf-zoom"
+              title={t('Thu phóng PDF', 'PDF zoom') + ` · ${zoom * 100}%`}
+            >
+              <PdfIcon name="zoom" />
+              <select
+                aria-label={t('Thu phóng PDF', 'PDF zoom')}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+              >
+                <option value={0.7}>70%</option>
+                <option value={1}>100%</option>
+                <option value={1.25}>125%</option>
+                <option value={1.5}>150%</option>
+              </select>
+            </label>
+          </div>
+        </details>
       </div>
       <div
         className="pdf-pages"
