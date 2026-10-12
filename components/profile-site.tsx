@@ -551,20 +551,29 @@ function Site({
       </article>
     );
   }
-  function activities() {
+  function activities(limit?: number) {
     const privateView = page === 'activity' && editing.enabled;
     const entries = activityPosts(
       privateView ? editing.adminPosts || data.posts : data.posts,
       privateView ? feedStatus : 'public',
       filter,
     );
-    return entries.length
-      ? entries.map((p) => post(p))
-      : empty(
-          filter === 'all'
-            ? t('Chưa có bài viết', 'No posts yet')
-            : t('Chưa có nội dung trong mục này.', 'No content in this category yet.'),
-        );
+    return entries.length ? (
+      <>
+        {entries.slice(0, limit).map((p) => post(p))}
+        {limit && (
+          <Link className="btn neutral all-activity" href="/activity">
+            {t('Xem tất cả hoạt động', 'View all activity')} <Icon name="next" />
+          </Link>
+        )}
+      </>
+    ) : (
+      empty(
+        filter === 'all'
+          ? t('Chưa có bài viết', 'No posts yet')
+          : t('Chưa có nội dung trong mục này.', 'No content in this category yet.'),
+      )
+    );
   }
   function profilePage() {
     const featured = data.projects.filter((p) => p.pinned).slice(0, 2),
@@ -629,7 +638,7 @@ function Site({
         body = (
           <>
             {tabs()}
-            {activities()}
+            {activities(3)}
           </>
         );
       else if (data.items[name]?.length)
