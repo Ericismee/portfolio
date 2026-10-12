@@ -259,7 +259,8 @@
   border-radius: 24px;
   box-shadow: none;
 }
-.tabs button.active {
+.tabs button.active,
+.tabs button.active:hover {
   background: var(--accent);
   color: var(--primary-ink);
 }
@@ -2488,6 +2489,9 @@ button.gh-day:hover {
   opacity: 0.75;
   font-size: 11px;
 }
+.tab-label-short {
+  display: none;
+}
 .cv-actions {
   display: flex;
   align-items: center;
@@ -4170,6 +4174,28 @@ html {
     white-space: nowrap;
     font-size: 12px;
     scroll-snap-align: start;
+  }
+  .main > .card > .tabs {
+    display: grid;
+    grid-template-columns: 0.9fr 1.05fr 1.1fr 0.95fr 1.1fr;
+    gap: 3px;
+    overflow: visible;
+  }
+  .main > .card > .tabs button {
+    min-width: 0;
+    padding: 8px 2px;
+    font-size: clamp(10px, 2.65vw, 12px);
+    letter-spacing: -0.2px;
+  }
+  .main > .card > .tabs .tab-count {
+    margin-left: 1px;
+    font-size: inherit;
+  }
+  .main > .card > .tabs .tab-label-full {
+    display: none;
+  }
+  .main > .card > .tabs .tab-label-short {
+    display: inline;
   }
   .projects-heading {
     flex-wrap: nowrap;

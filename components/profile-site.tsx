@@ -356,9 +356,17 @@ function Site({
               key={value}
               className={filter === value ? 'active' : ''}
               aria-pressed={filter === value}
+              title={label}
               onClick={() => setFilter(value)}
             >
-              {label}{' '}
+              {value === 'Cập nhật dự án' ? (
+                <>
+                  <span className="tab-label-full">{label}</span>
+                  <span className="tab-label-short">{t('Dự án', 'Projects')}</span>
+                </>
+              ) : (
+                label
+              )}{' '}
               <span className="tab-count">
                 {
                   source.filter((p) => publicationStatus(p) === status && postMatches(p, value))

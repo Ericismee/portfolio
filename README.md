@@ -6,14 +6,21 @@ A personal portfolio and publishing platform built with **Next.js, React and Typ
 
 ![Desktop profile](docs/screenshots/profile-desktop.png)
 
+<p align="center">
+  <img src="docs/screenshots/projects-mobile.png" alt="Mobile projects with instant search and grid/list controls" width="280" />
+  <img src="docs/screenshots/activity-mobile.png" alt="Mobile activity feed with compact post filters" width="280" />
+</p>
+
+Screenshots from the live website. Public browsing is available without an account; editing and visitor details require administrator access.
+
 ## Features
 
-- **Profile and projects** — cover, avatar, introduction, skills, custom sections, project details and searchable content.
+- **Profile and projects** — cover, avatar, introduction, skills, custom sections and project details. Instant project search, collapsible filters and grid/list views keep mobile browsing compact.
 - **Publishing** — rich text or Markdown with Edit / Preview, scheduled posts, visibility controls, duplicate checks and recoverable trash.
 - **Administration** — inline editing, mobile full-screen forms, image framing and upload progress. Attach PDF, DOCX, TXT, Markdown and images with previews; uploads support up to 20 MiB (static SVG: 1 MiB). DOCX previews show text; download for original formatting. Text files use UTF-8.
 - **GitHub integration** — public repositories, contributions and activity; authenticated imports stay private until explicitly published.
 - **Analytics** — daily trends, country/device/browser breakdowns, filters and viewing duration. Visitor details are admin-only; the public counter exposes a total.
-- **Presentation** — English by default, Vietnamese translation, light/dark themes and responsive layouts. Background updates pause while editing or when the tab is hidden.
+- **Presentation** — English by default, Vietnamese translation, light/dark themes and responsive layouts. Persistent header and mobile navigation stay in place between pages. Compact activity filters and an optional mobile CV shortcut are included; background updates pause while editing or when the tab is hidden.
 
 Interface translations do not automatically translate authored posts or project descriptions. Analytics exclude signed-in administrators and recognized bots and deduplicate views per page within a 30-minute session.
 
