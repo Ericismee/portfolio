@@ -12,6 +12,7 @@ import { uploadMime, uploadFile } from '../lib/upload-client';
 import { CvDocument } from './cv-document';
 import { PasswordInput } from './password-input';
 import { LocationInput } from './location-input';
+import { DOCUMENT_ACCEPT } from '../lib/file-types';
 export type Field = {
   key: string;
   label: string;
@@ -77,6 +78,7 @@ export function FieldsForm({
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
     [uploading, setUploading] = useState(0),
+    [uploadProgress, setUploadProgress] = useState<number | null>(null),
     [pendingCrops, setPendingCrops] = useState<Set<string>>(new Set());
   const dirty = pendingCrops.size > 0 || JSON.stringify(values) !== JSON.stringify(initial);
   useEffect(() => {
@@ -91,14 +93,14 @@ export function FieldsForm({
     setError('');
     try {
       const mime = await uploadMime(file);
-      const result = { url: await uploadFile(file, mime, csrf) };
+      const result = { url: await uploadFile(file, mime, csrf, { onProgress: setUploadProgress }) };
       if (done) done(result.url);
       else
         setValues((v) => ({
           ...v,
           [key]: result.url,
           ...(key === 'thumbnail' ? { imageFrame: 'original' } : {}),
-          ...(mime === 'application/pdf' ? { [key + 'Name']: file.name.slice(0, 200) } : {}),
+          ...(fields.some(f => f.key === key && f.type === 'pdf') ? { [key + 'Name']: file.name.slice(0, 200) } : {}),
         }));
       return true;
     } catch (e) {
@@ -116,6 +118,7 @@ export function FieldsForm({
       return false;
     } finally {
       setUploading((n) => n - 1);
+      setUploadProgress(null);
     }
   }
   async function save(e: FormEvent<HTMLFormElement>) {
@@ -186,6 +189,7 @@ export function FieldsForm({
                   value={String(values.markdown || '')}
                   base={String(values.markdownBase || '')}
                   change={(markdown) => setValues((v) => ({ ...v, markdown }))}
+                  upload={(file, done) => upload(field.key, file, done)}
                 />
               ) : (
                 <RichTextEditor
@@ -207,6 +211,7 @@ export function FieldsForm({
                 label={field.label}
                 base={String(values.detailsBase || '')}
                 change={update}
+                upload={(file, done) => upload(field.key, file, done)}
                 plain={
                   !projectUsesMarkdown({
                     detailsFormat: String(values.detailsFormat || 'auto'),
@@ -286,14 +291,14 @@ export function FieldsForm({
                   <input
                     type="file"
                     name={field.key + '-upload'}
-                    accept=".pdf,application/pdf"
+                    accept={DOCUMENT_ACCEPT}
                     disabled={busy || uploading > 0}
                     onChange={(e) => {
                       if (e.target.files?.[0]) void upload(field.key, e.target.files[0]);
                       e.target.value = '';
                     }}
                   />
-                  <small className="admin-help">{t('PDF tối đa 20 MB', 'PDF up to 20 MB')}</small>
+                  <small className="admin-help">PDF, DOCX, TXT, Markdown · 20 MB · SVG 1 MB</small>
                 </>
               ) : field.type === 'location' ? (
                 <LocationInput name={field.key} value={String(value)} onChange={update} />
@@ -341,6 +346,10 @@ export function FieldsForm({
       <p className="form-error" role="alert">
         {localizedError(error, language)}
       </p>
+      {uploadProgress !== null && <div className="upload-progress" role="status">
+        <span>{uploadProgress >= 95 ? t('Đang kiểm tra file…', 'Validating file…') : t('Đang tải lên…', 'Uploading…')} {uploadProgress}%</span>
+        <progress value={uploadProgress} max={100} aria-label={t('Tiến trình tải file', 'Upload progress')} />
+      </div>}
       {!footer && (busy || uploading > 0) && (
         <p role="status">
           {uploading ? t('Đang tải file…', 'Uploading…') : t('Đang lưu…', 'Saving…')}

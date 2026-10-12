@@ -3,6 +3,7 @@ import { useId, useRef, useState } from 'react';
 import { MarkdownContent } from './markdown-content';
 import { useLanguage } from './language';
 import { MAX_UPLOAD_BYTES } from '../lib/upload-limits';
+import { AttachmentPicker, type AttachmentUpload } from './attachment-picker';
 
 export function MarkdownEditor({
   value,
@@ -12,6 +13,7 @@ export function MarkdownEditor({
   label = 'Markdown',
   plain = false,
   required = false,
+  upload,
 }: {
   value: string;
   base?: string;
@@ -20,6 +22,7 @@ export function MarkdownEditor({
   label?: string;
   plain?: boolean;
   required?: boolean;
+  upload?: AttachmentUpload;
 }) {
   const { t } = useLanguage();
   const id = useId();
@@ -152,6 +155,10 @@ export function MarkdownEditor({
           </>
         )}
       </div>
+      {upload && <AttachmentPicker upload={upload} insert={(url, fileName, image) => {
+        const escaped = fileName.replace(/[\[\]\\\r\n]/g, '_');
+        change(value + '\n\n' + (image ? '!' : '') + `[${escaped}](${url})` + '\n');
+      }} />}
       <p className="admin-help">
         {plain
           ? t('Văn bản giữ nguyên xuống dòng.', 'Plain text retains your line breaks.')

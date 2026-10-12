@@ -1,6 +1,8 @@
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { markdownUrl } from '../lib/markdown';
+import { LOCAL_FILE } from '../lib/file-types';
+import { FileDocument } from './file-document';
 export function MarkdownContent({ value, base = '' }: { value: string; base?: string }) {
   return (
     <div className="markdown-content">
@@ -10,6 +12,7 @@ export function MarkdownContent({ value, base = '' }: { value: string; base?: st
         urlTransform={(url, key) => markdownUrl(url, base, key === 'src')}
         components={{
           a: ({ href, children }) => (
+            href && LOCAL_FILE.test(href) ? <FileDocument url={href} name={typeof children === 'string' ? children : 'Document'} /> :
             <a href={href} target="_blank" rel="noopener noreferrer">
               {children}
             </a>

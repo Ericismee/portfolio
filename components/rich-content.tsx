@@ -1,5 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 import { readRichText, safeMediaUrl, youtubeEmbed, type RichNode } from '../lib/rich-text';
+import { LOCAL_FILE } from '../lib/file-types';
+import { FileDocument } from './file-document';
 
 export function RichContent({ value, fallback = '' }: { value: string; fallback?: string }) {
   function render(node: RichNode, key: number): ReactNode {
@@ -14,6 +16,7 @@ export function RichContent({ value, fallback = '' }: { value: string; fallback?
         if (mark.type === 'code') text = <code>{text}</code>;
         if (mark.type === 'link' && safeMediaUrl(mark.attrs?.href))
           text = (
+            LOCAL_FILE.test(String(mark.attrs?.href)) ? <FileDocument url={String(mark.attrs?.href)} name={node.text || 'Document'} /> :
             <a href={safeMediaUrl(mark.attrs?.href)} target="_blank" rel="noopener noreferrer">
               {text}
             </a>
