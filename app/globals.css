@@ -5226,6 +5226,7 @@ body .icon-btn,
 body
   :is(
     .tabs,
+    .gh-tabs,
     .feed-status-tabs,
     .repo-visibility-tabs,
     .markdown-view-tabs,
@@ -5248,13 +5249,14 @@ body .btn.btn[aria-pressed='true'],
 body
   :is(
     .tabs,
+    .gh-tabs,
     .feed-status-tabs,
     .repo-visibility-tabs,
     .markdown-view-tabs,
     .analytics-range-tabs,
     .analytics-chart-tabs
   )
-  button:is(.active, [aria-pressed='true']) {
+  button:is(.active, [aria-pressed='true'], [aria-selected='true']) {
   background: var(--accent);
   color: var(--primary-ink);
   border-color: var(--edge);
@@ -5272,6 +5274,7 @@ body .icon-btn:hover,
 body
   :is(
     .tabs,
+    .gh-tabs,
     .feed-status-tabs,
     .repo-visibility-tabs,
     .markdown-view-tabs,
@@ -5287,13 +5290,14 @@ body .btn.btn[aria-pressed='true']:hover,
 body
   :is(
     .tabs,
+    .gh-tabs,
     .feed-status-tabs,
     .repo-visibility-tabs,
     .markdown-view-tabs,
     .analytics-range-tabs,
     .analytics-chart-tabs
   )
-  button:is(.active, [aria-pressed='true']):hover {
+  button:is(.active, [aria-pressed='true'], [aria-selected='true']):hover {
   background: var(--accent);
 }
 body .btn.btn:active,
@@ -5301,6 +5305,7 @@ body .icon-btn:active,
 body
   :is(
     .tabs,
+    .gh-tabs,
     .feed-status-tabs,
     .repo-visibility-tabs,
     .markdown-view-tabs,
@@ -5325,6 +5330,7 @@ body .icon-btn:disabled {
   body
     :is(
       .tabs,
+      .gh-tabs,
       .feed-status-tabs,
       .repo-visibility-tabs,
       .markdown-view-tabs,
