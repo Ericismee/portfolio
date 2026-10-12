@@ -12,6 +12,7 @@ export function FileDocument({
   trigger,
   triggerClassName = 'btn neutral',
   showDownload = true,
+  image = false,
 }: {
   url: string;
   name?: string;
@@ -19,14 +20,18 @@ export function FileDocument({
   trigger?: ReactNode;
   triggerClassName?: string;
   showDownload?: boolean;
+  image?: boolean;
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
+  const [imageState, setImageState] = useState<'loading' | 'ready' | 'error'>('loading');
   const dialog = useRef<HTMLDialogElement>(null);
   const local = LOCAL_FILE.test(url),
     previewable = local || url.startsWith('blob:');
-  const download = local ? url + '?download=1' : url;
-  const pdf = previewable && (documentKind(local ? url : name) || documentKind(url)) === 'pdf';
+  const download =
+    local || (image && /^\/uploads\/[a-f0-9-]+\.[a-z]+$/.test(url)) ? url + '?download=1' : url;
+  const pdf =
+    !image && previewable && (documentKind(local ? url : name) || documentKind(url)) === 'pdf';
   const viewerActions = (
     <>
       <a
@@ -56,6 +61,8 @@ export function FileDocument({
     const element = dialog.current;
     const previous = document.activeElement as HTMLElement | null;
     element?.showModal();
+    // Keep dialog autofocus off the download link after a touch opens the viewer.
+    element?.focus({ preventScroll: true });
     return () => {
       element?.close();
       previous?.focus();
@@ -63,7 +70,16 @@ export function FileDocument({
   }, [open]);
   return (
     <span className="file-document">
-      <button type="button" className={triggerClassName} onClick={() => setOpen(true)} title={name}>
+      <button
+        type="button"
+        className={triggerClassName}
+        onClick={() => {
+          setImageState('loading');
+          setOpen(true);
+        }}
+        title={name}
+        aria-label={image ? t('Xem ảnh', 'Preview image') + ': ' + name : undefined}
+      >
         {trigger ||
           (cv ? (
             t('Xem CV', 'View CV')
@@ -87,8 +103,11 @@ export function FileDocument({
       {open && (
         <dialog
           ref={dialog}
-          className={'cv-viewer' + (pdf ? ' cv-viewer-pdf' : '')}
+          className={
+            'cv-viewer' + (pdf ? ' cv-viewer-pdf' : '') + (image ? ' cv-viewer-image' : '')
+          }
           aria-label={name}
+          tabIndex={-1}
           onClose={() => setOpen(false)}
         >
           {!pdf && (
@@ -96,13 +115,39 @@ export function FileDocument({
               <div>
                 <strong title={name}>{name}</strong>
                 {!pdf && (
-                  <small>{(documentKind(url) || documentKind(name) || 'file').toUpperCase()}</small>
+                  <small>
+                    {image
+                      ? t('Ảnh', 'Image')
+                      : (documentKind(url) || documentKind(name) || 'file').toUpperCase()}
+                  </small>
                 )}
               </div>
               {!pdf && <div className="cv-actions">{viewerActions}</div>}
             </div>
           )}
-          {previewable ? (
+          {image ? (
+            <div className="image-preview-stage" aria-busy={imageState === 'loading'}>
+              <img
+                src={url}
+                alt={name}
+                onLoad={() => setImageState('ready')}
+                onError={() => setImageState('error')}
+              />
+              {imageState === 'loading' && (
+                <span className="image-preview-status" role="status">
+                  {t('Đang tải ảnh…', 'Loading image…')}
+                </span>
+              )}
+              {imageState === 'error' && (
+                <span className="image-preview-status" role="alert">
+                  {t(
+                    'Không tải được ảnh. Hãy đóng và mở lại để thử lại.',
+                    'Could not load this image. Close and reopen to retry.',
+                  )}
+                </span>
+              )}
+            </div>
+          ) : previewable ? (
             <DocumentPreview
               url={url}
               name={local ? url : name}

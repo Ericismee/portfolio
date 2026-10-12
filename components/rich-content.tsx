@@ -2,6 +2,7 @@ import { Fragment, type ReactNode } from 'react';
 import { readRichText, safeMediaUrl, youtubeEmbed, type RichNode } from '../lib/rich-text';
 import { LOCAL_FILE } from '../lib/file-types';
 import { FileDocument } from './file-document';
+import { ImagePreview } from './image-preview';
 
 export function RichContent({ value, fallback = '' }: { value: string; fallback?: string }) {
   function render(node: RichNode, key: number): ReactNode {
@@ -56,12 +57,10 @@ export function RichContent({ value, fallback = '' }: { value: string; fallback?
         return <hr key={key} />;
       case 'image':
         return safeMediaUrl(node.attrs?.src) ? (
-          <img
+          <ImagePreview
             key={key}
-            src={safeMediaUrl(node.attrs?.src)}
+            src={safeMediaUrl(node.attrs?.src)!}
             alt={typeof node.attrs?.alt === 'string' ? node.attrs.alt : ''}
-            loading="lazy"
-            decoding="async"
           />
         ) : null;
       case 'youtube':

@@ -16,6 +16,9 @@ import { usePublicEditing } from './public-shell';
 import type { GithubSkills } from '../lib/github-skills';
 import { GithubSkillsCard } from './github-skills';
 import { PostBody } from './post-body';
+import { ImagePreview } from './image-preview';
+import { FileDocument } from './file-document';
+import { LOCAL_FILE } from '../lib/file-types';
 import { CvDocument } from './cv-document';
 import { MarkdownContent } from './markdown-content';
 import { projectUsesMarkdown } from '../lib/markdown';
@@ -507,19 +510,20 @@ function Site({
           base={p.markdownBase}
         />
         {p.image && (
-          <img
+          <ImagePreview
             className="post-image"
-            {...responsiveImage(p.image, '(max-width: 700px) 100vw, 760px')}
+            src={p.image}
             alt={t('Ảnh đính kèm bài viết', 'Post image')}
-            loading="lazy"
-            decoding="async"
           />
         )}
-        {p.link && (
-          <a className="link-preview" href={p.link} target="_blank" rel="noopener noreferrer">
-            ↗ {p.link}
-          </a>
-        )}
+        {p.link &&
+          (LOCAL_FILE.test(p.link) ? (
+            <FileDocument url={p.link} name={p.title} showDownload={false} />
+          ) : (
+            <a className="link-preview" href={p.link} target="_blank" rel="noopener noreferrer">
+              ↗ {p.link}
+            </a>
+          ))}
         {published && (
           <div className="post-footer">
             <button

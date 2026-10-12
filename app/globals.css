@@ -2536,6 +2536,56 @@ button.gh-day:hover {
 .cv-viewer::backdrop {
   background: #172b4d99;
 }
+.cv-viewer:focus {
+  outline: none;
+}
+.media-preview-trigger {
+  display: inline-block;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 8px;
+  cursor: zoom-in;
+  line-height: 0;
+}
+.media-preview-trigger:hover {
+  background: transparent;
+  box-shadow: none;
+}
+.media-preview-trigger img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.image-preview-stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 12px;
+  background: var(--card);
+}
+.image-preview-status {
+  position: absolute;
+  max-width: calc(100% - 24px);
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--muted);
+  line-height: 1.5;
+}
+.image-preview-stage img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
 .file-document {
   display: inline-flex;
   align-items: center;

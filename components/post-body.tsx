@@ -38,7 +38,12 @@ export function PostBody({
         tabIndex={-1}
         onFocusCapture={(event) => {
           // Keyboard users must be able to see links that receive focus below the excerpt.
-          if (!detail && overflow && !(event.target as HTMLElement).closest('.post-fade-expand'))
+          if (
+            !detail &&
+            overflow &&
+            (event.target as HTMLElement).matches(':focus-visible') &&
+            !(event.target as HTMLElement).closest('.post-fade-expand, .file-document, dialog')
+          )
             setExpanded(true);
         }}
         className={
