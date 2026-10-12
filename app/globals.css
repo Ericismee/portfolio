@@ -4962,3 +4962,45 @@ html:has(.page-refresh-status) {
     margin-bottom: 0;
   }
 }
+
+.github-mobile-toggle {
+  display: none;
+}
+@media (max-width: 800px) {
+  .github-skills-card.github-deferred {
+    min-height: 0;
+  }
+  .github-skills-card.github-deferred[aria-busy='true'] {
+    display: block;
+  }
+  .github-skills-card .github-mobile-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: auto;
+  }
+  .github-mobile-toggle svg {
+    width: 16px;
+    height: 16px;
+    transform: rotate(90deg);
+  }
+  .is-mobile-expanded .github-mobile-toggle svg {
+    transform: rotate(-90deg);
+  }
+  .github-skills-card:not(.is-mobile-expanded) .github-card-body {
+    display: none;
+  }
+  .layout .github-skills-card:not(.is-mobile-expanded) .section-heading {
+    margin: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+}
