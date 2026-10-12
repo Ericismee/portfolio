@@ -5038,17 +5038,6 @@ html:has(.page-refresh-status) {
   }
 }
 
-.all-activity {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-  min-height: 44px;
-}
-.all-activity svg {
-  width: 16px;
-  height: 16px;
-}
 @media (max-width: 800px) {
   .github-skills-card .section-heading {
     position: relative;

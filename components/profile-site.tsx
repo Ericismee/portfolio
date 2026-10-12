@@ -551,35 +551,29 @@ function Site({
       </article>
     );
   }
-  function activities(limit?: number) {
+  function activities() {
     const privateView = page === 'activity' && editing.enabled;
     const entries = activityPosts(
       privateView ? editing.adminPosts || data.posts : data.posts,
       privateView ? feedStatus : 'public',
       filter,
     );
-    return entries.length ? (
-      <>
-        {entries.slice(0, limit).map((p) => post(p))}
-        {limit && (
-          <Link className="btn neutral all-activity" href="/activity">
-            {t('Xem tất cả hoạt động', 'View all activity')} <Icon name="next" />
-          </Link>
-        )}
-      </>
-    ) : (
-      empty(
-        filter === 'all'
-          ? t('Chưa có bài viết', 'No posts yet')
-          : t('Chưa có nội dung trong mục này.', 'No content in this category yet.'),
-      )
-    );
+    return entries.length
+      ? entries.map((p) => post(p))
+      : empty(
+          filter === 'all'
+            ? t('Chưa có bài viết', 'No posts yet')
+            : t('Chưa có nội dung trong mục này.', 'No content in this category yet.'),
+        );
   }
   function profilePage() {
     const featured = data.projects.filter((p) => p.pinned).slice(0, 2),
       sections: { name: string; body: ReactNode }[] = [];
+    const hasFeatured =
+      featured.length > 0 && data.sections.includes('Nổi bật') && !data.hidden.includes('Nổi bật');
     for (const name of data.sections) {
-      if (data.hidden.includes(name)) continue;
+      if (data.hidden.includes(name) || name === 'Hoạt động' || (name === 'Dự án' && hasFeatured))
+        continue;
       let body: ReactNode = null;
       if (name === 'Giới thiệu' && profile.about)
         body = <p className="preserve">{profile.about}</p>;
@@ -593,6 +587,9 @@ function Site({
               )}
             </p>
             <div className="project-grid featured-grid">{featured.map(projectCard)}</div>
+            <Link className="btn neutral all-projects" href="/projects">
+              {t('Xem tất cả dự án →', 'View all projects →')}
+            </Link>
           </>
         );
       else if (name === 'Dự án' && data.projects.length)
@@ -605,7 +602,7 @@ function Site({
                 'projects · Choose a project to explore.',
               )}
             </p>
-            {data.projects.map((p) => (
+            {data.projects.slice(0, 3).map((p) => (
               <Link
                 className="project-summary-link"
                 key={p.id}
@@ -633,13 +630,6 @@ function Site({
               </span>
             ))}
           </div>
-        );
-      else if (name === 'Hoạt động' && data.posts.length)
-        body = (
-          <>
-            {tabs()}
-            {activities(3)}
-          </>
         );
       else if (data.items[name]?.length)
         body = data.items[name].map((item) => (
