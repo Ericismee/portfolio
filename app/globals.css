@@ -5335,3 +5335,30 @@ body .icon-btn:disabled {
     transition: none;
   }
 }
+
+@media (max-width: 600px) {
+  .gh-content-toolbar {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .gh-content-toolbar > .gh-tabs {
+    flex: 1 1 0;
+    width: auto;
+    gap: 0;
+  }
+  .gh-content-toolbar .gh-tabs button {
+    min-width: 0;
+    padding: 6px 3px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .gh-content-toolbar > .gh-content-actions {
+    flex: 0 0 auto;
+    margin-left: 0;
+  }
+  .gh-content-actions > .btn {
+    padding: 5px 7px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+}
