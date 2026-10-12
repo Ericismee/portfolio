@@ -6,6 +6,7 @@ import { FieldsForm, type Field } from './admin-form';
 import { useLanguage } from './language';
 import { Icon } from './icon';
 import { AccountSkeleton } from './skeleton';
+import { MfaSettings } from './mfa-settings';
 
 type Account = { username: string; email: string };
 export function AccountSettings({
@@ -96,6 +97,7 @@ export function AccountSettings({
   ];
   return (
     <div className="account-settings">
+      <MfaSettings csrf={csrf} onSessionChange={onSessionChange} />
       {account && (
         <div className="account-actions">
           {(

@@ -1,4 +1,5 @@
 import { digest } from './auth.ts';
+import { beginMfa, confirmMfa, mfaState, verifyMfa } from './mfa.ts';
 import { MAX_UPLOAD_BYTES } from './upload-limits.ts';
 import { getGithubSkills } from './github-skills.ts';
 import { getGithubProject, githubProjectQuery } from './github-project.ts';
@@ -149,9 +150,14 @@ export function createApi(database: Database, production = false, origin?: strin
       if (pathname === '/api/session' && method === 'GET')
         return send({ authenticated: !!session, csrf: session?.csrf });
       if (pathname === '/api/login' && method === 'POST') {
-        await rate('login-global', 300);
+        await rate('login-global', 3000);
+        await rate('login-ip:' + digest(trafficIp(request) || 'local'), 60);
         const input = z
-          .object({ username: z.string().min(1).max(40), password: z.string().max(256) })
+          .object({
+            username: z.string().min(1).max(40),
+            password: z.string().max(256),
+            code: z.string().max(32).default(''),
+          })
           .parse(await json(request, 16 * 1024));
         await rate('login-account:' + digest(input.username.toLowerCase()), 30);
         const user = (await db
@@ -167,11 +173,17 @@ export function createApi(database: Database, production = false, origin?: strin
             401,
             'Incorrect username or password / Tên đăng nhập hoặc mật khẩu không đúng',
           );
+        if (!(await verifyMfa(database, user.username, input.code)))
+          throw new HttpError(
+            401,
+            'Two-factor code is missing, expired or invalid / Mã xác thực hai bước thiếu, hết hạn hoặc không hợp lệ',
+          );
         const login = await auth.create(user.username);
         return send({ authenticated: true, csrf: login.csrf }, 200, { 'Set-Cookie': login.cookie });
       }
       if (pathname === '/api/contact' && method === 'POST') {
-        await rate('contact', 30);
+        await rate('contact-ip:' + digest(trafficIp(request) || 'local'), 30);
+        await rate('contact-global', 3000);
         const b = messageInput.parse(await json(request));
         await db
           .prepare('INSERT INTO messages(name,email,subject,message,created_at) VALUES(?,?,?,?,?)')
@@ -180,6 +192,56 @@ export function createApi(database: Database, production = false, origin?: strin
       }
       if (pathname.startsWith('/api/admin/')) {
         if (!session) throw new HttpError(401, 'Please sign in / Vui lòng đăng nhập');
+        if (pathname === '/api/admin/mfa' && method === 'GET') {
+          const state = await mfaState(database, session.username);
+          return send({
+            enabled: !!state?.enabled,
+            recoveryRemaining: state?.enabled
+              ? (JSON.parse(state.recovery_hashes) as string[]).length
+              : 0,
+          });
+        }
+        if (pathname === '/api/admin/mfa' && method === 'POST') {
+          await rate('mfa-manage:' + digest(session.username), 15);
+          const input = z
+            .object({
+              action: z.enum(['begin', 'confirm', 'disable']),
+              password: z.string().max(256).default(''),
+              code: z.string().max(32).default(''),
+            })
+            .parse(await json(request, 4096));
+          if (input.action !== 'confirm') {
+            const user = (await db
+              .prepare('SELECT password_hash FROM admins WHERE username=?')
+              .get(session.username)) as { password_hash: string };
+            if (!(await verifyPassword(input.password, user.password_hash)))
+              throw new HttpError(
+                400,
+                'Current password is incorrect / Mật khẩu hiện tại không đúng',
+              );
+          }
+          if (input.action === 'begin') return send(await beginMfa(database, session.username));
+          let recoveryCodes: string[] | null = null;
+          if (input.action === 'confirm') {
+            recoveryCodes = await confirmMfa(database, session.username, input.code);
+            if (!recoveryCodes)
+              throw new HttpError(
+                400,
+                'Invalid or expired verification code / Mã xác thực không đúng hoặc hết hạn',
+              );
+          } else {
+            if (!(await verifyMfa(database, session.username, input.code)))
+              throw new HttpError(400, 'Invalid verification code / Mã xác thực không đúng');
+            await db.prepare('DELETE FROM admin_mfa WHERE username=?').run(session.username);
+          }
+          await db.prepare('DELETE FROM sessions WHERE username=?').run(session.username);
+          const rotated = await auth.create(session.username);
+          return send(
+            { enabled: input.action === 'confirm', recoveryCodes, csrf: rotated.csrf },
+            200,
+            { 'Set-Cookie': rotated.cookie },
+          );
+        }
         if (pathname === '/api/admin/account' && method === 'GET') {
           const profile = (await db
             .prepare('SELECT email FROM admin_profiles WHERE username=?')

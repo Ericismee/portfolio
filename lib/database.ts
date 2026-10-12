@@ -5,8 +5,7 @@ import { contentSchema, type ContentState } from './schema.ts';
 import { duplicateContent } from './content-management.ts';
 import { initial, skills } from './seed.ts';
 const httpErrorBrand = Symbol.for('profile.httpError');
-export const accountSchema =
-  `CREATE TABLE IF NOT EXISTS admin_profiles(username TEXT PRIMARY KEY REFERENCES admins(username),email TEXT NOT NULL);
+export const accountSchema = `CREATE TABLE IF NOT EXISTS admin_profiles(username TEXT PRIMARY KEY REFERENCES admins(username),email TEXT NOT NULL);
    CREATE TABLE IF NOT EXISTS admin_mfa(username TEXT PRIMARY KEY REFERENCES admins(username),secret TEXT NOT NULL,enabled INTEGER NOT NULL,last_step BIGINT NOT NULL,pending_expires BIGINT NOT NULL,recovery_hashes TEXT NOT NULL);`;
 export type AccountChange = {
   current: string;
@@ -145,7 +144,10 @@ export function openDatabase(
       db.prepare('DELETE FROM admin_profiles WHERE username=?').run(input.current);
       db.prepare('INSERT INTO admin_profiles VALUES(?,?)').run(input.username, input.email);
       if (input.username !== input.current)
-        db.prepare('UPDATE admin_mfa SET username=? WHERE username=?').run(input.username, input.current);
+        db.prepare('UPDATE admin_mfa SET username=? WHERE username=?').run(
+          input.username,
+          input.current,
+        );
       if (input.username !== input.current)
         db.prepare('DELETE FROM admins WHERE username=?').run(input.current);
       db.exec('COMMIT');

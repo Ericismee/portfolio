@@ -31,7 +31,7 @@ export type Field = {
     | 'image'
     | 'pdf';
   required?: boolean;
-  autoComplete?: 'username' | 'email' | 'current-password' | 'new-password';
+  autoComplete?: 'username' | 'email' | 'current-password' | 'new-password' | 'one-time-code';
   options?: [string, string][];
   help?: string;
   rows?: number;

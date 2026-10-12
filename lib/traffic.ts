@@ -17,6 +17,12 @@ CREATE TABLE IF NOT EXISTS traffic_visits(
 );
 CREATE INDEX IF NOT EXISTS traffic_created ON traffic_visits(created_at);
 CREATE INDEX IF NOT EXISTS traffic_session ON traffic_visits(session_hash);
+CREATE INDEX IF NOT EXISTS traffic_path_created ON traffic_visits(path,created_at);
+CREATE INDEX IF NOT EXISTS traffic_browser_created ON traffic_visits(browser,created_at);
+CREATE INDEX IF NOT EXISTS traffic_device_created ON traffic_visits(device,created_at);
+CREATE INDEX IF NOT EXISTS traffic_os_created ON traffic_visits(os,created_at);
+CREATE TABLE IF NOT EXISTS traffic_daily(bucket BIGINT PRIMARY KEY,views BIGINT NOT NULL,visits BIGINT NOT NULL);
+CREATE TABLE IF NOT EXISTS traffic_rollup_state(id INTEGER PRIMARY KEY,updated_at BIGINT NOT NULL);
 CREATE TABLE IF NOT EXISTS traffic_context(
  visit_id TEXT PRIMARY KEY,country TEXT NOT NULL,ip_hash TEXT NOT NULL,details TEXT NOT NULL
 );
@@ -29,6 +35,36 @@ CREATE TABLE IF NOT EXISTS traffic_durations(
 `;
 const day = 86400_000;
 const analyticsOffset = 7 * 3600_000;
+const dailyRefresh = new WeakMap<Database, { until: number; task: Promise<void> }>();
+export async function refreshTrafficDaily(database: Database, force = false) {
+  const current = dailyRefresh.get(database);
+  if (!force && current && current.until > Date.now()) return current.task;
+  const task = (async () => {
+    const prior = (await database.db
+      .prepare('SELECT updated_at FROM traffic_rollup_state WHERE id=1')
+      .get()) as { updated_at: number } | undefined;
+    const today = Math.floor((Date.now() + analyticsOffset) / day);
+    const since = prior ? Math.max(0, (today - 1) * day - analyticsOffset) : 0;
+    await database.db
+      .prepare(
+        `INSERT INTO traffic_daily(bucket,views,visits)
+      SELECT CAST((created_at+${analyticsOffset})/${day} AS BIGINT),COUNT(*),COUNT(DISTINCT session_hash)
+      FROM traffic_visits WHERE created_at>=? GROUP BY CAST((created_at+${analyticsOffset})/${day} AS BIGINT)
+      ON CONFLICT(bucket) DO UPDATE SET views=excluded.views,visits=excluded.visits`,
+      )
+      .run(since);
+    await database.db
+      .prepare(
+        'INSERT INTO traffic_rollup_state VALUES(1,?) ON CONFLICT(id) DO UPDATE SET updated_at=excluded.updated_at',
+      )
+      .run(Date.now());
+  })().catch((error) => {
+    dailyRefresh.delete(database);
+    throw error;
+  });
+  dailyRefresh.set(database, { until: Date.now() + 30_000, task });
+  return task;
+}
 const dateInput = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -181,6 +217,7 @@ export async function recordTraffic(
   production: boolean,
   client = trafficClientSchema.parse({}),
 ) {
+  dailyRefresh.delete(database);
   const now = Date.now(),
     key = credentialKey(database.directory, true);
   const provided =
@@ -344,6 +381,8 @@ export async function trafficDetails(
   }
   const filter = conditions.join(' AND ');
   const source = 'traffic_visits v LEFT JOIN traffic_context c ON c.visit_id=v.id';
+  const plain = !query && !Object.values(filters).some(Boolean);
+  if (plain) await refreshTrafficDaily(database);
   const count = (await database.db
     .prepare(
       "SELECT COUNT(*) AS total,COUNT(DISTINCT v.session_hash) AS visits,COALESCE(SUM(CASE WHEN v.path IN ('/','/profile') THEN 1 ELSE 0 END),0) AS profiles FROM " +
@@ -379,17 +418,19 @@ export async function trafficDetails(
   }>;
   const daily = (await database.db
     .prepare(
-      'SELECT CAST((v.created_at+' +
-        analyticsOffset +
-        ') / ' +
-        day +
-        ' AS BIGINT) AS bucket,COUNT(*) AS views,COUNT(DISTINCT v.session_hash) AS visits FROM ' +
-        source +
-        ' WHERE ' +
-        filter +
-        ' GROUP BY bucket ORDER BY bucket',
+      plain
+        ? 'SELECT bucket,views,visits FROM traffic_daily ORDER BY bucket'
+        : 'SELECT CAST((v.created_at+' +
+            analyticsOffset +
+            ') / ' +
+            day +
+            ' AS BIGINT) AS bucket,COUNT(*) AS views,COUNT(DISTINCT v.session_hash) AS visits FROM ' +
+            source +
+            ' WHERE ' +
+            filter +
+            ' GROUP BY bucket ORDER BY bucket',
     )
-    .all(...values)) as Array<{
+    .all(...(plain ? [] : values))) as Array<{
     bucket: number | string;
     views: number | string;
     visits: number | string;
@@ -405,34 +446,39 @@ export async function trafficDetails(
     .all(...values)) as Array<{ country: string; views: number | string; visits: number | string }>;
   const options: Record<string, string[]> = {};
   const breakdowns: Record<string, Array<{ name: string; views: number }>> = {};
-  for (const column of ['browser', 'device', 'os', 'path'] as const) {
-    const grouped = (await database.db
-      .prepare(
-        'SELECT COALESCE(NULLIF(v.' +
-          column +
-          ",''),'Unknown') AS name,COUNT(*) AS views FROM " +
-          source +
-          ' WHERE ' +
-          filter +
-          ' GROUP BY COALESCE(NULLIF(v.' +
-          column +
-          ",''),'Unknown') ORDER BY views DESC,name LIMIT 12",
-      )
-      .all(...values)) as Array<{ name: string; views: number | string }>;
-    breakdowns[column] = grouped.map((row) => ({ name: row.name, views: Number(row.views) }));
-  }
-  for (const column of ['browser', 'device', 'os', 'path'] as const)
-    options[column] = (
-      (await database.db
+  await Promise.all(
+    (['browser', 'device', 'os', 'path'] as const).map(async (column) => {
+      const grouped = (await database.db
         .prepare(
-          'SELECT DISTINCT ' +
+          'SELECT COALESCE(NULLIF(v.' +
             column +
-            ' AS value FROM traffic_visits WHERE ' +
+            ",''),'Unknown') AS name,COUNT(*) AS views FROM " +
+            source +
+            ' WHERE ' +
+            filter +
+            ' GROUP BY COALESCE(NULLIF(v.' +
             column +
-            "<>'' ORDER BY value",
+            ",''),'Unknown') ORDER BY views DESC,name LIMIT 12",
         )
-        .all()) as { value: string }[]
-    ).map((row) => row.value);
+        .all(...values)) as Array<{ name: string; views: number | string }>;
+      breakdowns[column] = grouped.map((row) => ({ name: row.name, views: Number(row.views) }));
+    }),
+  );
+  await Promise.all(
+    (['browser', 'device', 'os', 'path'] as const).map(async (column) => {
+      options[column] = (
+        (await database.db
+          .prepare(
+            'SELECT DISTINCT ' +
+              column +
+              ' AS value FROM traffic_visits WHERE ' +
+              column +
+              "<>'' ORDER BY value",
+          )
+          .all()) as { value: string }[]
+      ).map((row) => row.value);
+    }),
+  );
   options.country = (
     (await database.db
       .prepare('SELECT DISTINCT country AS value FROM traffic_context ORDER BY country')

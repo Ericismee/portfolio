@@ -1249,6 +1249,15 @@ function AdminDashboard() {
             fields={[
               field('username', t('Tên đăng nhập', 'Username'), 'text', true),
               field('password', t('Mật khẩu', 'Password'), 'password', true),
+              {
+                key: 'code',
+                label: t('Mã xác thực hai bước', 'Two-factor code'),
+                autoComplete: 'one-time-code',
+                help: t(
+                  'Nhập mã ứng dụng xác thực hoặc mã khôi phục nếu đã bật 2FA.',
+                  'Enter an authenticator or recovery code if you enabled 2FA.',
+                ),
+              },
             ]}
             initial={{ username: '', password: '' }}
             submit={async (v) => {
@@ -1301,7 +1310,11 @@ function AdminDashboard() {
           <div className="admin-header">
             <div className="admin-brand">
               <span className="admin-brand-mark" aria-hidden="true">
-                {state.data.profile.logo ? <img src={state.data.profile.logo} alt="" /> : <img src="/brand-terminal.svg" alt="" />}
+                {state.data.profile.logo ? (
+                  <img src={state.data.profile.logo} alt="" />
+                ) : (
+                  <img src="/brand-terminal.svg" alt="" />
+                )}
               </span>
               <div>
                 <h1>{t('Quản trị hồ sơ', 'Profile admin')}</h1>
