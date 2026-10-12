@@ -304,7 +304,7 @@ function Site({
             <Link className="text-action" href={'/projects/' + encodeURIComponent(p.id)}>
               <span>{t('Xem chi tiết', 'View details')}</span>
               <span className="project-open-icon" aria-hidden="true">
-                ↗
+                <Icon name="external" />
               </span>
             </Link>
           </div>
@@ -1171,16 +1171,18 @@ function Site({
           <>
             <div className="author-summary">
               {avatar()}
-              <strong>{profile.name}</strong>
+              <div>
+                <strong>{profile.name}</strong>
+                <span className="contact-headline muted">{profile.headline}</span>
+              </div>
             </div>
-            <p className="muted">{profile.headline}</p>
             <p className="sidebar-purpose">
               {t(
                 'Chọn kênh phù hợp hoặc gửi lời nhắn qua biểu mẫu.',
                 'Choose a channel or send a message using the form.',
               )}
             </p>
-            {links()}
+            <div className="contact-channels">{links()}</div>
             <Link className="side-link" href="/">
               {t('Xem hồ sơ →', 'View profile →')}
             </Link>

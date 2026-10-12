@@ -267,12 +267,6 @@ export function GithubProfile({
           <div className="gh-stack">
             <h2>{t('Công nghệ sử dụng', 'Technology stack')}</h2>
             <TechnologyChips names={stats.languages.map((item) => item.name)} />
-            <p className="github-skills-note">
-              {t(
-                'Ngôn ngữ phát hiện trong mã nguồn công khai, không tính fork.',
-                'Languages detected in public source code, excluding forks.',
-              )}
-            </p>
           </div>
         )}
         <Link href="/" className="side-link">
@@ -521,11 +515,9 @@ export function GithubProfile({
             )}
             <p className="github-skills-note">
               {t(
-                'Tối đa 30 commit của chủ hồ sơ trên nhánh mặc định từ ',
-                'Up to 30 owner-authored commits on default branches from ',
-              )}
-              {activity?.commitRepositories || 6}
-              {t(' kho mã cập nhật gần đây.', ' recently updated repositories.')}{' '}
+                'Những thay đổi gần đây trong các dự án tôi đang xây dựng.',
+                'Recent changes to the projects I’m working on.',
+              )}{' '}
               {activity?.commitsStatus !== 'ready' &&
                 activity &&
                 t('Dữ liệu chưa cập nhật được.', 'Data could not be refreshed.')}

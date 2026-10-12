@@ -1226,6 +1226,7 @@
 }
 .gh-identity-facts dt {
   color: var(--muted);
+  font-weight: 700;
 }
 .gh-identity-facts dd {
   margin: 0;
@@ -2141,6 +2142,11 @@ button.gh-day:hover {
   transition:
     background 180ms ease,
     color 180ms ease;
+}
+.project-open-icon svg {
+  display: block;
+  width: 18px;
+  height: 18px;
 }
 .project-card-actions .text-action:hover .project-open-icon,
 .project-card-actions .text-action:focus-visible .project-open-icon {
@@ -4465,5 +4471,120 @@ html {
   }
   body:has(> .bottom-nav) {
     padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Compact public controls retain comfortable touch targets. */
+.cv-viewer-image .cv-viewer-head {
+  flex-wrap: nowrap;
+  gap: 8px;
+  padding: 6px 10px;
+  min-height: 56px;
+}
+.cv-viewer-image .cv-viewer-head strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.cv-viewer-image .cv-viewer-head small {
+  display: none;
+}
+.cv-viewer-image .cv-actions {
+  flex: 0 0 auto;
+  gap: 4px;
+}
+.cv-viewer-image .cv-actions .btn {
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.profile-actions > .btn.neutral,
+.profile-actions > .file-document > .btn {
+  border: 1.5px solid var(--edge);
+  box-shadow: 2px 2px 0 var(--edge);
+}
+.main > .card > .activity + .activity {
+  border-top: 1.5px solid var(--muted);
+  margin-top: 18px;
+  padding-top: 22px;
+}
+.contact-headline {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+}
+.contact-layout .contact-form {
+  margin-top: 16px;
+}
+.contact-layout .contact-form label {
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.contact-layout .contact-form :is(input, textarea) {
+  margin-top: 5px;
+}
+.contact-layout .contact-form textarea {
+  min-height: 112px;
+}
+.contact-layout .contact-form > .muted {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 4px 0 12px;
+}
+.contact-layout .contact-form > [role='status']:empty {
+  display: none;
+}
+.contact-layout .author-summary {
+  margin: 12px 0;
+  flex-wrap: nowrap;
+}
+.contact-layout .sidebar-purpose {
+  margin: 8px 0;
+  font-size: 12px;
+}
+.contact-layout .contact-channels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+}
+.contact-layout .contact-channels .social-link {
+  min-width: 0;
+  padding: 8px 0;
+  gap: 8px;
+}
+@media (max-width: 600px) {
+  .contact-layout .card.pad {
+    padding: 14px;
+  }
+  .contact-layout .section-heading {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+  .contact-layout .form-grid {
+    gap: 10px;
+  }
+  .contact-layout .contact-form :is(input, textarea) {
+    padding: 9px 10px;
+    font-size: 16px;
+  }
+  .main > .card > .tabs {
+    margin: 8px 0;
+    gap: 3px;
+  }
+  .main > .card > .tabs button {
+    min-height: 44px;
+    padding: 6px 2px;
+    font-size: clamp(10px, 2.4vw, 11px);
+    border-radius: 8px;
+  }
+}
+@media (min-width: 400px) and (max-width: 600px) {
+  .contact-layout .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
