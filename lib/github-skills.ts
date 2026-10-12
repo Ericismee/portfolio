@@ -243,11 +243,26 @@ async function loadSkills(username: string, token: string): Promise<GithubSkills
       while (next < selected.length && !signal.aborted && !rateLimited) {
         const repo = selected[next++];
         try {
-          const input = await read('/repos/' + encodeURIComponent(username) + '/' + encodeURIComponent(repo.name) + '/languages');
-          if (!input || typeof input !== 'object' || Array.isArray(input)) throw Error('Invalid languages');
-          groups.push(Object.fromEntries(Object.entries(input).filter((entry): entry is [string, number] => typeof entry[1] === 'number')));
+          const input = await read(
+            '/repos/' +
+              encodeURIComponent(username) +
+              '/' +
+              encodeURIComponent(repo.name) +
+              '/languages',
+          );
+          if (!input || typeof input !== 'object' || Array.isArray(input))
+            throw Error('Invalid languages');
+          groups.push(
+            Object.fromEntries(
+              Object.entries(input).filter(
+                (entry): entry is [string, number] => typeof entry[1] === 'number',
+              ),
+            ),
+          );
           result.repositories++;
-        } catch { result.partial = true; }
+        } catch {
+          result.partial = true;
+        }
       }
     }
     // Keep four requests in flight without waiting for the slowest member of each batch.

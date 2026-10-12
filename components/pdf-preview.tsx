@@ -100,7 +100,14 @@ export function PdfPreview({ url }: { url: string }) {
         >
           <Icon name="previous" />
         </button>
-        <span className="pdf-page-count" aria-live="polite" aria-label={t(`Trang ${page} trên ${document?.numPages || '…'}`, `Page ${page} of ${document?.numPages || '…'}`)}>
+        <span
+          className="pdf-page-count"
+          aria-live="polite"
+          aria-label={t(
+            `Trang ${page} trên ${document?.numPages || '…'}`,
+            `Page ${page} of ${document?.numPages || '…'}`,
+          )}
+        >
           {page} / {document?.numPages || '…'}
         </span>
         <button
@@ -114,17 +121,17 @@ export function PdfPreview({ url }: { url: string }) {
           <Icon name="next" />
         </button>
         <label className="pdf-zoom" title={t('Thu phóng PDF', 'PDF zoom')}>
-        <Icon name="zoom" />
-        <select
-          aria-label={t('Thu phóng PDF', 'PDF zoom')}
-          value={zoom}
-          onChange={(e) => setZoom(Number(e.target.value))}
-        >
-          <option value={0.7}>70%</option>
-          <option value={1}>100%</option>
-          <option value={1.25}>125%</option>
-          <option value={1.5}>150%</option>
-        </select>
+          <Icon name="zoom" />
+          <select
+            aria-label={t('Thu phóng PDF', 'PDF zoom')}
+            value={zoom}
+            onChange={(e) => setZoom(Number(e.target.value))}
+          >
+            <option value={0.7}>70%</option>
+            <option value={1}>100%</option>
+            <option value={1.25}>125%</option>
+            <option value={1.5}>150%</option>
+          </select>
         </label>
       </div>
       <div className="pdf-pages" ref={pages} aria-busy={loading}>

@@ -48,6 +48,15 @@ export function GithubProfile({
     request.current = controller;
     setChecking(true);
     const timeout = setTimeout(() => controller.abort(), 20000);
+    // Show profile/repositories as soon as ready; calendar and commits can arrive later.
+    let fullReady = false;
+    void fetch('/api/github?view=skills', { signal: controller.signal, cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const next = (await response.json()) as { stats: GithubSkills };
+        if (!controller.signal.aborted && !fullReady) setStats(next.stats);
+      })
+      .catch(() => undefined);
     try {
       const response = await fetch('/api/github?year=' + year, {
         signal: controller.signal,
@@ -60,6 +69,7 @@ export function GithubProfile({
         settings: GithubSettings;
       };
       if (controller.signal.aborted) return;
+      fullReady = true;
       setStats(next.stats);
       setSettings(next.settings);
       setActivity(next.activity);
@@ -68,6 +78,7 @@ export function GithubProfile({
     } catch {
       if (request.current === controller) setError(true);
     } finally {
+      controller.abort();
       clearTimeout(timeout);
       if (request.current === controller) {
         request.current = null;

@@ -992,7 +992,11 @@ function AdminDashboard() {
             fields={[
               field('logo', t('Logo website', 'Website logo'), 'image'),
               field('accent', t('Màu chủ đạo', 'Accent color'), 'color'),
-              field('showVisitorCount', t('Hiển thị bộ đếm lượt truy cập công khai', 'Show public visitor counter'), 'checkbox'),
+              field(
+                'showVisitorCount',
+                t('Hiển thị bộ đếm lượt truy cập công khai', 'Show public visitor counter'),
+                'checkbox',
+              ),
               select('theme', t('Giao diện', 'Theme'), [
                 ['light', t('Sáng', 'Light')],
                 ['dark', t('Tối', 'Dark')],
