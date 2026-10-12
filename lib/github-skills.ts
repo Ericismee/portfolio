@@ -222,7 +222,6 @@ async function loadSkills(username: string, token: string): Promise<GithubSkills
         break;
       }
     }
-    await profileTask;
     result.repos = all.map((repo) =>
       repoSchema.parse({
         name: repo.name,
@@ -269,6 +268,7 @@ async function loadSkills(username: string, token: string): Promise<GithubSkills
     await Promise.all(Array.from({ length: Math.min(4, selected.length) }, () => worker()));
     if (next < selected.length) result.partial = true;
     result.languages = rankLanguages(groups);
+    await profileTask;
     result.status =
       result.languages.length || result.repos.length || result.profile
         ? 'ready'
