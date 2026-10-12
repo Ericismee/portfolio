@@ -9,7 +9,6 @@ export default ts.config(
       '.chrome-preview/**',
       'node_modules/**',
       'src/**',
-      'backend/**',
       'tests/*.mjs',
     ],
   },

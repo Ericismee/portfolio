@@ -1,5 +1,6 @@
 .chrome-preview/
 .qa-*
+qa-*.png
 node_modules/
 .data/
 .env

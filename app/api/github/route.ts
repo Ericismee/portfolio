@@ -6,13 +6,17 @@ import { getGithubActivity } from '../../../lib/github-activity';
 import { unstable_cache } from 'next/cache';
 // Cache upstream public data across Vercel instances. Apply the current owner's
 // visibility rules below on every request, outside this shared cache.
-const cachedSkills = unstable_cache(async (username: string) => {
-  const stats = await getGithubSkills(username);
-  if (stats.status === 'unavailable') throw Error('GitHub unavailable');
-  return stats;
-}, ['github-public-skills-v1'], {
-  revalidate: 3600,
-});
+const cachedSkills = unstable_cache(
+  async (username: string) => {
+    const stats = await getGithubSkills(username);
+    if (stats.status === 'unavailable') throw Error('GitHub unavailable');
+    return stats;
+  },
+  ['github-public-skills-v1'],
+  {
+    revalidate: 3600,
+  },
+);
 const cachedActivity = unstable_cache(getGithubActivity, ['github-public-activity-v1'], {
   revalidate: 60,
 });

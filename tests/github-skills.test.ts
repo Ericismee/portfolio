@@ -109,3 +109,40 @@ test('GitHub imports paginated public repos, profile and counts while excluding 
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test('GitHub loads profile and repositories concurrently and refills its bounded language workers', async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'github-concurrency-'));
+  const originalFetch = globalThis.fetch, originalDirectory = process.env.DATA_DIR;
+  process.env.DATA_DIR = directory;
+  const profileGate = Promise.withResolvers<void>(), slowGate = Promise.withResolvers<void>();
+  let active = 0, maximum = 0, languages = 0, slowFinished = false, refilledBeforeSlow = false;
+  const failsafe = setTimeout(() => { profileGate.resolve(); slowGate.resolve(); }, 1000);
+  globalThis.fetch = async input => {
+    const address = String(input);
+    if (address.endsWith('/users/qa-concurrent')) {
+      await profileGate.promise;
+      return Response.json({ name: 'QA', bio: null, location: null, company: null, followers: 1, following: 0, public_repos: 9, created_at: '2020-01-01T00:00:00Z' });
+    }
+    if (address.includes('/repos?')) return Response.json(Array.from({ length: 9 }, (_, i) => ({ name: 'repo-' + i, private: false, fork: false, size: 1 })));
+    active++; maximum = Math.max(maximum, active); languages++;
+    if (languages === 5) { refilledBeforeSlow = !slowFinished; slowGate.resolve(); }
+    if (languages === 9) profileGate.resolve();
+    if (address.includes('/repo-0/')) { await slowGate.promise; slowFinished = true; }
+    active--;
+    return Response.json({ TypeScript: 100 });
+  };
+  try {
+    const result = await getGithubSkills('qa-concurrent');
+    assert(refilledBeforeSlow, 'a completed worker starts its next repository before the slowest request finishes');
+    assert(maximum <= 4, 'language concurrency stays bounded');
+    assert.equal(languages, 9);
+    assert.equal(result.repositories, 9);
+    assert.equal(result.profile?.followers, 1);
+    assert.equal(result.partial, false);
+  } finally {
+    clearTimeout(failsafe); profileGate.resolve(); slowGate.resolve();
+    globalThis.fetch = originalFetch;
+    if (originalDirectory === undefined) delete process.env.DATA_DIR; else process.env.DATA_DIR = originalDirectory;
+    await rm(directory, { recursive: true, force: true });
+  }
+});
