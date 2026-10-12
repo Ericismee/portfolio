@@ -2678,6 +2678,31 @@ button.gh-day:hover {
   padding: 8px 12px;
   border-bottom: 1px solid var(--line);
 }
+.cv-viewer-pdf .cv-viewer-head {
+  padding: 6px 12px 0;
+  border-bottom: 0;
+}
+.cv-viewer-pdf .cv-viewer-head > div {
+  width: 100%;
+}
+.cv-viewer-pdf .cv-viewer-head strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 20px;
+}
+.cv-viewer-pdf .pdf-toolbar {
+  gap: 4px;
+  padding: 4px 8px 6px;
+}
+.pdf-file-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
 .cv-viewer .icon-action,
 .cv-viewer .pdf-nav {
   display: inline-flex;

@@ -1,12 +1,20 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { documentKind } from '../lib/file-types';
 import { MAX_UPLOAD_BYTES } from '../lib/upload-limits';
 import { useLanguage } from './language';
 import { PdfPreview } from './pdf-preview';
 import { MarkdownContent } from './markdown-content';
 
-export function DocumentPreview({ url, name }: { url: string; name: string }) {
+export function DocumentPreview({
+  url,
+  name,
+  pdfActions,
+}: {
+  url: string;
+  name: string;
+  pdfActions?: ReactNode;
+}) {
   const kind = documentKind(name) || documentKind(url);
   const { t } = useLanguage();
   const [state, setState] = useState({ text: '', error: '', ready: false, truncated: false });
@@ -77,7 +85,7 @@ export function DocumentPreview({ url, name }: { url: string; name: string }) {
       controller.abort();
     };
   }, [url, kind]);
-  if (kind === 'pdf') return <PdfPreview url={url} />;
+  if (kind === 'pdf') return <PdfPreview url={url} actions={pdfActions} />;
   if (!kind)
     return (
       <div className="document-preview">

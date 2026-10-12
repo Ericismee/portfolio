@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject, type ReactNode } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useLanguage } from './language';
 import { PdfIcon } from './pdf-icon';
@@ -109,7 +109,7 @@ function PdfPage({
   );
 }
 
-export function PdfPreview({ url }: { url: string }) {
+export function PdfPreview({ url, actions }: { url: string; actions?: ReactNode }) {
   const { t } = useLanguage();
   const pages = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(800);
@@ -232,6 +232,7 @@ export function PdfPreview({ url }: { url: string }) {
             <option value={1.5}>150%</option>
           </select>
         </label>
+        {actions && <span className="pdf-file-actions">{actions}</span>}
       </div>
       <div
         className="pdf-pages"

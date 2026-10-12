@@ -26,6 +26,31 @@ export function FileDocument({
   const local = LOCAL_FILE.test(url),
     previewable = local || url.startsWith('blob:');
   const download = local ? url + '?download=1' : url;
+  const pdf = previewable && (documentKind(local ? url : name) || documentKind(url)) === 'pdf';
+  const viewerActions = (
+    <>
+      <a
+        className="btn neutral icon-action"
+        href={download}
+        download={name}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={t('Tải xuống', 'Download')}
+        title={t('Tải xuống', 'Download')}
+      >
+        <Icon name="download" />
+      </a>
+      <button
+        type="button"
+        className="btn neutral icon-action"
+        onClick={() => dialog.current?.close()}
+        aria-label={t('Đóng bản xem trước', 'Close preview')}
+        title={t('Đóng bản xem trước', 'Close preview')}
+      >
+        <Icon name="close" />
+      </button>
+    </>
+  );
   useEffect(() => {
     if (!open) return;
     const element = dialog.current;
@@ -60,37 +85,23 @@ export function FileDocument({
         </a>
       )}
       {open && (
-        <dialog ref={dialog} className="cv-viewer" aria-label={name} onClose={() => setOpen(false)}>
+        <dialog
+          ref={dialog}
+          className={'cv-viewer' + (pdf ? ' cv-viewer-pdf' : '')}
+          aria-label={name}
+          onClose={() => setOpen(false)}
+        >
           <div className="cv-viewer-head">
             <div>
-              <strong>{name}</strong>
-              <small>{(documentKind(url) || documentKind(name) || 'file').toUpperCase()}</small>
+              <strong title={name}>{name}</strong>
+              {!pdf && (
+                <small>{(documentKind(url) || documentKind(name) || 'file').toUpperCase()}</small>
+              )}
             </div>
-            <div className="cv-actions">
-              <a
-                className="btn neutral icon-action"
-                href={download}
-                download={name}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={t('Tải xuống', 'Download')}
-                title={t('Tải xuống', 'Download')}
-              >
-                <Icon name="download" />
-              </a>
-              <button
-                type="button"
-                className="btn neutral icon-action"
-                onClick={() => dialog.current?.close()}
-                aria-label={t('Đóng bản xem trước', 'Close preview')}
-                title={t('Đóng bản xem trước', 'Close preview')}
-              >
-                <Icon name="close" />
-              </button>
-            </div>
+            {!pdf && <div className="cv-actions">{viewerActions}</div>}
           </div>
           {previewable ? (
-            <DocumentPreview url={url} name={local ? url : name} />
+            <DocumentPreview url={url} name={local ? url : name} pdfActions={viewerActions} />
           ) : (
             <p className="document-preview">
               {t(
