@@ -5,6 +5,7 @@ const invalid = () =>
   new Error('Unsupported or unsafe document / Tài liệu không hợp lệ hoặc không an toàn');
 export function utf8(bytes: Uint8Array) {
   const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  // eslint-disable-next-line no-control-regex -- Reject binary control bytes in text documents.
   if (/[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(text)) throw invalid();
   return text;
 }
@@ -114,6 +115,7 @@ export function validateSvg(bytes: Uint8Array) {
       throw invalid();
     for (let j = 0; j < node.attributes.length; j++) {
       const a = node.attributes.item(j)!;
+      // eslint-disable-next-line no-control-regex -- Reject escaped URLs and hidden control characters.
       if (!attrs.has(a.name) || /[\\\x00-\x1f]/.test(a.value)) throw invalid();
       if (a.name.endsWith('href') && !/^#[\w.-]+$/.test(a.value)) throw invalid();
       if (/url\s*\(/i.test(a.value) && !/^url\(#[\w.-]+\)$/.test(a.value)) throw invalid();

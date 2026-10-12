@@ -34,7 +34,7 @@ try {
       if (error.code === 'ENOENT') return [];
       throw error;
     })
-  ).filter((name) => /^[a-f0-9-]+\.(png|jpg|gif|webp|pdf)$/.test(name));
+  ).filter((name) => /^[a-f0-9-]+\.(png|jpg|gif|webp|pdf|docx|txt|md|svg)$/.test(name));
   if (!process.argv.includes('--apply')) {
     console.log(
       JSON.stringify({

@@ -2,7 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { createCloudDatabase, postgresParameters } from '../lib/cloud-database.ts';
-import { startCloudUpload, consumeCloudUpload, type blobServices } from '../lib/cloud-uploads.ts';
+import {
+  startCloudUpload,
+  consumeCloudUpload,
+  finishCloudUpload,
+  type blobServices,
+} from '../lib/cloud-uploads.ts';
 import { createApi } from '../lib/api.ts';
 import { passwordHash } from '../lib/auth.ts';
 import { githubCredential, saveGithubCredential } from '../lib/github-connection.ts';
@@ -156,6 +161,66 @@ test('Postgres persistence preserves authorization, atomic versions, rate limits
     assert.equal(requests.length, 0);
     const file = await consumeCloudUpload(database, 'owner', intent.id, services);
     assert.equal(uploadExtension(file.bytes, file.mime), 'pdf');
+    const copied: string[] = [];
+    const finished = await startCloudUpload(
+      database,
+      'owner',
+      { mime: 'application/pdf', size: 5 },
+      services,
+    );
+    const resultUrl = await finishCloudUpload(
+      database,
+      'owner',
+      finished.id,
+      {
+        ...services,
+        del: async () => {
+          assert.equal(copied.length, 1, 'staging is removed after the validated copy');
+        },
+      },
+      async (source, destination, options) => {
+        assert.equal(source, 'pending/' + finished.id);
+        assert.equal(options.access, 'private');
+        assert.equal(options.allowOverwrite, false);
+        assert.equal(options.contentType, 'application/pdf');
+        copied.push(destination);
+        return {
+          url: '',
+          downloadUrl: '',
+          pathname: destination,
+          contentType: 'application/pdf',
+          contentDisposition: '',
+          etag: '',
+        };
+      },
+    );
+    assert.equal(resultUrl, '/' + copied[0]);
+    const bad = await startCloudUpload(
+      database,
+      'owner',
+      { mime: 'application/pdf', size: 5 },
+      services,
+    );
+    await assert.rejects(
+      () =>
+        finishCloudUpload(
+          database,
+          'owner',
+          bad.id,
+          {
+            ...services,
+            get: async (pathname, options) => {
+              const response = await services.get(pathname, options);
+              if (response?.statusCode === 200) response.stream = new Response('wrong').body!;
+              return response;
+            },
+          },
+          async () => {
+            throw Error('Unvalidated files must never be copied');
+          },
+        ),
+      { status: 400 },
+    );
     await assert.rejects(() => consumeCloudUpload(database, 'owner', intent.id, services), {
       status: 404,
     });

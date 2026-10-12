@@ -32,7 +32,7 @@ export function PdfPreview({ url }: { url: string }) {
           'pdfjs-dist/build/pdf.worker.min.mjs',
           import.meta.url,
         ).toString();
-        const loadingTask = pdfjs.getDocument({ url, isEvalSupported: false });
+        const loadingTask = pdfjs.getDocument({ url });
         task = loadingTask;
         const pdf = await loadingTask.promise;
         if (!disposed) setDocument(pdf);

@@ -159,7 +159,7 @@ export function MarkdownEditor({
         <AttachmentPicker
           upload={upload}
           insert={(url, fileName, image) => {
-            const escaped = fileName.replace(/[\[\]\\\r\n]/g, '_');
+            const escaped = fileName.replace(/[[\]\\\r\n]/g, '_');
             change(value + '\n\n' + (image ? '!' : '') + `[${escaped}](${url})` + '\n');
           }}
         />

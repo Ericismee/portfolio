@@ -90,9 +90,9 @@ export async function migrateAssets(
   created: string[] = [],
 ): Promise<unknown> {
   if (typeof input === 'string' && input.startsWith('data:')) {
-    const m =
-      /^data:(image\/(?:png|jpeg|gif|webp)|application\/pdf);base64,([A-Za-z0-9+/=]+)$/.exec(input);
-    if (!m) throw new HttpError(400, 'Unsupported imported file');
+    const m = /^data:([^;,]+);base64,([A-Za-z0-9+/=]+)$/.exec(input);
+    if (!m || !Object.values(mimeTypes).includes(m[1]))
+      throw new HttpError(400, 'Unsupported imported file');
     const url = await storeUpload(directory, Buffer.from(m[2], 'base64'), m[1]);
     created.push(url);
     return url;
