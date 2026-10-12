@@ -19,7 +19,7 @@ import { GithubSkillsCard } from './github-skills';
 import { PostBody } from './post-body';
 import { ImagePreview } from './image-preview';
 import { FileDocument } from './file-document';
-import { isImageFile, LOCAL_FILE } from '../lib/file-types';
+import { LOCAL_FILE } from '../lib/file-types';
 import { CvDocument } from './cv-document';
 import { MarkdownContent } from './markdown-content';
 import { projectUsesMarkdown } from '../lib/markdown';
@@ -699,7 +699,7 @@ function Site({
               image
               showDownload={false}
               triggerClassName="credential-icon"
-              trigger={<Icon name="camera" />}
+              trigger={<Icon name="eye" />}
             />
           )}
           {item.file && (
@@ -710,7 +710,7 @@ function Site({
               triggerClassName="credential-icon"
               trigger={
                 <>
-                  <Icon name={isImageFile(item.file) ? 'camera' : 'feed'} />
+                  <Icon name="eye" />
                   <span className="credential-label">
                     {t('Xem tệp', 'Preview file') + ': ' + item.title}
                   </span>
@@ -866,14 +866,14 @@ function Site({
                 <span className="profile-action-label-short">{t('Dự án', 'Projects')}</span>
               </Link>
               {!editing.enabled && (
-                <Link className="btn primary" href="/contact">
+                <Link className="btn neutral" href="/contact">
                   {t('Liên hệ', 'Contact')}
                 </Link>
               )}
               {data.cv && <CvDocument url={data.cv.url} name={data.cv.name} showDownload={false} />}
               {!editing.enabled && (
                 <button
-                  className="btn primary profile-share"
+                  className="btn neutral profile-share"
                   onClick={() => share()}
                   aria-label={t('Chia sẻ', 'Share')}
                   title={t('Chia sẻ', 'Share')}
