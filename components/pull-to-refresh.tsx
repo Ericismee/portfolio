@@ -42,7 +42,7 @@ export function PullToRefresh({
       const dy = event.touches[0].clientY - start.y;
       const dx = Math.abs(event.touches[0].clientX - start.x);
       if (dy <= 0 || dx > Math.abs(dy)) return reset();
-      if (dy > 10) {
+      if (dy > 0) {
         if (event.cancelable) event.preventDefault();
         pulled = Math.min(96, dy * 0.65);
         setDistance(pulled);

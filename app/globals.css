@@ -4704,6 +4704,9 @@ html {
     opacity 150ms,
     transform 150ms;
 }
+html:has(.page-refresh-status) {
+  overscroll-behavior-y: contain;
+}
 .page-refresh-status.is-visible {
   opacity: 1;
   visibility: visible;
