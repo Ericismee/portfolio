@@ -155,10 +155,15 @@ export function MarkdownEditor({
           </>
         )}
       </div>
-      {upload && <AttachmentPicker upload={upload} insert={(url, fileName, image) => {
-        const escaped = fileName.replace(/[\[\]\\\r\n]/g, '_');
-        change(value + '\n\n' + (image ? '!' : '') + `[${escaped}](${url})` + '\n');
-      }} />}
+      {upload && (
+        <AttachmentPicker
+          upload={upload}
+          insert={(url, fileName, image) => {
+            const escaped = fileName.replace(/[\[\]\\\r\n]/g, '_');
+            change(value + '\n\n' + (image ? '!' : '') + `[${escaped}](${url})` + '\n');
+          }}
+        />
+      )}
       <p className="admin-help">
         {plain
           ? t('Văn bản giữ nguyên xuống dòng.', 'Plain text retains your line breaks.')

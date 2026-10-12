@@ -14,7 +14,12 @@ async function jsonPost(url: string, body: unknown, csrf: string, method = 'POST
   if (!response.ok) throw new RequestError(result.error || 'Upload failed', response.status);
   return result;
 }
-async function directUpload(file: Blob, mime: string, csrf: string, options: UploadOptions = {}): Promise<string | null> {
+async function directUpload(
+  file: Blob,
+  mime: string,
+  csrf: string,
+  options: UploadOptions = {},
+): Promise<string | null> {
   if (file.size > MAX_UPLOAD_BYTES) throw Error('File up to 20 MB / File tối đa 20 MB');
   const intent = await jsonPost('/api/admin/upload-init', { mime, size: file.size }, csrf);
   if (intent.mode === 'local') return null;
@@ -23,12 +28,20 @@ async function directUpload(file: Blob, mime: string, csrf: string, options: Upl
     token: intent.token,
     contentType: mime,
     multipart: file.size > 4 * 1024 * 1024,
-    abortSignal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(120000),
-    onUploadProgress: ({ percentage }) => options.onProgress?.(Math.min(95, Math.round(percentage * 0.95))),
+    abortSignal: options.signal
+      ? AbortSignal.any([options.signal, AbortSignal.timeout(120000)])
+      : AbortSignal.timeout(120000),
+    onUploadProgress: ({ percentage }) =>
+      options.onProgress?.(Math.min(95, Math.round(percentage * 0.95))),
   });
   return intent.id;
 }
-export async function uploadFile(file: File, mime: string, csrf: string, options: UploadOptions = {}): Promise<string> {
+export async function uploadFile(
+  file: File,
+  mime: string,
+  csrf: string,
+  options: UploadOptions = {},
+): Promise<string> {
   options.onProgress?.(0);
   const id = await directUpload(file, mime, csrf, options);
   if (id) {
@@ -47,18 +60,34 @@ export async function uploadFile(file: File, mime: string, csrf: string, options
       xhr.setRequestHeader('Content-Type', mime);
       xhr.setRequestHeader('x-csrf-token', csrf);
       xhr.timeout = 120000;
-      xhr.upload.onprogress = e => { if (e.lengthComputable) options.onProgress?.(Math.min(95, Math.round(e.loaded / e.total * 95))); };
-      xhr.onerror = xhr.ontimeout = () => { cleanup(); reject(new Error('Upload interrupted / Tải file bị gián đoạn')); };
-      xhr.onabort = () => { cleanup(); reject(new DOMException('Upload cancelled', 'AbortError')); };
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable)
+          options.onProgress?.(Math.min(95, Math.round((e.loaded / e.total) * 95)));
+      };
+      xhr.onerror = xhr.ontimeout = () => {
+        cleanup();
+        reject(new Error('Upload interrupted / Tải file bị gián đoạn'));
+      };
+      xhr.onabort = () => {
+        cleanup();
+        reject(new DOMException('Upload cancelled', 'AbortError'));
+      };
       xhr.onload = () => {
         cleanup();
         try {
           const result = JSON.parse(xhr.responseText);
-          if (xhr.status < 200 || xhr.status >= 300) throw new RequestError(result.error || 'Upload failed', xhr.status);
-          options.onProgress?.(100); resolve(result.url);
-        } catch (error) { reject(error); }
+          if (xhr.status < 200 || xhr.status >= 300)
+            throw new RequestError(result.error || 'Upload failed', xhr.status);
+          options.onProgress?.(100);
+          resolve(result.url);
+        } catch (error) {
+          reject(error);
+        }
       };
-      if (options.signal?.aborted) { reject(options.signal.reason); return; }
+      if (options.signal?.aborted) {
+        reject(options.signal.reason);
+        return;
+      }
       options.signal?.addEventListener('abort', abort, { once: true });
       xhr.send(file);
     });
@@ -96,10 +125,7 @@ export async function saveLargeContent(data: unknown, version: number, csrf: str
 }
 export async function uploadMime(file: File): Promise<string> {
   const pdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
-  if (file.size > MAX_UPLOAD_BYTES)
-    throw Error(
-      'File tối đa 20 MB / File up to 20 MB',
-    );
+  if (file.size > MAX_UPLOAD_BYTES) throw Error('File tối đa 20 MB / File up to 20 MB');
   if (pdf) {
     const signature = new TextDecoder().decode(await file.slice(0, 5).arrayBuffer());
     if (signature !== '%PDF-') throw Error('File PDF không hợp lệ / Invalid PDF file');
@@ -109,6 +135,7 @@ export async function uploadMime(file: File): Promise<string> {
   if (kind === 'svg' && file.size > 1024 * 1024) throw Error('SVG tối đa 1 MB / SVG up to 1 MB');
   if (!file.size) throw Error('File trống / Empty file');
   if (kind) return documentTypes[kind];
-  if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)) throw Error('Unsupported file type / Định dạng file chưa hỗ trợ');
+  if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type))
+    throw Error('Unsupported file type / Định dạng file chưa hỗ trợ');
   return file.type;
 }

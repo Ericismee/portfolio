@@ -10,5 +10,9 @@ export const DOCUMENT_ACCEPT = '.pdf,.docx,.txt,.md,.markdown,.svg';
 export const LOCAL_FILE = /^\/uploads\/[a-f0-9-]+\.(pdf|docx|txt|md|svg)$/;
 export function documentKind(name: string) {
   const ext = name.split(/[?#]/)[0].split('.').pop()?.toLowerCase();
-  return ext === 'markdown' ? 'md' : ext && ext in documentTypes ? ext as keyof typeof documentTypes : undefined;
+  return ext === 'markdown'
+    ? 'md'
+    : ext && ext in documentTypes
+      ? (ext as keyof typeof documentTypes)
+      : undefined;
 }

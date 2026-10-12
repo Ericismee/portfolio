@@ -182,10 +182,32 @@ export function RichTextEditor({
           }}
         />
       </label>
-      <AttachmentPicker upload={upload} insert={(href, name, image) => {
-        if (image) editor.chain().focus().setImage({ src: href, alt: name }).run();
-        else editor.chain().focus().insertContent({ type: 'paragraph', content: [{ type: 'text', text: name, marks: [{ type: 'link', attrs: { href, target: '_blank', rel: 'noopener noreferrer' } }] }] }).run();
-      }} />
+      <AttachmentPicker
+        upload={upload}
+        insert={(href, name, image) => {
+          if (image) editor.chain().focus().setImage({ src: href, alt: name }).run();
+          else
+            editor
+              .chain()
+              .focus()
+              .insertContent({
+                type: 'paragraph',
+                content: [
+                  {
+                    type: 'text',
+                    text: name,
+                    marks: [
+                      {
+                        type: 'link',
+                        attrs: { href, target: '_blank', rel: 'noopener noreferrer' },
+                      },
+                    ],
+                  },
+                ],
+              })
+              .run();
+        }}
+      />
       <p className="admin-help">
         {t(
           'Ctrl+B/I/U để định dạng; Ctrl+Z để hoàn tác. Chọn chữ trước khi chèn liên kết.',

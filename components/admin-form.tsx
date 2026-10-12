@@ -100,7 +100,9 @@ export function FieldsForm({
           ...v,
           [key]: result.url,
           ...(key === 'thumbnail' ? { imageFrame: 'original' } : {}),
-          ...(fields.some(f => f.key === key && f.type === 'pdf') ? { [key + 'Name']: file.name.slice(0, 200) } : {}),
+          ...(fields.some((f) => f.key === key && f.type === 'pdf')
+            ? { [key + 'Name']: file.name.slice(0, 200) }
+            : {}),
         }));
       return true;
     } catch (e) {
@@ -346,10 +348,21 @@ export function FieldsForm({
       <p className="form-error" role="alert">
         {localizedError(error, language)}
       </p>
-      {uploadProgress !== null && <div className="upload-progress" role="status">
-        <span>{uploadProgress >= 95 ? t('Đang kiểm tra file…', 'Validating file…') : t('Đang tải lên…', 'Uploading…')} {uploadProgress}%</span>
-        <progress value={uploadProgress} max={100} aria-label={t('Tiến trình tải file', 'Upload progress')} />
-      </div>}
+      {uploadProgress !== null && (
+        <div className="upload-progress" role="status">
+          <span>
+            {uploadProgress >= 95
+              ? t('Đang kiểm tra file…', 'Validating file…')
+              : t('Đang tải lên…', 'Uploading…')}{' '}
+            {uploadProgress}%
+          </span>
+          <progress
+            value={uploadProgress}
+            max={100}
+            aria-label={t('Tiến trình tải file', 'Upload progress')}
+          />
+        </div>
+      )}
       {!footer && (busy || uploading > 0) && (
         <p role="status">
           {uploading ? t('Đang tải file…', 'Uploading…') : t('Đang lưu…', 'Saving…')}

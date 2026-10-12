@@ -64,13 +64,15 @@ export function ImageFramePicker({
     setError('');
     if (
       file &&
-      (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type) ||
+      (!['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml'].includes(
+        file.type,
+      ) ||
         file.size > MAX_UPLOAD_BYTES)
     ) {
       setError(
         t(
-          'Chọn ảnh PNG, JPG, WebP hoặc GIF tối đa 20 MB.',
-          'Choose a PNG, JPG, WebP or GIF up to 20 MB.',
+          'Chọn PNG, JPG, WebP, GIF tối đa 20 MB hoặc SVG tĩnh tối đa 1 MB.',
+          'Choose PNG, JPG, WebP, GIF up to 20 MB or static SVG up to 1 MB.',
         ),
       );
       return;
@@ -185,7 +187,7 @@ export function ImageFramePicker({
         <input
           name={name + '-upload'}
           type="file"
-          accept="image/png,image/jpeg,image/webp,image/gif"
+          accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
           disabled={busy || loading}
           onChange={(event) => {
             const file = event.target.files?.[0];

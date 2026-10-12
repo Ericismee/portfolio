@@ -22,7 +22,9 @@ const signatures: Record<string, (b: Buffer) => boolean> = {
 };
 export function uploadExtension(bytes: Buffer, mime: string) {
   if (bytes.length > MAX_UPLOAD_BYTES) throw new HttpError(413, 'File too large / File quá lớn');
-  const document = Object.entries(documentTypes).find(([ext, type]) => ext !== 'pdf' && type === mime)?.[0];
+  const document = Object.entries(documentTypes).find(
+    ([ext, type]) => ext !== 'pdf' && type === mime,
+  )?.[0];
   if (document) {
     try {
       if (!bytes.length) throw Error('Empty file');
@@ -31,7 +33,10 @@ export function uploadExtension(bytes: Buffer, mime: string) {
       else utf8(bytes);
       return document;
     } catch {
-      throw new HttpError(400, 'Invalid document. SVG must be static and up to 1 MB; text must be UTF-8. / Tài liệu không hợp lệ. SVG phải là ảnh tĩnh tối đa 1 MB; văn bản phải dùng UTF-8.');
+      throw new HttpError(
+        400,
+        'Invalid document. SVG must be static and up to 1 MB; text must be UTF-8. / Tài liệu không hợp lệ. SVG phải là ảnh tĩnh tối đa 1 MB; văn bản phải dùng UTF-8.',
+      );
     }
   }
   const ext = Object.keys(signatures).find((k) => signatures[k](bytes));

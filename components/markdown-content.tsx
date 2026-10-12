@@ -11,12 +11,17 @@ export function MarkdownContent({ value, base = '' }: { value: string; base?: st
         skipHtml
         urlTransform={(url, key) => markdownUrl(url, base, key === 'src')}
         components={{
-          a: ({ href, children }) => (
-            href && LOCAL_FILE.test(href) ? <FileDocument url={href} name={typeof children === 'string' ? children : 'Document'} /> :
-            <a href={href} target="_blank" rel="noopener noreferrer">
-              {children}
-            </a>
-          ),
+          a: ({ href, children }) =>
+            href && LOCAL_FILE.test(href) ? (
+              <FileDocument
+                url={href}
+                name={typeof children === 'string' ? children : 'Document'}
+              />
+            ) : (
+              <a href={href} target="_blank" rel="noopener noreferrer">
+                {children}
+              </a>
+            ),
           img: ({ src, alt }) =>
             typeof src === 'string' && src ? (
               <img src={src} alt={alt || ''} loading="lazy" decoding="async" />

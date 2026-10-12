@@ -121,12 +121,23 @@ export async function consumeCloudUpload(
 }
 
 // Validate once, then copy within the private store instead of uploading all bytes again.
-export async function finishCloudUpload(database: Database, username: string, id: string, services = blobServices, copyBlob = copy) {
+export async function finishCloudUpload(
+  database: Database,
+  username: string,
+  id: string,
+  services = blobServices,
+  copyBlob = copy,
+) {
   let url = '';
   await consumeCloudUpload(database, username, id, services, async (bytes, mime) => {
     const ext = uploadExtension(bytes, mime);
     const name = randomUUID() + '.' + ext;
-    await copyBlob('pending/' + id, 'uploads/' + name, { access: 'private', contentType: mime, addRandomSuffix: false, allowOverwrite: false });
+    await copyBlob('pending/' + id, 'uploads/' + name, {
+      access: 'private',
+      contentType: mime,
+      addRandomSuffix: false,
+      allowOverwrite: false,
+    });
     url = '/uploads/' + name;
   });
   return url;

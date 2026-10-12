@@ -12,7 +12,9 @@ export async function uploadResponse(database: Database, request: Request, filen
     typeof v === 'string'
       ? v === url ||
         (v
-          .match(/\/uploads\/[a-f0-9-]+\.(?:png|jpg|webp|gif|pdf|docx|txt|md|svg)(?![a-zA-Z0-9_.-])/g)
+          .match(
+            /\/uploads\/[a-f0-9-]+\.(?:png|jpg|webp|gif|pdf|docx|txt|md|svg)(?![a-zA-Z0-9_.-])/g,
+          )
           ?.some((reference) => reference === url) ??
           false)
       : !!v && typeof v === 'object' && Object.values(v).some(referenced);

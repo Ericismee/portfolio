@@ -15,8 +15,9 @@ export function RichContent({ value, fallback = '' }: { value: string; fallback?
         if (mark.type === 'strike') text = <s>{text}</s>;
         if (mark.type === 'code') text = <code>{text}</code>;
         if (mark.type === 'link' && safeMediaUrl(mark.attrs?.href))
-          text = (
-            LOCAL_FILE.test(String(mark.attrs?.href)) ? <FileDocument url={String(mark.attrs?.href)} name={node.text || 'Document'} /> :
+          text = LOCAL_FILE.test(String(mark.attrs?.href)) ? (
+            <FileDocument url={String(mark.attrs?.href)} name={node.text || 'Document'} />
+          ) : (
             <a href={safeMediaUrl(mark.attrs?.href)} target="_blank" rel="noopener noreferrer">
               {text}
             </a>
