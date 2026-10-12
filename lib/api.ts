@@ -23,6 +23,8 @@ import {
   trafficIp,
   trafficClientSchema,
   trafficFilterSchema,
+  trafficDurationSchema,
+  recordTrafficDuration,
 } from './traffic.ts';
 const envelope = z.object({ version: z.number().int().positive(), data: z.unknown() });
 const restoreInput = z.object({
@@ -105,6 +107,14 @@ export function createApi(database: Database, production = false, origin?: strin
         return send({ data: publicContent((await database.read()).data) });
       if (pathname === '/api/traffic' && method === 'GET')
         return send({ views: (await trafficSummary(database)).visits });
+      if (pathname === '/api/traffic/duration' && method === 'POST') {
+        const input = trafficDurationSchema.parse(await json(request, 1024));
+        if (session) return send({ ok: true });
+        await rate('traffic-duration:' + digest(trafficIp(request) || 'unknown'), 600);
+        if (!(await recordTrafficDuration(database, input)))
+          throw new HttpError(400, 'Invalid tracking token');
+        return send({ ok: true });
+      }
       if (pathname === '/api/traffic' && method === 'POST') {
         const input = trafficClientSchema
           .extend({ path: z.string().max(240) })
@@ -128,7 +138,10 @@ export function createApi(database: Database, production = false, origin?: strin
         await rate('traffic:' + digest(trafficIp(request) || 'unknown'), 120);
         const result = await recordTraffic(database, request, input.path, production, input);
         return send(
-          { views: result.summary.visits },
+          {
+            views: result.summary.visits,
+            ...(result.trackingToken ? { trackingToken: result.trackingToken } : {}),
+          },
           200,
           result.cookie ? { 'Set-Cookie': result.cookie } : {},
         );

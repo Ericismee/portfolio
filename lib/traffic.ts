@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS traffic_context(
 );
 CREATE INDEX IF NOT EXISTS traffic_country ON traffic_context(country);
 CREATE INDEX IF NOT EXISTS traffic_ip_lookup ON traffic_context(ip_hash);
+CREATE TABLE IF NOT EXISTS traffic_durations(
+ visit_id TEXT NOT NULL,instance_id TEXT NOT NULL,duration_ms BIGINT NOT NULL,
+ PRIMARY KEY(visit_id,instance_id)
+);
 `;
 const day = 86400_000;
 const analyticsOffset = 7 * 3600_000;
@@ -53,6 +57,7 @@ export const trafficFilterSchema = z
   );
 export type TrafficFilters = z.input<typeof trafficFilterSchema>;
 export const trafficClientSchema = z.object({
+  durationTracking: z.boolean().default(false),
   timezone: z.string().max(80).default(''),
   width: z.number().int().min(0).max(20000).default(0),
   height: z.number().int().min(0).max(20000).default(0),
@@ -260,10 +265,52 @@ export async function recordTraffic(
   }
   return {
     summary: await trafficSummary(database),
+    trackingToken:
+      client.durationTracking && !/bot|crawler|spider|headless|preview|slurp/i.test(ua)
+        ? durationToken(key, mac(key, sessionHash + ':' + path), now + day)
+        : undefined,
     cookie: valid
       ? undefined
       : `${cookieName}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=1800${production ? '; Secure' : ''}`,
   };
+}
+function durationToken(key: Buffer, id: string, expires: number) {
+  const value = id + '.' + expires;
+  return value + '.' + mac(key, 'duration:' + value);
+}
+export const trafficDurationSchema = z.object({
+  token: z.string().max(160),
+  instance: z.uuid(),
+  durationMs: z.number().int().min(0).max(86400_000),
+});
+export async function recordTrafficDuration(
+  database: Database,
+  input: z.infer<typeof trafficDurationSchema>,
+) {
+  const key = credentialKey(database.directory, true);
+  const [id, expires, signature] = input.token.split('.');
+  if (
+    !/^[a-f0-9]{64}$/.test(id || '') ||
+    !/^\d{13}$/.test(expires || '') ||
+    !/^[a-f0-9]{64}$/.test(signature || '') ||
+    Number(expires) < Date.now() ||
+    Number(expires) > Date.now() + day ||
+    !timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(mac(key, 'duration:' + id + '.' + expires)),
+    )
+  )
+    return false;
+  // Cumulative updates are idempotent, including retries and out-of-order beacons.
+  await database.db
+    .prepare(
+      `INSERT INTO traffic_durations(visit_id,instance_id,duration_ms)
+    SELECT id,?,CASE WHEN ? < ?-created_at THEN ? ELSE ?-created_at END FROM traffic_visits WHERE id=?
+    ON CONFLICT(visit_id,instance_id) DO UPDATE SET duration_ms=excluded.duration_ms
+    WHERE excluded.duration_ms>traffic_durations.duration_ms`,
+    )
+    .run(input.instance, input.durationMs, Date.now(), input.durationMs, Date.now(), id);
+  return true;
 }
 export async function trafficDetails(
   database: Database,
@@ -391,6 +438,17 @@ export async function trafficDetails(
       .prepare('SELECT DISTINCT country AS value FROM traffic_context ORDER BY country')
       .all()) as { value: string }[]
   ).map((row) => row.value || 'unknown');
+  const durations = new Map<string, number>();
+  if (rows.length) {
+    const times = (await database.db
+      .prepare(
+        'SELECT visit_id,SUM(duration_ms) AS duration FROM traffic_durations WHERE visit_id IN (' +
+          rows.map(() => '?').join(',') +
+          ') GROUP BY visit_id',
+      )
+      .all(...rows.map((row) => row.id))) as Array<{ visit_id: string; duration: number | string }>;
+    for (const time of times) durations.set(time.visit_id, Number(time.duration));
+  }
   return {
     ...(await trafficSummary(database)),
     total: Number(count.total),
@@ -444,6 +502,7 @@ export async function trafficDetails(
         country: row.country,
         sessionId: row.session_hash.slice(0, 12),
         ...context,
+        durationMs: durations.get(row.id) ?? null,
       };
     }),
   };

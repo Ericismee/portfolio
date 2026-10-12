@@ -1,5 +1,5 @@
 'use client';
-import { useId, useState } from 'react';
+import { useId, useState, useSyncExternalStore } from 'react';
 import type { trafficDetails } from '../lib/traffic';
 import { trafficSeries } from '../lib/traffic-series';
 import { countryName } from '../lib/countries';
@@ -9,6 +9,13 @@ type Report = Awaited<ReturnType<typeof trafficDetails>>;
 type Row = { name: string; views: number };
 type Filter = 'country' | 'browser' | 'device' | 'os' | 'path';
 const colors = ['#4264da', '#20a49b', '#a078dd', '#d99335'];
+function subscribeCompact(listener: () => void) {
+  const media = window.matchMedia('(max-width: 600px)');
+  media.addEventListener('change', listener);
+  return () => media.removeEventListener('change', listener);
+}
+const readCompact = () => window.matchMedia('(max-width: 600px)').matches;
+const serverCompact = () => false;
 
 export function TrafficCharts({
   report,
@@ -19,6 +26,8 @@ export function TrafficCharts({
 }) {
   const { t, language } = useLanguage();
   const [software, setSoftware] = useState<'browser' | 'os'>('browser');
+  const [selectedDate, setSelectedDate] = useState('');
+  const compact = useSyncExternalStore(subscribeCompact, readCompact, serverCompact);
   const titleId = useId();
   const { grain, points } = trafficSeries(
     report?.daily || [],
@@ -32,13 +41,25 @@ export function TrafficCharts({
     <div className="analytics-chart-empty">{t('Chưa có dữ liệu phù hợp', 'No matching data')}</div>
   );
   const max = Math.max(1, ...points.map((point) => Math.max(point.views, point.visits)));
-  const ceiling = max <= 5 ? 5 : Math.ceil(max / 5) * 5;
+  const ceiling = Math.max(4, Math.ceil(max / 4) * 4);
+  const plotEnd = compact ? 338 : 618;
   const x = (index: number) =>
-    points.length === 1 ? 340 : 48 + (index / (points.length - 1)) * 570;
+    points.length === 1 ? (48 + plotEnd) / 2 : 48 + (index / (points.length - 1)) * (plotEnd - 48);
   const y = (value: number) => 174 - (value / ceiling) * 146;
   const path = (key: 'views' | 'visits') =>
     points.map((point, index) => `${index ? 'L' : 'M'}${x(index)},${y(point[key])}`).join(' ');
   const devices = report?.breakdowns.device || [];
+  const foundIndex = points.findIndex((point) => point.date === selectedDate);
+  const selectedIndex = Math.max(0, foundIndex < 0 ? points.length - 1 : foundIndex);
+  const selected = points[selectedIndex];
+  const dateLabel = (date: string) =>
+    grain === 'year'
+      ? date
+      : new Intl.DateTimeFormat(language, {
+          month: 'short',
+          ...(grain === 'day' ? { day: 'numeric' as const } : { year: 'numeric' as const }),
+          timeZone: 'UTC',
+        }).format(new Date(date + (grain === 'month' ? '-01' : '') + 'T00:00:00Z'));
   const deviceName = (value: string) =>
     ({
       Desktop: t('Máy tính', 'Desktop'),
@@ -105,9 +126,17 @@ export function TrafficCharts({
         </div>
         {points.length ? (
           <>
+            <div className="analytics-point-summary" aria-live="polite">
+              <span>{dateLabel(selected.date)}</span>
+              <div>
+                <strong>{number(selected.views)}</strong> {t('lượt xem', 'views')}
+                <i />
+                <strong>{number(selected.visits)}</strong> {t('phiên', 'sessions')}
+              </div>
+            </div>
             <svg
               className="analytics-line-chart"
-              viewBox="0 0 640 210"
+              viewBox={`0 0 ${compact ? 360 : 640} 210`}
               role="img"
               aria-labelledby={titleId}
             >
@@ -117,13 +146,19 @@ export function TrafficCharts({
                   'Page views and sessions over time',
                 )}
               </title>
-              {[0, 1, 2, 3].map((step) => {
-                const value = (ceiling * step) / 3;
+              <defs>
+                <linearGradient id={`${titleId}-area`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={colors[0]} stopOpacity=".20" />
+                  <stop offset="100%" stopColor={colors[0]} stopOpacity=".01" />
+                </linearGradient>
+              </defs>
+              {[0, 1, 2, 3, 4].map((step) => {
+                const value = (ceiling * step) / 4;
                 return (
                   <g key={step}>
                     <line
                       x1="48"
-                      x2="618"
+                      x2={plotEnd}
                       y1={y(value)}
                       y2={y(value)}
                       className="analytics-gridline"
@@ -136,8 +171,14 @@ export function TrafficCharts({
               })}
               <path
                 d={`${path('views')} L${x(points.length - 1)},174 L${x(0)},174 Z`}
-                fill="var(--accent)"
-                opacity="0.10"
+                fill={`url(#${titleId}-area)`}
+              />
+              <line
+                x1={x(selectedIndex)}
+                x2={x(selectedIndex)}
+                y1="28"
+                y2="174"
+                className="analytics-selection-line"
               />
               <path
                 d={path('views')}
@@ -160,6 +201,7 @@ export function TrafficCharts({
                   cy={y(point.views)}
                   r={points.length > 40 ? 2 : 3.5}
                   fill={colors[0]}
+                  onPointerEnter={() => setSelectedDate(point.date)}
                 >
                   <title>
                     {point.date}: {number(point.views)} {t('lượt xem', 'views')},{' '}
@@ -168,12 +210,16 @@ export function TrafficCharts({
                 </circle>
               ))}
               {[
-                ...new Set([
-                  0,
-                  Math.floor((points.length - 1) / 3),
-                  Math.floor(((points.length - 1) * 2) / 3),
-                  points.length - 1,
-                ]),
+                ...new Set(
+                  compact
+                    ? [0, points.length - 1]
+                    : [
+                        0,
+                        Math.floor((points.length - 1) / 3),
+                        Math.floor(((points.length - 1) * 2) / 3),
+                        points.length - 1,
+                      ],
+                ),
               ].map((index) => (
                 <text
                   key={index}
@@ -183,10 +229,22 @@ export function TrafficCharts({
                     index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'
                   }
                 >
-                  {points[index].date}
+                  {dateLabel(points[index].date)}
                 </text>
               ))}
             </svg>
+            {points.length > 1 && (
+              <input
+                className="analytics-scrubber"
+                type="range"
+                min="0"
+                max={points.length - 1}
+                value={selectedIndex}
+                aria-label={t('Chọn mốc thời gian trên biểu đồ', 'Choose chart period')}
+                aria-valuetext={`${selected.date}: ${selected.views} ${t('lượt xem', 'views')}, ${selected.visits} ${t('phiên', 'sessions')}`}
+                onChange={(event) => setSelectedDate(points[Number(event.target.value)].date)}
+              />
+            )}
             <details className="analytics-chart-data">
               <summary>{t('Xem dữ liệu biểu đồ', 'View chart data')}</summary>
               <div>
@@ -221,7 +279,7 @@ export function TrafficCharts({
           <span className="muted">{t('Tỷ lệ lượt xem', 'Share of views')}</span>
         </div>
         {devices.length ? (
-          <>
+          <div className="analytics-device-content">
             <div className="analytics-donut-wrap">
               <svg
                 viewBox="0 0 160 160"
@@ -280,7 +338,7 @@ export function TrafficCharts({
                 </button>
               ))}
             </div>
-          </>
+          </div>
         ) : (
           empty
         )}

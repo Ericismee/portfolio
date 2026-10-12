@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Icon } from './icon';
 import { useLanguage } from './language';
@@ -7,8 +7,10 @@ import { request } from '../lib/client';
 import type { trafficDetails } from '../lib/traffic';
 import { countryName } from '../lib/countries';
 import { TrafficCharts } from './traffic-charts';
+import { visibleTime } from '../lib/visible-time';
 
-const pending = new Map<string, Promise<{ views: number }>>();
+type TrafficReceipt = { views: number; trackingToken?: string };
+const pending = new Map<string, Promise<TrafficReceipt>>();
 function analyticsToday() {
   return new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
 }
@@ -18,10 +20,50 @@ export function PublicTraffic() {
   const [views, setViews] = useState<number | null>(null);
   useEffect(() => {
     let active = true;
+    let token = '';
+    let suspended = false;
+    const instance = crypto.randomUUID();
+    const elapsed = visibleTime(performance.now(), document.visibilityState === 'visible');
+    const flush = (beacon = false) => {
+      const durationMs = elapsed(
+        performance.now(),
+        active && !suspended && document.visibilityState === 'visible',
+      );
+      if (!token || durationMs < 1) return;
+      const body = JSON.stringify({ token, instance, durationMs });
+      if (
+        beacon &&
+        navigator.sendBeacon(
+          '/api/traffic/duration',
+          new Blob([body], { type: 'application/json' }),
+        )
+      )
+        return;
+      void fetch('/api/traffic/duration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        keepalive: true,
+      }).catch(() => undefined);
+    };
+    const visibility = () => flush(true);
+    const pageHide = () => {
+      suspended = true;
+      flush(true);
+    };
+    const pageShow = () => {
+      suspended = false;
+      elapsed(performance.now(), document.visibilityState === 'visible');
+    };
+    document.addEventListener('visibilitychange', visibility);
+    window.addEventListener('pagehide', pageHide);
+    window.addEventListener('pageshow', pageShow);
+    const heartbeat = setInterval(() => flush(), 30000);
     let task = pending.get(path);
     if (!task) {
-      task = request<{ views: number }>('/api/traffic', 'POST', {
+      task = request<TrafficReceipt>('/api/traffic', 'POST', {
         path,
+        durationTracking: true,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
         width: Math.min(20000, window.innerWidth),
         height: Math.min(20000, window.innerHeight),
@@ -35,7 +77,9 @@ export function PublicTraffic() {
     }
     void task
       .then((result) => {
+        token = result.trackingToken || '';
         if (active) setViews(result.views);
+        else flush(true);
       })
       .catch(() => {
         void request<{ views: number }>('/api/traffic')
@@ -46,6 +90,11 @@ export function PublicTraffic() {
       });
     return () => {
       active = false;
+      flush(true);
+      clearInterval(heartbeat);
+      document.removeEventListener('visibilitychange', visibility);
+      window.removeEventListener('pagehide', pageHide);
+      window.removeEventListener('pageshow', pageShow);
     };
   }, [path]);
   return (
@@ -66,7 +115,6 @@ export function PublicTraffic() {
           </span>
         </span>
       }
-        
     </footer>
   );
 }
@@ -92,6 +140,7 @@ export function TrafficAdmin() {
   const [ipDraft, setIpDraft] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [range, setRange] = useState('all');
+  const [expanded, setExpanded] = useState<string | null>(null);
   const extraFilters = ['country', 'browser', 'device', 'os', 'path', 'ip'].filter(
     (key) => filters[key as keyof typeof filters],
   ).length;
@@ -110,6 +159,16 @@ export function TrafficAdmin() {
     setFilters((previous) => ({ ...previous, [key]: value }));
     setPage(1);
     if (key === 'from' || key === 'to') setRange('custom');
+  };
+  const filterLabels = {
+    from: t('Từ', 'From'),
+    to: t('Đến', 'To'),
+    country: t('Quốc gia', 'Country'),
+    browser: t('Trình duyệt', 'Browser'),
+    device: t('Thiết bị', 'Device'),
+    os: t('Hệ điều hành', 'OS'),
+    path: t('Trang', 'Page'),
+    ip: 'IP',
   };
   useEffect(() => {
     let active = true;
@@ -227,6 +286,33 @@ export function TrafficAdmin() {
           </div>
         ))}
       </div>
+      {Object.values(filters).some(Boolean) && (
+        <div
+          className="analytics-active-filters"
+          aria-label={t('Bộ lọc đang áp dụng', 'Active filters')}
+        >
+          {Object.entries(filters)
+            .filter(([, value]) => value)
+            .map(([key, value]) => (
+              <button
+                key={key}
+                onClick={() => {
+                  updateFilter(key as keyof typeof filters, '');
+                  if (key === 'ip') setIpDraft('');
+                }}
+                aria-label={
+                  t('Bỏ bộ lọc ', 'Remove filter ') + filterLabels[key as keyof typeof filters]
+                }
+              >
+                <span>
+                  {filterLabels[key as keyof typeof filters]}:{' '}
+                  <strong>{key === 'country' ? countryName(value, language) : value}</strong>
+                </span>
+                <span aria-hidden="true">×</span>
+              </button>
+            ))}
+        </div>
+      )}
       <div className="traffic-notice">
         <Icon name="lock" />
         <p>
@@ -374,6 +460,7 @@ export function TrafficAdmin() {
                 t('Trang', 'Page'),
                 'IP',
                 t('Quốc gia', 'Country'),
+                t('Thời gian xem', 'View time'),
                 t('Trình duyệt / Thiết bị', 'Browser / Device'),
               ].map((label) => (
                 <th key={label} scope="col">
@@ -384,88 +471,115 @@ export function TrafficAdmin() {
           </thead>
           <tbody>
             {report?.entries.map((entry) => (
-              <tr key={entry.id}>
-                <td>
-                  <time dateTime={new Date(entry.at).toISOString()}>
-                    {new Date(entry.at).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-GB', {
-                      timeZone: 'Asia/Ho_Chi_Minh',
-                    })}
-                  </time>
-                </td>
-                <td>
-                  <code>{entry.path}</code>
-                </td>
-                <td>
-                  <code>{entry.ip || t('Không xác định', 'Unknown')}</code>
-                </td>
-                <td>
-                  {countryName(entry.country, language)}
-                  <span className="muted">
-                    {[entry.city, entry.region].filter(Boolean).join(' · ')}
-                  </span>
-                </td>
-                <td>
-                  <strong>
-                    {entry.browser === 'Unknown' ? t('Không xác định', 'Unknown') : entry.browser} ·{' '}
-                    {entry.device === 'Mobile'
-                      ? t('Điện thoại', 'Mobile')
-                      : entry.device === 'Tablet'
-                        ? t('Máy tính bảng', 'Tablet')
-                        : t('Máy tính', 'Desktop')}
-                  </strong>
-                  <span className="muted">
-                    {entry.os === 'Unknown' ? t('Không xác định', 'Unknown') : entry.os}
-                  </span>
-                  <details>
-                    <summary>{t('Xem toàn bộ chi tiết', 'View all details')}</summary>
-                    <dl className="traffic-detail-fields">
-                      {[
-                        [t('Mã phiên', 'Session ID'), entry.sessionId],
-                        [
-                          t('Quốc gia / Thành phố / Vùng', 'Country / City / Region'),
-                          [countryName(entry.country, language), entry.city, entry.region]
-                            .filter(Boolean)
-                            .join(' · '),
-                        ],
-                        [t('Nguồn giới thiệu (tên miền)', 'Referring origin'), entry.referrer],
-                        [t('Ngôn ngữ trình duyệt', 'Browser language'), entry.language],
-                        [t('Múi giờ thiết bị', 'Device timezone'), entry.timezone],
-                        [t('Châu lục (mã)', 'Continent code'), entry.continent],
-                        [t('Mã bưu chính gần đúng', 'Approximate postal code'), entry.postalCode],
-                        [t('Múi giờ theo IP', 'IP timezone'), entry.geoTimezone],
-                        [
-                          t('Tọa độ theo IP (không phải GPS)', 'IP coordinates (not GPS)'),
-                          [entry.latitude, entry.longitude].filter(Boolean).join(', '),
-                        ],
-                        [
-                          t('Kích thước cửa sổ', 'Window size'),
-                          entry.width && entry.height ? `${entry.width} × ${entry.height}` : '',
-                        ],
-                        [
-                          t('Kích thước màn hình', 'Screen size'),
-                          entry.screenWidth && entry.screenHeight
-                            ? `${entry.screenWidth} × ${entry.screenHeight}`
-                            : '',
-                        ],
-                        [
-                          t('Tỷ lệ điểm ảnh', 'Pixel ratio'),
-                          entry.pixelRatio ? String(entry.pixelRatio) : '',
-                        ],
-                      ].map(([label, value]) => (
-                        <div key={label}>
-                          <dt>{label}</dt>
-                          <dd>{value || t('Không xác định', 'Unknown')}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                    <p className="traffic-ua">{entry.userAgent || '—'}</p>
-                  </details>
-                </td>
-              </tr>
+              <Fragment key={entry.id}>
+                <tr className="traffic-visit-row">
+                  <td data-label={t('Thời gian', 'Time')}>
+                    <time dateTime={new Date(entry.at).toISOString()}>
+                      {new Date(entry.at).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-GB', {
+                        timeZone: 'Asia/Ho_Chi_Minh',
+                      })}
+                    </time>
+                  </td>
+                  <td data-label={t('Trang', 'Page')}>
+                    <code>{entry.path}</code>
+                  </td>
+                  <td data-label="IP">
+                    <code>{entry.ip || t('Không xác định', 'Unknown')}</code>
+                  </td>
+                  <td data-label={t('Quốc gia', 'Country')}>
+                    {countryName(entry.country, language)}
+                    <span className="muted">
+                      {[entry.city, entry.region].filter(Boolean).join(' · ')}
+                    </span>
+                  </td>
+                  <td data-label={t('Thời gian xem', 'View time')}>
+                    <span
+                      title={t(
+                        'Thời gian tab hiển thị, ước tính',
+                        'Estimated time with the tab visible',
+                      )}
+                    >
+                      {entry.durationMs == null
+                        ? '—'
+                        : `${Math.floor(entry.durationMs / 60000)}m ${Math.floor(entry.durationMs / 1000) % 60}s`}
+                    </span>
+                  </td>
+                  <td data-label={t('Trình duyệt / Thiết bị', 'Browser / Device')}>
+                    <strong>
+                      {entry.browser === 'Unknown' ? t('Không xác định', 'Unknown') : entry.browser}{' '}
+                      ·{' '}
+                      {entry.device === 'Mobile'
+                        ? t('Điện thoại', 'Mobile')
+                        : entry.device === 'Tablet'
+                          ? t('Máy tính bảng', 'Tablet')
+                          : t('Máy tính', 'Desktop')}
+                    </strong>
+                    <span className="muted">
+                      {entry.os === 'Unknown' ? t('Không xác định', 'Unknown') : entry.os}
+                    </span>
+                    <button
+                      className="traffic-expand"
+                      aria-expanded={expanded === entry.id}
+                      aria-controls={'visit-' + entry.id}
+                      onClick={() => setExpanded(expanded === entry.id ? null : entry.id)}
+                    >
+                      <Icon name="eye" />
+                      {t('Xem thông tin', 'Inspect')}
+                    </button>
+                  </td>
+                </tr>
+                {expanded === entry.id && (
+                  <tr className="traffic-expanded-row">
+                    <td colSpan={6} id={'visit-' + entry.id}>
+                      <dl className="traffic-detail-fields">
+                        {[
+                          [t('Mã phiên', 'Session ID'), entry.sessionId],
+                          [
+                            t('Quốc gia / Thành phố / Vùng', 'Country / City / Region'),
+                            [countryName(entry.country, language), entry.city, entry.region]
+                              .filter(Boolean)
+                              .join(' · '),
+                          ],
+                          [t('Nguồn giới thiệu (tên miền)', 'Referring origin'), entry.referrer],
+                          [t('Ngôn ngữ trình duyệt', 'Browser language'), entry.language],
+                          [t('Múi giờ thiết bị', 'Device timezone'), entry.timezone],
+                          [t('Châu lục (mã)', 'Continent code'), entry.continent],
+                          [t('Mã bưu chính gần đúng', 'Approximate postal code'), entry.postalCode],
+                          [t('Múi giờ theo IP', 'IP timezone'), entry.geoTimezone],
+                          [
+                            t('Tọa độ theo IP (không phải GPS)', 'IP coordinates (not GPS)'),
+                            [entry.latitude, entry.longitude].filter(Boolean).join(', '),
+                          ],
+                          [
+                            t('Kích thước cửa sổ', 'Window size'),
+                            entry.width && entry.height ? `${entry.width} × ${entry.height}` : '',
+                          ],
+                          [
+                            t('Kích thước màn hình', 'Screen size'),
+                            entry.screenWidth && entry.screenHeight
+                              ? `${entry.screenWidth} × ${entry.screenHeight}`
+                              : '',
+                          ],
+                          [
+                            t('Tỷ lệ điểm ảnh', 'Pixel ratio'),
+                            entry.pixelRatio ? String(entry.pixelRatio) : '',
+                          ],
+                        ].map(([label, value]) => (
+                          <div key={label}>
+                            <dt>{label}</dt>
+                            <dd>{value || t('Không xác định', 'Unknown')}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                      <p className="traffic-ua">{entry.userAgent || '—'}</p>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
             {(!report || !report.entries.length) && (
               <tr>
-                <td colSpan={5} className="traffic-empty">
+                <td colSpan={6} className="traffic-empty">
                   <span className="traffic-empty-icon">
                     <Icon name={hasFilters ? 'search' : 'globe'} />
                   </span>
@@ -521,8 +635,8 @@ export function TrafficAdmin() {
       </div>
       <p className="traffic-footnote">
         {t(
-          'Mỗi trang được tính một lần trong phiên 30 phút. Số phiên không phải số người duy nhất.',
-          'Each page counts once per 30-minute session. Sessions are not unique people.',
+          'Mỗi trang được tính một lần trong phiên 30 phút. Số phiên không phải số người duy nhất. Thời gian xem ước tính khi tab hiển thị, cập nhật mỗi 30 giây và khi rời trang; bản ghi cũ hiện —.',
+          'Each page counts once per 30-minute session. Sessions are not unique people. View time estimates visible-tab time, updated every 30 seconds and on exit; older records show —.',
         )}
       </p>
       <details className="traffic-field-inventory">
@@ -537,8 +651,8 @@ export function TrafficAdmin() {
         </p>
         <p>
           {t(
-            'Không thu thập GPS, địa chỉ nhà, danh tính/tên/email khách, mật khẩu, cookie đăng nhập, lịch sử duyệt web, nội dung form, nhà mạng/ASN hoặc thời gian ở lại trang. Chưa có dữ liệu để tính chính xác người dùng duy nhất, tỷ lệ thoát hay chuyển đổi.',
-            'Not collected: GPS, street address, visitor identity/name/email, passwords, authentication cookies, browsing history, form contents, ISP/ASN or time on page. There is no sufficient tracking to measure unique people, bounce rate or conversions accurately.',
+            'Thời gian xem được ước tính khi tab hiển thị, không xác định người xem có đang đọc hay không. Không thu thập GPS, địa chỉ nhà, danh tính/tên/email khách, mật khẩu, cookie đăng nhập, lịch sử duyệt web, nội dung form hoặc nhà mạng/ASN. Chưa đủ dữ liệu để tính chính xác người dùng duy nhất, tỷ lệ thoát hay chuyển đổi.',
+            'View time estimates visible-tab time, not whether a visitor is reading. Not collected: GPS, street address, visitor identity/name/email, passwords, authentication cookies, browsing history, form contents or ISP/ASN. There is insufficient tracking to measure unique people, bounce rate or conversions accurately.',
           )}
         </p>
       </details>

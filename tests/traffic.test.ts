@@ -51,6 +51,7 @@ test('Traffic counts sessions without exposing visitor details and encrypts reta
     assert.equal((await call('/api/traffic', 'POST', { path: '/?secret=value' })).status, 400);
     const first = await call('/api/traffic', 'POST', {
       path: '/',
+      durationTracking: true,
       timezone: 'Asia/Bangkok',
       width: 1440,
       height: 900,
@@ -60,7 +61,47 @@ test('Traffic counts sessions without exposing visitor details and encrypts reta
       referrer: 'https://search.example/private?q=secret#hidden',
     });
     assert.equal(first.status, 200);
-    assert.deepEqual(await first.json(), { views: 1 });
+    const receipt = await first.json();
+    assert.equal(receipt.views, 1);
+    assert.match(receipt.trackingToken, /^[a-f0-9]{64}\.\d{13}\.[a-f0-9]{64}$/);
+    const durationInput = {
+      token: receipt.trackingToken,
+      instance: '12345678-1234-4234-8234-123456789abc',
+      durationMs: 1500,
+    };
+    database.db.prepare('UPDATE traffic_visits SET created_at=?').run(Date.now() - 120000);
+    assert.equal((await call('/api/traffic/duration', 'POST', durationInput)).status, 200);
+    assert.equal(
+      (await call('/api/traffic/duration', 'POST', { ...durationInput, durationMs: 1200 })).status,
+      200,
+    );
+    assert.equal((await trafficDetails(database, 1, '')).entries[0].durationMs, 1500);
+    assert.equal(
+      (await call('/api/traffic/duration', 'POST', { ...durationInput, durationMs: 3500 })).status,
+      200,
+    );
+    assert.equal((await trafficDetails(database, 1, '')).entries[0].durationMs, 3500);
+    assert.equal(
+      (
+        await call('/api/traffic/duration', 'POST', {
+          ...durationInput,
+          token: receipt.trackingToken.slice(0, -1) + 'x',
+        })
+      ).status,
+      400,
+    );
+    assert.equal(
+      (await call('/api/traffic/duration', 'POST', { ...durationInput, durationMs: -1 })).status,
+      400,
+    );
+    assert.equal(
+      (
+        await call('/api/traffic/duration', 'POST', durationInput, {
+          origin: 'https://evil.example',
+        })
+      ).status,
+      403,
+    );
     assert.match(first.headers.get('set-cookie')!, /HttpOnly; SameSite=Lax; Max-Age=1800; Secure/);
     const cookie = first.headers.get('set-cookie')!.split(';')[0];
     assert.deepEqual(await (await call('/api/traffic', 'POST', { path: '/' }, { cookie })).json(), {

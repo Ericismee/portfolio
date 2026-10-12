@@ -231,15 +231,33 @@ test('Postgres persistence preserves authorization, atomic versions, rate limits
           'content-type': 'application/json',
           'user-agent': 'Firefox/130.0',
         },
-        body: JSON.stringify({ path: '/' }),
+        body: JSON.stringify({ path: '/', durationTracking: true }),
       }),
     );
     assert.equal(visit.status, 200);
-    assert.deepEqual(await visit.json(), { views: 1 });
+    const visitReceipt = await visit.json();
+    assert.equal(visitReceipt.views, 1);
+    await pg.query('UPDATE traffic_visits SET created_at=$1', [Date.now() - 120000]);
+    const durationBody = {
+      token: visitReceipt.trackingToken,
+      instance: '12345678-1234-4234-8234-123456789abc',
+      durationMs: 12345,
+    };
+    for (const durationMs of [12345, 1000]) {
+      const durationResponse = await handle(
+        new Request('https://profile.example/api/traffic/duration', {
+          method: 'POST',
+          headers: { origin: 'https://profile.example', 'content-type': 'application/json' },
+          body: JSON.stringify({ ...durationBody, durationMs }),
+        }),
+      );
+      assert.equal(durationResponse.status, 200);
+    }
     const traffic = await (await call('/api/admin/traffic?q=firefox')).json();
     assert.equal(traffic.profileViews, 1);
     assert.equal(traffic.visits, 1);
     assert.equal(traffic.entries[0].browser, 'Firefox');
+    assert.equal(traffic.entries[0].durationMs, 12345);
     assert.equal(traffic.total, 1);
     assert.equal(
       traffic.daily.reduce((sum: number, row: { views: number }) => sum + row.views, 0),
