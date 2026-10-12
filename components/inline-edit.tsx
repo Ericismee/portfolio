@@ -1,6 +1,7 @@
 'use client';
 import dynamic from 'next/dynamic';
 import { trashEntry } from '../lib/content-management';
+import { useBackgroundRefresh } from './use-background-refresh';
 import { sectionLabel } from '../lib/i18n';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -47,6 +48,27 @@ export function useInlineEdit(publicData: Content) {
   const [editorKey, setEditorKey] = useState(0);
   const [notice, setNotice] = useState('');
   const [guestPreview, setGuestPreview] = useState(false);
+  const [livePublicData, setLivePublicData] = useState(publicData);
+  useEffect(() => {
+    setLivePublicData(publicData);
+  }, [publicData]);
+  useBackgroundRefresh(
+    async (isCurrent) => {
+      if (state) {
+        const next = await request<ContentState>('/api/admin/content');
+        if (isCurrent())
+          setState((previous) => (previous?.version === next.version ? previous : next));
+      } else {
+        const next = await request<{ data: Content }>('/api/content');
+        if (isCurrent())
+          setLivePublicData((previous) =>
+            JSON.stringify(previous) === JSON.stringify(next.data) ? previous : next.data,
+          );
+      }
+    },
+    !editor,
+    60_000,
+  );
   const enabled = !!state && !guestPreview;
   useEffect(() => {
     if (!notice) return;
@@ -72,18 +94,12 @@ export function useInlineEdit(publicData: Content) {
           if (!next) setEditor(null);
         }
       } catch {
-        if (active) {
-          setState(null);
-          setCsrf('');
-          setEditor(null);
-        }
+        /* A temporary connection failure must not discard an editor. */
       }
     }
     void sync();
-    window.addEventListener('focus', sync);
     return () => {
       active = false;
-      window.removeEventListener('focus', sync);
     };
   }, []);
   function open(next: Editor) {
@@ -714,7 +730,7 @@ export function useInlineEdit(publicData: Content) {
       }
     },
     adminPosts: enabled ? state?.data.posts : undefined,
-    data: state ? publicContent(state.data) : publicData,
+    data: state ? publicContent(state.data) : livePublicData,
     button,
     profile,
     section,

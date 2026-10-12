@@ -3536,3 +3536,111 @@ html {
     gap: 5px;
   }
 }
+
+/* Mobile editors use the available screen, including the visible area above
+   the software keyboard. Only the form scrolls; actions remain reachable. */
+@media (max-width: 900px) {
+  dialog.content-editor {
+    box-sizing: border-box;
+    width: 100dvw;
+    max-width: none;
+    height: var(--editor-height, 100dvh);
+    max-height: none;
+    inset: var(--editor-top, 0px) 0 auto;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    overflow: hidden;
+  }
+  .content-editor .editor-head {
+    padding: calc(8px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px
+      max(12px, env(safe-area-inset-left));
+  }
+  .content-editor .editor-fields {
+    padding: 16px max(12px, env(safe-area-inset-right)) 20px max(12px, env(safe-area-inset-left));
+    max-height: none;
+    overscroll-behavior: contain;
+    scroll-padding-block: 16px;
+  }
+  .content-editor .admin-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    width: 100%;
+    min-width: 0;
+  }
+  .content-editor .admin-form > * {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .content-editor .editor-foot {
+    padding: 8px max(12px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+    flex-wrap: nowrap;
+  }
+  .content-editor .editor-foot > .admin-help {
+    display: none;
+  }
+  .content-editor .editor-foot .actions {
+    width: 100%;
+    display: flex;
+    gap: 12px;
+  }
+  .content-editor .editor-foot .btn {
+    flex: 1;
+  }
+  .content-editor .github-project-picker {
+    padding: 12px;
+    margin-bottom: 0;
+    border-radius: 10px;
+  }
+  .content-editor .image-frame-picker {
+    padding: 10px;
+  }
+  .content-editor :is(.markdown-editor, .rich-editor, .location-input) {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .content-editor :is(.markdown-editor-header, .rich-editor-toolbar) {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .content-editor textarea {
+    min-height: 160px;
+    resize: vertical;
+  }
+  .content-editor :is(.markdown-preview, .rich-editor-content) {
+    overflow-wrap: anywhere;
+  }
+  .admin-shell {
+    padding: 12px;
+    gap: 14px;
+  }
+  .admin-content > .card {
+    padding: 14px;
+  }
+  .admin-mobile-navigation {
+    margin: 0;
+  }
+  .admin-mobile-navigation select {
+    min-height: 48px;
+    background-color: var(--card);
+  }
+  .admin-title {
+    flex-wrap: wrap;
+  }
+  .admin-title > .actions {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 600px) {
+  .admin-shell {
+    padding: 10px;
+  }
+  .admin-content > .card {
+    padding: 12px;
+  }
+  .admin-page .image-frame-picker {
+    padding: 10px;
+  }
+}

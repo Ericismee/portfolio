@@ -384,6 +384,17 @@ export function EditorDialog({
     lastFocus = useRef<HTMLElement | null>(null);
   useEffect(() => {
     const dialog = ref.current;
+    const viewport = window.visualViewport;
+    const resize = () => {
+      dialog?.style.setProperty('--editor-height', `${viewport?.height ?? window.innerHeight}px`);
+      dialog?.style.setProperty('--editor-top', `${viewport?.offsetTop ?? 0}px`);
+    };
+    resize();
+    viewport?.addEventListener('resize', resize);
+    viewport?.addEventListener('scroll', resize);
+    window.addEventListener('resize', resize);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     // Cancel the native close synchronously. A React state update alone cannot
     // prevent every browser from closing its dialog after an Escape key release.
     const preventNativeClose = (event: Event) => event.preventDefault();
@@ -399,8 +410,17 @@ export function EditorDialog({
         element.getClientRects().length > 0 &&
         !element.closest('details:not([open]),[hidden],[inert]'),
     );
-    (firstField || ref.current?.querySelector<HTMLElement>('button'))?.focus();
+    // Opening on a phone should not immediately raise the keyboard and hide
+    // half the form. Users choose the field they want to edit.
+    (window.matchMedia('(max-width: 900px)').matches
+      ? ref.current?.querySelector<HTMLElement>('button')
+      : firstField || ref.current?.querySelector<HTMLElement>('button')
+    )?.focus();
     return () => {
+      viewport?.removeEventListener('resize', resize);
+      viewport?.removeEventListener('scroll', resize);
+      window.removeEventListener('resize', resize);
+      document.body.style.overflow = previousOverflow;
       dialog?.removeEventListener('cancel', preventNativeClose);
       if (lastFocus.current?.isConnected) lastFocus.current.focus();
       else document.querySelector<HTMLButtonElement>('[aria-controls="site-menu"]')?.focus();

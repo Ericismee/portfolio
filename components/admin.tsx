@@ -1,5 +1,6 @@
 'use client';
 import { localizedError } from '../lib/i18n';
+import { useBackgroundRefresh } from './use-background-refresh';
 import { sectionLabel } from '../lib/i18n';
 import { MAX_UPLOAD_BYTES } from '../lib/upload-limits';
 import { importContent } from '../lib/upload-client';
@@ -111,6 +112,18 @@ function AdminDashboard() {
     void reload();
     setAdminTheme(readTheme(document.documentElement.dataset.theme));
   }, [reload]);
+  useBackgroundRefresh(
+    async (isCurrent) => {
+      const next = await api<ContentState>('/api/admin/content');
+      if (!isCurrent()) return;
+      setState((previous) => (previous?.version === next.version ? previous : next));
+      if (tab === 'inbox') {
+        const result = await api<{ messages: InboxMessage[] }>('/api/admin/messages');
+        if (isCurrent()) setMessages(result.messages);
+      }
+    },
+    !!state && !dirty && !pending && !editor,
+  );
   useEffect(() => {
     if (adminTheme) applyTheme(state?.data.accent || '#4264da', adminTheme);
   }, [adminTheme, state?.data.accent]);

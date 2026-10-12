@@ -1,5 +1,6 @@
 'use client';
 import { Fragment, useEffect, useState } from 'react';
+import { useBackgroundRefresh } from './use-background-refresh';
 import { usePathname } from 'next/navigation';
 import { Icon } from './icon';
 import { useLanguage } from './language';
@@ -141,6 +142,18 @@ export function TrafficAdmin() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [range, setRange] = useState('all');
   const [expanded, setExpanded] = useState<string | null>(null);
+  useBackgroundRefresh(async (isCurrent) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      q: query,
+      ...Object.fromEntries(Object.entries(filters).filter(([, value]) => value)),
+    });
+    const next = await request<Report>(`/api/admin/traffic?${params}`);
+    if (isCurrent()) {
+      setReport(next);
+      setError('');
+    }
+  }, !loading);
   const extraFilters = ['country', 'browser', 'device', 'os', 'path', 'ip'].filter(
     (key) => filters[key as keyof typeof filters],
   ).length;
