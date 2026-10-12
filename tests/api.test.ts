@@ -455,8 +455,14 @@ test('Appearance and logo save together, and stale saves retain HTTP 409 after m
     await f.login();
     const state = (await f.call('/api/admin/content')).data as ContentState;
     assert.equal(state.data.profile.logo, '');
+    assert.equal(
+      state.data.showVisitorCount,
+      true,
+      'existing profiles keep the counter by default',
+    );
     state.data.profile.logo = '/uploads/1234-abcd.png';
     state.data.theme = 'dark';
+    state.data.showVisitorCount = false;
     state.data.density = 'compact';
     state.data.layout = 'wide';
     const saved = await f.call('/api/admin/content', 'PUT', state);
@@ -464,6 +470,7 @@ test('Appearance and logo save together, and stale saves retain HTTP 409 after m
     assert.equal(saved.data.data.profile.logo, state.data.profile.logo);
     assert.equal(publicContent(f.database.read().data).profile.logo, state.data.profile.logo);
     assert.equal(f.database.read().data.theme, 'dark');
+    assert.equal((await f.call('/api/content')).data.data.showVisitorCount, false);
     assert.equal((await f.call('/api/admin/content', 'PUT', state)).response.status, 409);
     // Recreate the constructor mismatch produced by development hot reload.
     const reloaded = await import(new URL('../lib/database.ts?reload-test', import.meta.url).href);
@@ -477,6 +484,11 @@ test('Appearance and logo save together, and stale saves retain HTTP 409 after m
     assert.equal(stale.data.error, 'Reload before saving');
     const refreshed = openDatabase(f.directory, f.database.db);
     assert.equal(refreshed.read().data.profile.logo, state.data.profile.logo);
+    assert.equal(
+      refreshed.read().data.showVisitorCount,
+      false,
+      'counter visibility persists across database reload',
+    );
     assert.equal(f.database.read().data.profile.logo, state.data.profile.logo);
     const latest = refreshed.read();
     refreshed.write(latest.data, latest.version);
