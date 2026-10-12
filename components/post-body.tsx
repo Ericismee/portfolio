@@ -35,9 +35,11 @@ export function PostBody({
     <>
       <div
         id={id}
-        onFocusCapture={() => {
+        tabIndex={-1}
+        onFocusCapture={(event) => {
           // Keyboard users must be able to see links that receive focus below the excerpt.
-          if (!detail && overflow) setExpanded(true);
+          if (!detail && overflow && !(event.target as HTMLElement).closest('.post-fade-expand'))
+            setExpanded(true);
         }}
         className={
           'post-body' +
@@ -54,6 +56,19 @@ export function PostBody({
             <p className="preserve">{text}</p>
           )}
         </div>
+        {!detail && !expanded && overflow && (
+          <button
+            type="button"
+            className="post-fade-expand"
+            aria-label={t('Mở rộng bài viết', 'Expand post')}
+            aria-controls={id}
+            aria-expanded={false}
+            onClick={() => {
+              setExpanded(true);
+              content.current?.parentElement?.focus({ preventScroll: true });
+            }}
+          />
+        )}
       </div>
       {!detail && (
         <button

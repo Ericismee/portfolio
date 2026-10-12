@@ -2462,15 +2462,28 @@ button.gh-day:hover {
   max-height: 320px;
   overflow: hidden;
 }
-.post-body.is-collapsed.has-overflow::after {
-  content: '';
+.post-fade-expand {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 28px;
-  pointer-events: none;
+  width: 100%;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  cursor: pointer;
   background: linear-gradient(transparent, var(--card));
+}
+.post-fade-expand:hover {
+  background: linear-gradient(transparent, var(--card));
+  box-shadow: none;
+}
+.post-fade-expand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 .post-body .rich-content > :first-child,
 .post-body .preserve {
