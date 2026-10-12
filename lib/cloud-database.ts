@@ -105,6 +105,7 @@ export async function createCloudDatabase(sql: postgres.Sql): Promise<Database> 
           await tx`DELETE FROM admin_profiles WHERE username=${input.current}`;
           await tx`INSERT INTO admin_profiles VALUES(${input.username},${input.email})`;
           if (input.username !== input.current) {
+            await tx`UPDATE admin_mfa SET username=${input.username} WHERE username=${input.current}`;
             await tx`UPDATE upload_intents SET username=${input.username} WHERE username=${input.current}`;
             await tx`DELETE FROM admins WHERE username=${input.current}`;
           }

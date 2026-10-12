@@ -1301,7 +1301,7 @@ function AdminDashboard() {
           <div className="admin-header">
             <div className="admin-brand">
               <span className="admin-brand-mark" aria-hidden="true">
-                {Array.from(state.data.profile.name)[0]}
+                {state.data.profile.logo ? <img src={state.data.profile.logo} alt="" /> : <img src="/brand-terminal.svg" alt="" />}
               </span>
               <div>
                 <h1>{t('Quản trị hồ sơ', 'Profile admin')}</h1>

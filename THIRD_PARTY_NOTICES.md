@@ -27,6 +27,8 @@ This summary is a source-level inventory, not a substitute for reviewing the act
 
 Profile text, photographs, project branding and screenshots are content assets, separate from the reusable application code. References to projects do not grant rights to their logos or documents.
 
-The current favicon files (`app/icon.svg`, `app/apple-icon.png`, `app/favicon.ico`) derive from an owner-supplied `linux.png`. Its upstream author and redistribution license were not established during this review. Do not assume it is covered by the application's MIT license; confirm permission or replace it with artwork whose rights are documented before redistributing a complete asset bundle.
+The bundled terminal brand and favicon (`public/brand-terminal.svg`, `app/icon.svg`, `app/apple-icon.png`, `app/favicon.ico`) is original geometric artwork authored for this project and distributed under the project MIT license. It does not incorporate or trace the previously owner-supplied `linux.png`. The SVG is the source for the PNG and ICO derivatives.
+
+The upstream author and redistribution rights of the previous `linux.png` remain unverified. Owner-uploaded media and older Git revisions containing that image are not covered by this favicon attribution; review them separately before redistribution.
 
 Review screenshots for personal data and third-party artwork before republishing them. Forks should supply their own identity, images and branding.

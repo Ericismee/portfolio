@@ -8,6 +8,7 @@ import type { Content, Project, Post } from '../lib/schema';
 import { publicationStatus } from '../lib/schema';
 import { applyTheme, readTheme, saveTheme } from '../lib/theme';
 import { Icon } from './icon';
+import { responsiveImage } from '../lib/image-variants';
 import { PublicTraffic } from './traffic';
 import { SocialLogo, socialLabels } from './social-logo';
 import { LanguageProvider, useLanguage } from './language';
@@ -167,7 +168,7 @@ function Site({
   const avatar = (size = 'small') => (
     <div className={'avatar ' + size}>
       {profile.avatar ? (
-        <img src={profile.avatar} alt={t('Ảnh đại diện', 'Avatar') + ' ' + profile.name} />
+        <img {...responsiveImage(profile.avatar, '120px')} alt={t('Ảnh đại diện', 'Avatar') + ' ' + profile.name} decoding="async" />
       ) : (
         Array.from(profile.name)[0]
       )}
@@ -305,7 +306,7 @@ function Site({
           >
             {p.thumbnail ? (
               <span className="project-image">
-                <img src={p.thumbnail} alt={p.name} loading="lazy" decoding="async" />
+                <img {...responsiveImage(p.thumbnail, '(max-width: 600px) 90vw, 320px')} alt={p.name} loading="lazy" decoding="async" />
               </span>
             ) : (
               <>
@@ -669,7 +670,7 @@ function Site({
           >
             {profile.cover && (
               <img
-                src={profile.cover}
+                {...responsiveImage(profile.cover, '(max-width: 600px) 100vw, 800px')}
                 alt={t('Ảnh bìa', 'Cover image')}
                 fetchPriority="high"
                 decoding="async"
@@ -911,7 +912,7 @@ function Site({
         </div>
         {p.imageFrame !== 'none' && (
           <div className="project-art project-detail-art" data-frame={p.imageFrame}>
-            {p.thumbnail ? <img src={p.thumbnail} alt={p.name} /> : p.name}
+            {p.thumbnail ? <img {...responsiveImage(p.thumbnail)} alt={p.name} loading="lazy" decoding="async" /> : p.name}
           </div>
         )}
         <div className="pad">

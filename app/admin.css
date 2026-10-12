@@ -1930,3 +1930,6 @@
 .analytics-trend .analytics-chart-empty {
   min-height: 290px;
 }
+.admin-brand-mark:has(img) { background: transparent; }
+.admin-brand-mark img { display: block; width: 100%; height: 100%; object-fit: contain; }
+[data-theme='dark'] .admin-brand-mark img { filter: brightness(0) invert(1); }

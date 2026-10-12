@@ -2,12 +2,14 @@ import type { Metadata } from 'next';
 import type { CSSProperties } from 'react';
 import { readServerContent } from '../lib/server-content';
 import { themeBootstrap } from '../lib/theme';
+import { siteOrigin } from '../lib/site-origin';
 import '../src/fonts/fonts.css';
 import '../src/tokens.css';
 import '../src/app.css';
 import './admin.css';
 import './globals.css';
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin()),
   title: 'Eric | Home',
   description: 'Eric — Software Engineer. Projects, updates and contact information.',
 };

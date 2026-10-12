@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useLanguage } from './language';
-import { Icon } from './icon';
+import { PdfIcon } from './pdf-icon';
 
 type PageSize = { width: number; height: number };
 
@@ -197,7 +197,7 @@ export function PdfPreview({ url }: { url: string }) {
           disabled={!document || page <= 1}
           onClick={() => goToPage(page - 1)}
         >
-          <Icon name="previous" />
+          <PdfIcon name="previous" />
         </button>
         <span
           className="pdf-page-count"
@@ -217,10 +217,10 @@ export function PdfPreview({ url }: { url: string }) {
           disabled={!document || page >= document.numPages}
           onClick={() => goToPage(page + 1)}
         >
-          <Icon name="next" />
+          <PdfIcon name="next" />
         </button>
         <label className="pdf-zoom" title={t('Thu phóng PDF', 'PDF zoom') + ` · ${zoom * 100}%`}>
-          <Icon name="zoom" />
+          <PdfIcon name="zoom" />
           <select
             aria-label={t('Thu phóng PDF', 'PDF zoom')}
             value={zoom}

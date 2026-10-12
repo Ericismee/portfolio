@@ -36,6 +36,23 @@ export async function generateMetadata({
   return {
     title: 'Eric | ' + (detail || titles[segments[0] || ''] || 'Home'),
     description: profile.summary || profile.headline,
+    alternates: {
+      canonical:
+        segments[0] === 'profile'
+          ? '/'
+          : segments[0] === 'feed'
+            ? '/activity'
+            : '/' + segments.map(encodeURIComponent).join('/'),
+    },
+    robots:
+      segments[0] === 'search' ? { index: false, follow: true } : { index: true, follow: true },
+    openGraph: {
+      title: 'Eric | ' + (detail || titles[segments[0] || ''] || 'Home'),
+      description: profile.summary || profile.headline,
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Eric portfolio' }],
+      type: 'website',
+    },
+    twitter: { card: 'summary_large_image', images: ['/opengraph-image'] },
   };
 }
 export default async function PublicPage({
