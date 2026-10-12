@@ -670,24 +670,35 @@ function Site({
                 <Link href="/contact">{t('Thông tin liên hệ', 'Contact information')}</Link>
               </div>
             </div>
-            <div className="actions">
+            <div
+              className={
+                'actions profile-actions' + (editing.enabled ? ' profile-actions-editing' : '')
+              }
+            >
               {editing.button(
                 t('Chỉnh sửa hồ sơ', 'Edit profile'),
                 () => editing.profile('identity'),
                 true,
               )}
               <Link className="btn primary" href="/projects">
-                {t('Xem dự án', 'View projects')}
+                <span className="profile-action-label-full">{t('Xem dự án', 'View projects')}</span>
+                <span className="profile-action-label-short">{t('Dự án', 'Projects')}</span>
               </Link>
               {!editing.enabled && (
                 <Link className="btn neutral" href="/contact">
                   {t('Liên hệ', 'Contact')}
                 </Link>
               )}
-              {data.cv && <CvDocument url={data.cv.url} name={data.cv.name} />}
+              {data.cv && <CvDocument url={data.cv.url} name={data.cv.name} showDownload={false} />}
               {!editing.enabled && (
-                <button className="btn neutral" onClick={() => share()}>
-                  {t('Chia sẻ', 'Share')}
+                <button
+                  className="btn neutral profile-share"
+                  onClick={() => share()}
+                  aria-label={t('Chia sẻ', 'Share')}
+                  title={t('Chia sẻ', 'Share')}
+                >
+                  <Icon name="share" />
+                  <span>{t('Chia sẻ', 'Share')}</span>
                 </button>
               )}
             </div>

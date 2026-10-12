@@ -2492,6 +2492,10 @@ button.gh-day:hover {
 .tab-label-short {
   display: none;
 }
+.profile-action-label-short,
+.profile-share svg {
+  display: none;
+}
 .cv-actions {
   display: flex;
   align-items: center;
@@ -4221,6 +4225,40 @@ html {
   }
   .main > .card > .tabs .tab-label-short {
     display: inline;
+  }
+  .profile-body > .profile-actions:not(.profile-actions-editing) {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .profile-actions:not(.profile-actions-editing) > :is(.btn, .file-document) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .profile-actions:not(.profile-actions-editing) .btn {
+    justify-content: center;
+    padding: 8px 6px;
+    min-height: 44px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .profile-actions:not(.profile-actions-editing) > .file-document > .btn {
+    width: 100%;
+  }
+  .profile-actions:not(.profile-actions-editing) > .profile-share {
+    flex: 0 0 44px;
+    width: 44px;
+  }
+  .profile-actions .profile-share span,
+  .profile-actions .profile-action-label-full {
+    display: none;
+  }
+  .profile-actions .profile-action-label-short {
+    display: inline;
+  }
+  .profile-actions .profile-share svg {
+    display: block;
+    width: 18px;
+    height: 18px;
   }
   .projects-heading {
     flex-wrap: nowrap;
