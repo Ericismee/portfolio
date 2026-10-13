@@ -5596,3 +5596,38 @@ body .icon-btn:disabled {
 [data-theme='dark'] .gh-calendar-card .gh-day.level-0 {
   background: #263445;
 }
+
+/* Let the weeks fill the available frame, with readable cells on small screens. */
+.gh-calendar-card .gh-calendar-scroll {
+  --gh-grid-min: calc(var(--gh-weeks) * 9px + var(--gh-gap-width));
+}
+.gh-calendar-card .gh-calendar-months,
+.gh-calendar-card .gh-calendar-grid {
+  width: 100%;
+  min-width: var(--gh-grid-min);
+  grid-template-columns: repeat(var(--gh-weeks), minmax(9px, 1fr));
+}
+.gh-calendar-card .gh-calendar-grid {
+  grid-template-rows: repeat(7, auto);
+}
+.gh-calendar-card .gh-calendar-grid .gh-day {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+.gh-calendar-card .gh-day.future {
+  opacity: 1;
+  background: #f1f5f9;
+  border: 1px dashed #b8c5d5;
+  box-shadow: none;
+}
+.gh-calendar-card .gh-day.level-0 {
+  background: #dce4ee;
+}
+[data-theme='dark'] .gh-calendar-card .gh-day.future {
+  background: #18212f;
+  border-color: #526175;
+}
+[data-theme='dark'] .gh-calendar-card .gh-day.level-0 {
+  background: #2e3c4f;
+}
