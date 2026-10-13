@@ -190,8 +190,7 @@ export function PdfPreview({
     const target = root?.querySelector<HTMLElement>(`[data-pdf-page="${number}"]`);
     if (!root || !target) return;
     root.scrollTo({
-      top:
-        root.scrollTop + target.getBoundingClientRect().top - root.getBoundingClientRect().top,
+      top: root.scrollTop + target.getBoundingClientRect().top - root.getBoundingClientRect().top,
     });
     setPage(number);
   };
