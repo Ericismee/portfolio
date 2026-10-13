@@ -13,8 +13,8 @@
     "test": "node --test tests/*.test.ts tests/*.test.mjs",
     "security:source": "node scripts/check-public-source.mjs",
     "check": "npm run lint && npm run typecheck && npm test",
-    "format": "prettier --write app components lib tests/*.ts scripts/*.ts next.config.ts tsconfig.json",
-    "format:check": "prettier --check app components lib tests/*.ts scripts/*.ts next.config.ts tsconfig.json",
+    "format": "prettier --write \"{app,components,lib,src,scripts,tests}/**/*.{html,css,js,jsx,mjs,cjs,ts,tsx,json}\" \"*.{html,js,mjs,cjs,ts,json}\"",
+    "format:check": "prettier --check \"{app,components,lib,src,scripts,tests}/**/*.{html,css,js,jsx,mjs,cjs,ts,tsx,json}\" \"*.{html,js,mjs,cjs,ts,json}\"",
     "data:migrate": "node scripts/migrate-cloud.ts",
     "admin:create": "node scripts/create-admin.ts"
   },

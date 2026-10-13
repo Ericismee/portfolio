@@ -3,7 +3,10 @@ node_modules
 .data
 .chrome-preview
 package-lock.json
-src
 backend
 qa*.mjs
 scripts/qa*.mjs
+next-env.d.ts
+dist
+coverage
+.vercel
