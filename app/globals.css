@@ -1651,13 +1651,7 @@ button.gh-day:hover {
     align-items: start;
   }
   .gh-identity > .avatar {
-    grid-row: 1 / 4;
-  }
-  .gh-identity > h1 {
-    margin-top: 0;
-  }
-  .gh-identity > p {
-    margin: 2px 0 10px;
+    grid-row: 1;
   }
   .gh-identity > .btn,
   .gh-identity-facts,
@@ -5413,4 +5407,45 @@ body .icon-btn:disabled {
 }
 .gh-stack[open] > .github-tech-chips {
   margin-top: 8px;
+}
+
+.gh-identity-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  margin: 14px 0;
+}
+.gh-identity-copy h1 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.2;
+  letter-spacing: -0.6px;
+}
+.gh-identity-copy .gh-username {
+  gap: 4px;
+  min-height: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.gh-identity-copy .gh-username:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.gh-identity-copy p {
+  margin: 3px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+@media (max-width: 700px) {
+  .gh-identity-copy {
+    align-self: center;
+    margin: 0;
+  }
+  .gh-identity > .btn {
+    margin-top: 12px;
+  }
 }

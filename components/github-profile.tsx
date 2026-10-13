@@ -231,11 +231,13 @@ export function GithubProfile({
             owner.name.slice(0, 1)
           )}
         </div>
-        <h1>{profile?.name || owner.name}</h1>
-        <a className="gh-username" href={url} target="_blank" rel="noopener noreferrer">
-          @{stats.username} ↗
-        </a>
-        <p>{profile?.bio || owner.headline}</p>
+        <div className="gh-identity-copy">
+          <h1>{profile?.name || owner.name}</h1>
+          <a className="gh-username" href={url} target="_blank" rel="noopener noreferrer">
+            @{stats.username} <span aria-hidden="true">↗</span>
+          </a>
+          <p>{profile?.bio || owner.headline}</p>
+        </div>
         <a className="btn neutral" href={url} target="_blank" rel="noopener noreferrer">
           {t('Xem trên GitHub ↗', 'View on GitHub ↗')}
         </a>
