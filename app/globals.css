@@ -6516,3 +6516,24 @@ body .icon-btn:disabled {
   font: inherit;
   font-weight: 600;
 }
+
+/* Keep the overview metrics in one quiet, evenly divided strip. */
+.gh-main > .gh-stats {
+  gap: 0;
+  padding: 16px 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--card);
+  overflow: hidden;
+}
+.gh-stats > .card {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 2px 10px;
+  gap: 6px;
+}
+.gh-stats > .card + .card {
+  border-left: 1px solid var(--border-subtle);
+}
