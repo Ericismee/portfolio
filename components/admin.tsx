@@ -1327,13 +1327,27 @@ function AdminDashboard() {
                 )}
               </span>
               <div>
-                <h1>{t('Quản trị hồ sơ', 'Profile admin')}</h1>
+                <h1>
+                  <span className="admin-label-full">{t('Quản trị hồ sơ', 'Profile admin')}</span>
+                  <span className="admin-label-compact">Admin</span>
+                </h1>
                 <p>{state.data.profile.name}</p>
               </div>
             </div>
             <div className="actions">
-              <Link className="btn neutral" href="/" target="_blank" rel="noopener noreferrer">
-                {t('Xem website ↗', 'View website ↗')}
+              <Link
+                className="btn neutral admin-website"
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t('Xem website', 'View website')}
+                title={t('Xem website', 'View website')}
+              >
+                <span className="admin-website-icon">
+                  <Icon name="external" />
+                </span>
+                <span className="admin-label-full">{t('Xem website ↗', 'View website ↗')}</span>
+                <span className="admin-label-compact">Website ↗</span>
               </Link>
               <button
                 className="btn neutral admin-icon-control"
@@ -1353,7 +1367,9 @@ function AdminDashboard() {
                 <Icon name="languages" />
               </button>
               <button
-                className="btn neutral"
+                className="btn neutral admin-logout"
+                aria-label={t('Đăng xuất', 'Sign out')}
+                title={t('Đăng xuất', 'Sign out')}
                 onClick={() =>
                   void action(async () => {
                     if (
@@ -1367,13 +1383,14 @@ function AdminDashboard() {
                   })
                 }
               >
-                {t('Đăng xuất', 'Sign out')}
+                <Icon name="logout" />
+                <span className="admin-label-full">{t('Đăng xuất', 'Sign out')}</span>
               </button>
             </div>
           </div>
           <div className="admin-shell">
             <label className="admin-mobile-navigation">
-              {t('Chọn mục quản trị', 'Choose an admin section')}
+              <span>{t('Mục', 'Section')}</span>
               <select value={tab} onChange={(event) => navigate(event.target.value as Tab)}>
                 {Object.entries(labels).map(([key, label]) => (
                   <option key={key} value={key}>
@@ -1414,7 +1431,7 @@ function AdminDashboard() {
               ))}
             </nav>
             <main className="admin-content" id="admin-main">
-              <div className="admin-title">
+              <div className={'admin-title' + (tab === 'traffic' ? ' admin-title-traffic' : '')}>
                 <div>
                   <p className="admin-eyebrow">{t('Quản lý nội dung', 'Content management')}</p>
                   <h2>{labels[tab]}</h2>

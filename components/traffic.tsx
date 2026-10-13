@@ -168,6 +168,8 @@ export function TrafficAdmin() {
           </a>
           <button
             className="btn neutral traffic-refresh"
+            aria-label={t('Làm mới thống kê', 'Refresh analytics')}
+            title={t('Làm mới thống kê', 'Refresh analytics')}
             onClick={() => {
               setLoading(true);
               setRefresh((v) => v + 1);
@@ -175,7 +177,7 @@ export function TrafficAdmin() {
             disabled={loading}
           >
             <Icon name="clock" />
-            {t('Làm mới', 'Refresh')}
+            <span className="traffic-refresh-label">{t('Làm mới', 'Refresh')}</span>
           </button>
         </div>
       </div>
@@ -190,21 +192,28 @@ export function TrafficAdmin() {
         <div className="analytics-range-tabs" aria-label={t('Khoảng thời gian', 'Date range')}>
           {['7', '30', '90', 'all'].map((value) => (
             <button key={value} aria-pressed={range === value} onClick={() => chooseRange(value)}>
-              {value === 'all'
-                ? t('Toàn thời gian', 'All time')
-                : t(value + ' ngày', value + ' days')}
+              <span className="analytics-range-label-full">
+                {value === 'all'
+                  ? t('Toàn thời gian', 'All time')
+                  : t(value + ' ngày', value + ' days')}
+              </span>
+              <span className="analytics-range-label-compact">
+                {value === 'all' ? t('Tất cả', 'All') : t(value + ' ngày', value + ' days')}
+              </span>
             </button>
           ))}
         </div>
         <button
           className="btn neutral analytics-filter-toggle"
           aria-expanded={filtersOpen}
+          aria-label={t('Bộ lọc', 'Filters') + (extraFilters ? ` (${extraFilters})` : '')}
+          title={t('Bộ lọc', 'Filters')}
           aria-controls="analytics-filters"
           onClick={() => setFiltersOpen((value) => !value)}
         >
           <Icon name="search" />
-          {t('Bộ lọc', 'Filters')}
-          {extraFilters > 0 && <span>{extraFilters}</span>}
+          <span className="analytics-filter-label">{t('Bộ lọc', 'Filters')}</span>
+          {extraFilters > 0 && <span className="analytics-filter-count">{extraFilters}</span>}
         </button>
       </div>
       <div className="analytics-report-context" role="status" aria-live="polite">

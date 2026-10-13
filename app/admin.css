@@ -2248,3 +2248,285 @@
     width: 100%;
   }
 }
+
+.admin-label-compact,
+.analytics-range-label-compact,
+.admin-logout > svg {
+  display: none;
+}
+@media (max-width: 900px) {
+  .admin-shell {
+    padding: 12px;
+    gap: 12px;
+  }
+  .admin-page label.admin-mobile-navigation {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+  }
+  .admin-mobile-navigation > span {
+    flex: 0 0 auto;
+    color: var(--muted);
+  }
+  .admin-mobile-navigation select {
+    flex: 1;
+    width: 0;
+    min-width: 0;
+    min-height: 44px;
+  }
+  .admin-content .admin-eyebrow {
+    display: none;
+  }
+  .admin-content > .admin-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .admin-content > .admin-title > div {
+    min-width: 0;
+  }
+  .admin-content .admin-title h2 {
+    font-size: 20px;
+    line-height: 1.3;
+    margin: 0;
+  }
+  .admin-content > .admin-title-traffic {
+    display: none;
+  }
+  .admin-title > .btn {
+    flex-shrink: 0;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .admin-content > .card {
+    padding: 16px;
+    border-radius: 10px;
+  }
+}
+@media (max-width: 600px) {
+  .admin-page {
+    --admin-header-height: 64px;
+  }
+  .admin-page .admin-header {
+    height: 64px;
+    padding: 8px 10px;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .admin-header .admin-brand {
+    width: auto;
+    flex: 0 0 auto;
+    gap: 6px;
+  }
+  .admin-header .admin-brand-mark {
+    width: 28px;
+    height: 28px;
+  }
+  .admin-header h1 {
+    font-size: 16px;
+  }
+  .admin-header .admin-brand p {
+    display: none;
+  }
+  .admin-header .admin-label-full {
+    display: none;
+  }
+  .admin-header .admin-label-compact {
+    display: inline;
+  }
+  .admin-header > .actions {
+    flex-wrap: nowrap;
+    width: auto;
+    margin-left: auto;
+    gap: 6px;
+  }
+  .admin-header .actions > .btn {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 8px;
+    font-size: 12px;
+  }
+  .admin-header .actions > :is(.admin-icon-control, .admin-logout) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+  }
+  .admin-logout > svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+  }
+  .admin-shell {
+    padding: 10px;
+    gap: 10px;
+  }
+  .admin-tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .admin-tools :is(input, select) {
+    min-width: 0;
+    width: 100%;
+  }
+  .admin-tools select {
+    flex-basis: auto;
+    max-width: 150px;
+  }
+  .traffic-admin .traffic-heading {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 8px;
+  }
+  .traffic-heading > div:first-child {
+    display: contents;
+  }
+  .traffic-heading .traffic-kicker {
+    display: none;
+  }
+  .traffic-heading h3 {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    font-size: 18px;
+    line-height: 1.3;
+    margin: 0;
+  }
+  .traffic-heading > .actions {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    gap: 6px;
+  }
+  .traffic-heading > .actions .btn {
+    min-height: 44px;
+    padding: 8px;
+    font-size: 12px;
+  }
+  .traffic-heading p {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 11px;
+  }
+  .traffic-refresh-label {
+    display: none;
+  }
+  .traffic-heading .traffic-refresh {
+    width: 44px;
+    padding: 10px;
+  }
+  .traffic-admin .analytics-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .traffic-admin .analytics-range-tabs {
+    grid-column: 1;
+  }
+  .analytics-range-label-full {
+    display: none;
+  }
+  .analytics-range-label-compact {
+    display: inline;
+  }
+  .traffic-admin .analytics-filter-toggle {
+    grid-column: 2;
+    width: 44px;
+    height: 52px;
+    padding: 10px;
+    margin: 0;
+    position: relative;
+  }
+  .analytics-filter-label {
+    display: none;
+  }
+  .analytics-filter-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    border-radius: 10px;
+    min-width: 18px;
+    padding: 1px 4px;
+    background: var(--accent);
+    color: var(--primary-ink);
+    font-size: 10px;
+  }
+  .analytics-jump-links {
+    margin: 6px 0;
+    padding-bottom: 4px;
+  }
+  .traffic-admin .traffic-stats {
+    margin-top: 10px;
+  }
+}
+
+.admin-website-icon {
+  display: none;
+}
+@media (max-width: 900px) {
+  .admin-page label.admin-mobile-navigation {
+    flex-direction: row;
+  }
+}
+@media (max-width: 600px) {
+  .admin-page .admin-header .actions > .btn {
+    padding: 8px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 380px) {
+  .admin-header .admin-brand-mark {
+    width: 24px;
+    height: 24px;
+  }
+  .admin-header .admin-brand {
+    gap: 4px;
+  }
+  .admin-header h1 {
+    font-size: 14px;
+  }
+  .admin-page .admin-header .actions > .admin-website {
+    width: 44px;
+    padding: 10px;
+  }
+  .admin-website .admin-label-compact {
+    display: none;
+  }
+  .admin-website-icon {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-page .admin-header {
+    min-height: 64px;
+  }
+  .traffic-admin .analytics-chart-empty {
+    min-height: 140px;
+  }
+  .traffic-admin .analytics-trend .analytics-chart-empty {
+    min-height: 140px;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-content > .card {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+}
+@media (max-width: 600px) {
+  .traffic-admin .traffic-stat-top {
+    flex-direction: row;
+    align-items: center;
+  }
+  .traffic-admin .traffic-stat-icon {
+    width: 26px;
+    height: 26px;
+  }
+}
