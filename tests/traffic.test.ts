@@ -6,7 +6,13 @@ import path from 'node:path';
 import { openDatabase } from '../lib/database.ts';
 import { createApi } from '../lib/api.ts';
 import { passwordHash } from '../lib/auth.ts';
-import { trafficDetails, trafficIp, trafficGeo, trafficFilterSchema } from '../lib/traffic.ts';
+import {
+  trafficDetails,
+  trafficIp,
+  trafficGeo,
+  trafficFilterSchema,
+  trafficCsv,
+} from '../lib/traffic.ts';
 
 test('Traffic counts sessions without exposing visitor details and encrypts retained IPs', async () => {
   const directory = await mkdtemp(path.join(tmpdir(), 'profile-traffic-'));
@@ -228,6 +234,37 @@ test('Traffic counts sessions without exposing visitor details and encrypts reta
     else process.env.GITHUB_CREDENTIAL_KEY = oldKey;
     if (oldVercel === undefined) delete process.env.VERCEL;
     else process.env.VERCEL = oldVercel;
+    database.db.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('Traffic CSV neutralizes spreadsheet formulas, including leading whitespace', async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'profile-traffic-csv-'));
+  const database = openDatabase(directory);
+  try {
+    const handle = createApi(database);
+    await handle(new Request('http://localhost:3001/api/content'));
+    const inputs = ['=1+1', '+1+1', '-1+1', '@SUM(1)', '  =1+1', '\t=1+1'];
+    inputs.forEach((value, index) => {
+      database.db
+        .prepare('INSERT INTO traffic_visits VALUES(?,?,?,?,?,?,?,?,?)')
+        .run(
+          String(index),
+          'synthetic-session',
+          '/github',
+          Date.now(),
+          '',
+          'test',
+          value,
+          'Unknown',
+          'Unknown',
+        );
+    });
+    const csv = await new Response(trafficCsv(database, '')).text();
+    for (const value of inputs) assert.ok(csv.includes('"\'' + value + '"'), value);
+    assert.equal(csv.trim().split('\r\n').length, inputs.length + 1);
+  } finally {
     database.db.close();
     await rm(directory, { recursive: true, force: true });
   }

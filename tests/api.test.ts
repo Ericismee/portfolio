@@ -688,6 +688,8 @@ test('Every private read endpoint rejects anonymous and forged sessions without 
     for (const endpoint of [
       '/api/admin/content',
       '/api/admin/revisions',
+      '/api/admin/traffic',
+      '/api/admin/traffic/export',
       '/api/admin/messages',
       '/api/admin/github',
       '/api/admin/github-connection',
