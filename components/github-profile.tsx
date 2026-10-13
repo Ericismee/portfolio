@@ -1,6 +1,5 @@
 'use client';
 import { PAGE_REFRESH_EVENT, type PageRefreshRequest } from '../lib/page-refresh';
-import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GithubSkills } from '../lib/github-skills';
 import type { GithubActivity, ContributionDay } from '../lib/github-activity';
@@ -282,9 +281,6 @@ export function GithubProfile({
             <TechnologyChips names={stats.languages.map((item) => item.name)} />
           </details>
         )}
-        <Link href="/" className="side-link">
-          {t('← Về hồ sơ cá nhân', '← Back to profile')}
-        </Link>
       </aside>
       <div className="gh-main">
         <div className="gh-content-toolbar">
