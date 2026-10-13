@@ -386,16 +386,15 @@ export function GithubProfile({
                       />
                       <div className="gh-calendar-footer">
                         <span role="status">
-                          {selectedDay
-                            ? selectedDay.date +
-                              ' · ' +
-                              number(selectedDay.count) +
-                              ' ' +
-                              t('đóng góp', 'contributions')
-                            : t(
-                                'Chọn một ngày để xem số đóng góp.',
-                                'Select a day to see contributions.',
-                              )}
+                          {selectedDay ? (
+                            <span className="gh-selected-day">
+                              <span>{selectedDay.date.split('-').reverse().join('/')}</span>
+                              <strong>{t('Đóng góp', 'Contributions')}: {number(selectedDay.count)}</strong>
+                            </span>
+                          ) : t(
+                            'Chọn một ngày để xem số đóng góp.',
+                            'Select a day to see contributions.',
+                          )}
                         </span>
                         <span className="gh-legend">
                           {t('Ít', 'Less')}

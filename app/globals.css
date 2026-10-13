@@ -5652,3 +5652,21 @@ body .icon-btn:disabled {
 }
 .gh-day-tooltip > span { color: #cbd5e1; }
 .gh-day-tooltip > strong { font-size: 14px; font-weight: 650; }
+
+.gh-selected-day {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.gh-selected-day strong {
+  color: var(--accent);
+  font-weight: 650;
+}
