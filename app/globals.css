@@ -6775,3 +6775,12 @@ body .icon-btn:disabled {
     padding-bottom: 3px;
   }
 }
+
+@media (max-width: 800px) {
+  .layout > .author-sidebar {
+    display: block;
+    position: static;
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+}
