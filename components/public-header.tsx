@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { saveTheme } from '../lib/theme';
+import { saveTheme, type Theme } from '../lib/theme';
 import { responsiveImage } from '../lib/image-variants';
 import { Icon } from './icon';
 import { FileDocument } from './file-document';
@@ -29,6 +29,7 @@ export function PublicHeader({
   const profile = data.profile;
   const [search, setSearch] = useState(page === 'search' ? searchTerm : '');
   const [menu, setMenu] = useState(false);
+  const [menuTheme, setMenuTheme] = useState<Theme>('light');
   const menuButton = useRef<HTMLButtonElement>(null);
   const menuPanel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -163,7 +164,10 @@ export function PublicHeader({
             aria-expanded={menu}
             aria-controls="site-menu"
             ref={menuButton}
-            onClick={() => setMenu(!menu)}
+            onClick={() => {
+              setMenuTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+              setMenu(!menu);
+            }}
           >
             {avatar('tiny')}
           </button>
@@ -172,40 +176,125 @@ export function PublicHeader({
               className="site-menu"
               id="site-menu"
               ref={menuPanel}
+              aria-label={t('Tùy chọn trang', 'Page options')}
               onClick={(event) => {
-                if ((event.target as HTMLElement).closest('button,a')) setMenu(false);
+                const target = event.target as HTMLElement;
+                if (target.closest('button,a') && !target.closest('[data-menu-stay-open]'))
+                  setMenu(false);
+              }}
+              onBlur={(event) => {
+                if (
+                  event.relatedTarget &&
+                  !event.currentTarget.contains(event.relatedTarget as Node) &&
+                  event.relatedTarget !== menuButton.current
+                )
+                  setMenu(false);
               }}
             >
-              <strong className="settings-title">{t('Cài đặt', 'Settings')}</strong>
-              <button
-                className="theme-menu-action"
-                onClick={() => {
-                  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-                  saveTheme(data.accent, next);
-                }}
+              <div className="site-menu-identity">
+                {avatar('tiny')}
+                <div>
+                  <strong>{profile.name}</strong>
+                  <span>
+                    {editing.isAdmin
+                      ? editing.guestPreview
+                        ? t('Đang xem như khách', 'Guest preview')
+                        : t('Chế độ quản trị', 'Admin mode')
+                      : t('Tùy chọn cho người xem', 'Visitor options')}
+                  </span>
+                </div>
+              </div>
+              <section
+                className="site-menu-group"
+                aria-labelledby="menu-display-title"
+                data-menu-stay-open
               >
-                <Icon name="moon" />
-                {t('Sáng / Tối', 'Dark / Light')}
-              </button>
-              <span className="settings-label">
-                {t('Ngôn ngữ giao diện', 'Interface language')}
-              </span>
-              <button onClick={toggle}>{language === 'vi' ? 'English' : 'Tiếng Việt'}</button>
-              {editing.isAdmin && (
-                <button
-                  className="theme-menu-action"
-                  onClick={() => editing.setGuestPreview(!editing.guestPreview)}
-                >
-                  <Icon name={editing.guestPreview ? 'edit' : 'eye'} />
-                  {editing.guestPreview
-                    ? t('Quay lại quản trị', 'Return to admin')
-                    : t('Xem như khách', 'View as guest')}
+                <h2 id="menu-display-title">{t('Giao diện', 'Appearance')}</h2>
+                <div className="site-menu-preference">
+                  <span>
+                    <Icon name={menuTheme === 'dark' ? 'moon' : 'sun'} />
+                    {t('Chế độ', 'Theme')}
+                  </span>
+                  <div
+                    className="site-menu-choice"
+                    role="group"
+                    aria-label={t('Chế độ giao diện', 'Color theme')}
+                  >
+                    {(['light', 'dark'] as const).map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={menuTheme === value}
+                        onClick={() => {
+                          saveTheme(data.accent, value);
+                          setMenuTheme(value);
+                        }}
+                      >
+                        {value === 'light' ? t('Sáng', 'Light') : t('Tối', 'Dark')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="site-menu-preference">
+                  <span>
+                    <Icon name="languages" />
+                    {t('Ngôn ngữ', 'Language')}
+                  </span>
+                  <div
+                    className="site-menu-choice"
+                    role="group"
+                    aria-label={t('Ngôn ngữ giao diện', 'Interface language')}
+                  >
+                    <button
+                      type="button"
+                      aria-pressed={language === 'vi'}
+                      onClick={() => {
+                        if (language !== 'vi') toggle();
+                      }}
+                    >
+                      VI
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={language === 'en'}
+                      onClick={() => {
+                        if (language !== 'en') toggle();
+                      }}
+                    >
+                      EN
+                    </button>
+                  </div>
+                </div>
+              </section>
+              <section className="site-menu-group" aria-labelledby="menu-shortcuts-title">
+                <h2 id="menu-shortcuts-title">{t('Truy cập nhanh', 'Quick links')}</h2>
+                <Link className="site-menu-item" href="/github">
+                  <Icon name="github" />
+                  <span>GitHub</span>
+                  <Icon name="next" />
+                </Link>
+                <button className="site-menu-item" onClick={() => window.print()}>
+                  <Icon name="print" />
+                  <span>{t('In hồ sơ', 'Print profile')}</span>
                 </button>
+              </section>
+              {editing.isAdmin && (
+                <section className="site-menu-group" aria-labelledby="menu-admin-title">
+                  <h2 id="menu-admin-title">{t('Dành cho quản trị viên', 'Administration')}</h2>
+                  <button
+                    className="site-menu-item site-menu-preview"
+                    onClick={() => editing.setGuestPreview(!editing.guestPreview)}
+                  >
+                    <Icon name={editing.guestPreview ? 'edit' : 'eye'} />
+                    <span>
+                      {editing.guestPreview
+                        ? t('Quay lại chỉnh sửa', 'Return to editing')
+                        : t('Xem như khách', 'Preview as visitor')}
+                    </span>
+                  </button>
+                  {editing.settings}
+                </section>
               )}
-              {editing.settings}
-              <div className="settings-divider" />
-              <Link href="/github">GitHub ↗</Link>
-              <button onClick={() => window.print()}>{t('In hồ sơ', 'Print profile')}</button>
             </div>
           )}
         </div>

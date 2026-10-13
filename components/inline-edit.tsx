@@ -745,12 +745,25 @@ export function useInlineEdit(publicData: Content) {
     removePost: (id: string) => removeEntry('posts', '', id),
     settings: enabled && (
       <>
-        <div className="settings-divider" />
-        <button onClick={() => addSection()}>{t('Các mục hồ sơ', 'Profile sections')}</button>
-        <button onClick={githubSettings}>{t('Cấu hình GitHub', 'GitHub settings')}</button>
-        <button onClick={appearance}>{t('Giao diện hồ sơ', 'Profile appearance')}</button>
-        <Link href="/admin">{t('Quản trị nâng cao', 'Advanced administration')}</Link>
+        <button className="site-menu-item" onClick={() => addSection()}>
+          <Icon name="sections" />
+          <span>{t('Các mục hồ sơ', 'Profile sections')}</span>
+        </button>
+        <button className="site-menu-item" onClick={githubSettings}>
+          <Icon name="github" />
+          <span>{t('Cấu hình GitHub', 'GitHub settings')}</span>
+        </button>
+        <button className="site-menu-item" onClick={appearance}>
+          <Icon name="settings" />
+          <span>{t('Giao diện hồ sơ', 'Profile appearance')}</span>
+        </button>
+        <Link className="site-menu-item" href="/admin">
+          <Icon name="lock" />
+          <span>{t('Trang quản trị', 'Admin dashboard')}</span>
+          <Icon name="next" />
+        </Link>
         <button
+          className="site-menu-item site-menu-signout"
           onClick={async () => {
             try {
               await request('/api/admin/logout', 'POST', {}, csrf);
@@ -762,7 +775,8 @@ export function useInlineEdit(publicData: Content) {
             }
           }}
         >
-          {t('Đăng xuất', 'Sign out')}
+          <Icon name="logout" />
+          <span>{t('Đăng xuất', 'Sign out')}</span>
         </button>
       </>
     ),

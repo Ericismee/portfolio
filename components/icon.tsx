@@ -1,5 +1,11 @@
 export function Icon({ name }: { name: string }) {
   const paths: Record<string, React.ReactNode> = {
+    print: (
+      <>
+        <path d="M7 8V3h10v5M7 17H3V8h18v9h-4M7 14h10v7H7z" />
+        <path d="M17 11h1" />
+      </>
+    ),
     reply: <path d="m9 4-6 6 6 6M3 10h10a8 8 0 0 1 8 8v2" />,
     forward: <path d="m15 4 6 6-6 6m6-6H11a8 8 0 0 0-8 8v2" />,
     logout: <path d="M9 4H4v16h5m6-12 4 4-4 4m-7-4h13" />,
