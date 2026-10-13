@@ -6121,6 +6121,8 @@ body .icon-btn:disabled {
 }
 
 .gh-stack > summary {
+  -webkit-user-select: none;
+  user-select: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
