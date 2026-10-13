@@ -1,6 +1,7 @@
 'use client';
 import { PAGE_REFRESH_EVENT, type PageRefreshRequest } from '../lib/page-refresh';
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { GithubSkills } from '../lib/github-skills';
 import type { GithubActivity, ContributionDay } from '../lib/github-activity';
 import { featuredGithubRepos } from '../lib/github-display';
@@ -645,6 +646,29 @@ function ContributionCalendar({
   language: string;
   onSelect: (day: ContributionDay) => void;
 }) {
+  const tooltipId = useId();
+  const [tooltip, setTooltip] = useState<{
+    day: ContributionDay; x: number; y: number; below: boolean;
+  } | null>(null);
+  const showTooltip = (element: HTMLButtonElement, day: ContributionDay) => {
+    const rect = element.getBoundingClientRect();
+    const below = rect.top < 90;
+    setTooltip({
+      day,
+      x: Math.max(112, Math.min(window.innerWidth - 112, rect.left + rect.width / 2)),
+      y: below ? rect.bottom + 8 : rect.top - 8,
+      below,
+    });
+  };
+  useEffect(() => {
+    const hide = () => setTooltip(null);
+    window.addEventListener('scroll', hide, true);
+    window.addEventListener('resize', hide);
+    return () => {
+      window.removeEventListener('scroll', hide, true);
+      window.removeEventListener('resize', hide);
+    };
+  }, []);
   const first = new Date(Date.UTC(year, 0, 1));
   const offset = first.getUTCDay();
   const length = Math.round((Date.UTC(year + 1, 0, 1) - first.getTime()) / 86400000);
@@ -660,6 +684,7 @@ function ContributionCalendar({
       ) + 1,
   }));
   return (
+    <>
     <div
       className="gh-calendar-scroll"
       style={{
@@ -694,13 +719,23 @@ function ContributionCalendar({
               data-day={index}
               className={'gh-day level-' + day.level}
               tabIndex={index === days.length - 1 ? 0 : -1}
-              title={date + ' · ' + day.count}
+              aria-describedby={tooltip?.day.date === date ? tooltipId : undefined}
+              onMouseEnter={(event) => showTooltip(event.currentTarget, day)}
+              onMouseLeave={() => setTooltip(null)}
+              onBlur={() => setTooltip(null)}
               aria-label={
                 date + ': ' + day.count + (language === 'vi' ? ' đóng góp' : ' contributions')
               }
-              onClick={() => onSelect(day)}
-              onFocus={() => onSelect(day)}
+              onClick={(event) => {
+                onSelect(day);
+                showTooltip(event.currentTarget, day);
+              }}
+              onFocus={(event) => {
+                onSelect(day);
+                showTooltip(event.currentTarget, day);
+              }}
               onKeyDown={(event) => {
+                if (event.key === 'Escape') setTooltip(null);
                 const delta = (
                   { ArrowRight: 7, ArrowLeft: -7, ArrowDown: 1, ArrowUp: -1 } as Record<
                     string,
@@ -722,5 +757,22 @@ function ContributionCalendar({
         })}
       </div>
     </div>
+    {tooltip && createPortal(
+      <div
+        id={tooltipId}
+        role="tooltip"
+        className="gh-day-tooltip"
+        style={{
+          left: tooltip.x,
+          top: tooltip.y,
+          transform: tooltip.below ? 'translateX(-50%)' : 'translate(-50%, -100%)',
+        }}
+      >
+        <span>{tooltip.day.date.split('-').reverse().join('/')}</span>
+        <strong>{language === 'vi' ? 'Đóng góp' : 'Contributions'}: {tooltip.day.count.toLocaleString(language)}</strong>
+      </div>,
+      document.body,
+    )}
+    </>
   );
 }

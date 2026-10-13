@@ -5631,3 +5631,24 @@ body .icon-btn:disabled {
 [data-theme='dark'] .gh-calendar-card .gh-day.level-0 {
   background: #2e3c4f;
 }
+
+.gh-day-tooltip {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 200px;
+  max-width: calc(100vw - 24px);
+  padding: 10px 12px;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  background: #172033;
+  color: #fff;
+  box-shadow: 0 6px 20px rgb(15 23 42 / 22%);
+  pointer-events: none;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.gh-day-tooltip > span { color: #cbd5e1; }
+.gh-day-tooltip > strong { font-size: 14px; font-weight: 650; }
