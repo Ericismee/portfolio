@@ -34,3 +34,9 @@ DNS A/CNAME records and CDN addresses are public by design. A Vercel edge addres
 ## Validation
 
 Run `npm run check`, `npm run build`, `npm audit` and `npm run security:source -- --history`. The source check screens tracked files and locally available Git history for private paths and recognizable credential formats; it does not detect every secret, image contents or sensitive prose. CI fetches full history before running it. Recheck anonymous access to private APIs and unpublished files after changing authentication, storage, routing or proxy settings. Audits are point-in-time checks, not a guarantee against all vulnerabilities.
+
+### Analytics export checks
+
+The analytics report and CSV export are both private reads: anonymous and forged-session requests must receive `401` without visitor data. CSV responses use `private, no-store`, attachment disposition and `nosniff`; export requests are rate limited. Text fields are quoted and spreadsheet formula prefixes (`=`, `+`, `-`, `@`), including leading whitespace, are neutralized before export. Treat downloaded files as private visitor records.
+
+Review on 2026-10-13: the dependency audit reported no known advisories, and the source/history scan found no recognized credentials or private paths. Focused tests verified analytics authorization, encrypted visitor details, filter validation and CSV formula neutralization. This is a point-in-time review of these controls, not a penetration-test certification.
