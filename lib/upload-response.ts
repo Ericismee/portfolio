@@ -2,7 +2,7 @@ import type { Database } from './database.ts';
 import { authService } from './auth.ts';
 import { publicContent } from './schema.ts';
 import { uploadBody, readUpload, mimeTypes } from './uploads.ts';
-import { imageVariant } from './image-cache.ts';
+import { imageVariant, ImageBusyError } from './image-cache.ts';
 import { imageWidths } from './image-variants.ts';
 
 export async function uploadResponse(database: Database, request: Request, filename: string) {
@@ -57,7 +57,12 @@ export async function uploadResponse(database: Database, request: Request, filen
           : {}),
       },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof ImageBusyError)
+      return new Response('Image processing busy', {
+        status: 503,
+        headers: { 'Retry-After': '5', 'Cache-Control': 'no-store' },
+      });
     return new Response('Not found', { status: 404 });
   }
 }

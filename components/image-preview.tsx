@@ -22,7 +22,7 @@ export function ImagePreview({
       triggerClassName="media-preview-trigger"
       trigger={
         <img
-          {...responsiveImage(src)}
+          {...responsiveImage(src, '(max-width: 800px) 100vw, 900px')}
           className={className}
           alt={alt}
           loading="lazy"
