@@ -2,7 +2,7 @@
 
 A personal portfolio with a publishing workspace, a GitHub activity dashboard and private website analytics. Built with Next.js App Router, React and TypeScript.
 
-[Live website](https://ericisme.cloud) · [Deployment](docs/VERCEL-DEPLOYMENT.md) · [Backups](docs/BACKUPS.md) · [Security](SECURITY.md) · [MIT license](LICENSE)
+[Live website](https://ericisme.cloud) · [Deployment](docs/VERCEL-DEPLOYMENT.md) · [Backups](docs/BACKUPS.md) · [Security](SECURITY.md) · [MIT license](LICENSE) · [Copyright](COPYRIGHT.md)
 
 ![Profile on desktop: identity, introduction and featured projects](docs/screenshots/profile-desktop.png)
 
@@ -117,6 +117,8 @@ Keep environment files, databases, tokens, keys, backups and content/visitor exp
 
 ## License and content rights
 
-Original application code is [MIT licensed](LICENSE). Fonts, dependencies and third-party artwork retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Copyright © 2026 **Eric (Ericismee)**. Original application code and technical documentation are licensed under [MIT](LICENSE): you may use, modify and redistribute them, including commercially, while retaining the copyright and license notices. The software is provided without warranty under the terms of that license.
 
-Personal profile content, photographs, artwork and trademarks are not granted for reuse by the software license. Replace them when deploying your own portfolio. Screenshots illustrate this application rather than provide a reusable asset pack.
+Personal profile content, photographs, CVs, certificates and uploaded documents are separate from the reusable software. Replace them when deploying your own portfolio; the code license does not grant rights to someone else's identity, content or trademarks. Original terminal branding and favicon assets are MIT licensed as documented in the notices.
+
+Fonts, dependencies, technology logos and third-party artwork retain their own licenses and rights. See [third-party notices](THIRD_PARTY_NOTICES.md) and [copyright and reuse guidance in Vietnamese](COPYRIGHT.md). Screenshots illustrate this application rather than provide a reusable asset pack.
