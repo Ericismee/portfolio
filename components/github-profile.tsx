@@ -1,6 +1,6 @@
 'use client';
 import { PAGE_REFRESH_EVENT, type PageRefreshRequest } from '../lib/page-refresh';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { GithubSkills } from '../lib/github-skills';
 import type { GithubActivity, ContributionDay } from '../lib/github-activity';
 import { featuredGithubRepos } from '../lib/github-display';
@@ -662,6 +662,10 @@ function ContributionCalendar({
   return (
     <div
       className="gh-calendar-scroll"
+      style={{
+        '--gh-weeks': Math.ceil((offset + length) / 7),
+        '--gh-gap-width': (Math.ceil((offset + length) / 7) - 1) * 3 + 'px',
+      } as CSSProperties}
       tabIndex={0}
       aria-label={
         language === 'vi'
