@@ -331,8 +331,8 @@ export function GithubProjectPicker({
           {preview.private && (
             <p className="private-note">
               {t(
-                'Đây là kho mã riêng tư. Kiểm tra kỹ nội dung trước khi lưu hoặc đăng công khai.',
-                'This repository is private. Review the content before saving or publishing.',
+                'Đây là kho mã riêng tư. Ảnh GitHub có thể không hiển thị cho người xem. Để chia sẻ ảnh, chọn Đính kèm file trong trình soạn thảo để tải từng ảnh được phép công khai, giữ bản nháp và xem trước khi xuất bản.',
+                'This repository is private. GitHub images may not load for visitors. Use Attach file in the editor to upload individual images you may share, keep a draft and preview before publishing.',
               )}
             </p>
           )}

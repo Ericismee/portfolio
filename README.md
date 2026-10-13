@@ -97,6 +97,8 @@ Raster images have responsive variants up to 2560px and higher-quality WebP enco
 
 Uploaded files retain visibility checks. Draft, hidden and unpublished attachments are not public simply because their URLs are known.
 
+GitHub tokens are never sent to visitors to load README images. For private repositories, upload individually reviewed images using the editor’s attachment control; publishing that content also publishes its referenced images. See [private GitHub image guidance](docs/GITHUB-IMAGES.md).
+
 ## Development and verification
 
 ```sh
