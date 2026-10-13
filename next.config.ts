@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { contentSecurityPolicy } from './lib/security-headers';
 const config: NextConfig = {
   output: 'standalone',
   serverExternalPackages: ['node:sqlite'],
@@ -13,10 +14,7 @@ const config: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           {
             key: 'Content-Security-Policy',
-            value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline'" +
-              (process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : '') +
-              "; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http:; font-src 'self' blob:; connect-src 'self' blob: https://vercel.com/api/blob https://vercel.com/api/blob/ https://blob.vercel-storage.com https://*.blob.vercel-storage.com; worker-src 'self'; frame-src https://www.youtube-nocookie.com; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'self'",
+            value: contentSecurityPolicy('', process.env.NODE_ENV === 'development'),
           },
         ],
       },

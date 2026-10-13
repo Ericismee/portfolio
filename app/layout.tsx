@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { CSSProperties } from 'react';
 import localFont from 'next/font/local';
+import { headers } from 'next/headers';
 import { readPublicServerContent } from '../lib/server-content';
 import { themeBootstrap } from '../lib/theme';
 import { siteOrigin } from '../lib/site-origin';
@@ -42,6 +43,7 @@ export const metadata: Metadata = {
 };
 export const dynamic = 'force-dynamic';
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const nonce = (await headers()).get('x-nonce') || undefined;
   const content = await readPublicServerContent();
   const { theme, accent, density } = content;
   return (
@@ -53,7 +55,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <head>
-        <script id="theme-bootstrap" dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
+        <script
+          nonce={nonce}
+          id="theme-bootstrap"
+          dangerouslySetInnerHTML={{ __html: themeBootstrap }}
+        />
       </head>
       <body className={density === 'compact' ? 'compact' : undefined}>
         <LanguageProvider>
