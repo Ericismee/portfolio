@@ -336,15 +336,15 @@ export function GithubProfile({
               <div className="gh-stats">
                 <div className="card pad">
                   <strong>{number(stats.repos.length)}</strong>
-                  <span>{t('Kho mã hiển thị', 'Displayed repositories')}</span>
+                  <span>{t('Kho mã', 'Repositories')}</span>
                 </div>
                 <div className="card pad">
                   <strong>{number(stats.repos.reduce((sum, repo) => sum + repo.stars, 0))}</strong>
-                  <span>{t('Stars của kho mã hiển thị', 'Displayed repository stars')}</span>
+                  <span>{t('Stars', 'Stars')}</span>
                 </div>
                 <div className="card pad">
                   <strong>{stats.languages.length}</strong>
-                  <span>{t('Ngôn ngữ mã nguồn', 'Code languages')}</span>
+                  <span>{t('Ngôn ngữ', 'Languages')}</span>
                 </div>
               </div>
             )}
@@ -388,8 +388,12 @@ export function GithubProfile({
                         <span role="status">
                           {selectedDay ? (
                             <span className="gh-selected-day">
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <rect x="3" y="5" width="18" height="16" rx="2" />
+                                <path d="M16 3v4M8 3v4M3 11h18" />
+                              </svg>
                               <span>{selectedDay.date.split('-').reverse().join('/')}</span>
-                              <strong>{t('Đóng góp', 'Contributions')}: {number(selectedDay.count)}</strong>
+                              <strong>{t('Đóng góp', 'Contributions')} <span className="gh-selected-count">{number(selectedDay.count)}</span></strong>
                             </span>
                           ) : t(
                             'Chọn một ngày để xem số đóng góp.',
