@@ -1183,7 +1183,10 @@
   gap: 18px;
 }
 .gh-calendar-content {
-  min-block-size: 250px;
+  min-block-size: 0;
+}
+.gh-calendar-content[aria-busy='true'] {
+  min-block-size: 200px;
 }
 .gh-calendar-placeholder {
   padding-block: 20px;
@@ -1391,7 +1394,7 @@
 }
 .gh-calendar-total {
   font-size: 13px;
-  margin-bottom: 18px;
+  margin: 10px 0 12px;
 }
 .gh-calendar-total strong {
   font-size: 20px;
@@ -5448,4 +5451,26 @@ body .icon-btn:disabled {
   .gh-identity > .btn {
     margin-top: 12px;
   }
+}
+
+.gh-main > .gh-calendar-card {
+  padding: 16px;
+}
+.gh-calendar-card .gh-section-heading {
+  margin-bottom: 8px;
+  gap: 10px;
+}
+.gh-calendar-card .gh-section-heading h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.35;
+}
+.gh-calendar-card .gh-calendar-footer {
+  margin-top: 8px;
+  gap: 8px;
+}
+.gh-calendar-card > .github-skills-note {
+  margin: 12px 0 0;
+  font-size: 10px;
+  line-height: 1.5;
 }
