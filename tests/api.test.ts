@@ -947,7 +947,10 @@ test('Every administrative mutation rejects absent sessions, missing CSRF and cr
     await f.login();
     const before = await f.database.read();
     for (const [url, method] of targets) {
-      for (const headers of [{ 'x-csrf-token': '' }, { origin: 'https://untrusted.example' }]) {
+      for (const headers of [
+        { 'x-csrf-token': '' },
+        { origin: 'https://untrusted.example' },
+      ] as Record<string, string>[]) {
         const result = await f.call(url, method, {}, headers);
         assert.equal(result.response.status, 403, url);
         assert.deepEqual(Object.keys(result.data), ['error']);
