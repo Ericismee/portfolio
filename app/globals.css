@@ -6498,3 +6498,21 @@ body .icon-btn:disabled {
     font-size: 12px;
     font-weight: 700;
 }
+.gh-calendar-footer .gh-selected-day {
+  display: inline;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.gh-calendar-footer .gh-selected-day > strong {
+  display: inline;
+  padding: 0;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+}

@@ -388,12 +388,9 @@ export function GithubProfile({
                         <span role="status">
                           {selectedDay ? (
                             <span className="gh-selected-day">
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                <rect x="3" y="5" width="18" height="16" rx="2" />
-                                <path d="M16 3v4M8 3v4M3 11h18" />
-                              </svg>
-                              <span>{selectedDay.date.split('-').reverse().join('/')}</span>
-                              <strong>{t('Đóng góp', 'Contributions')} <span className="gh-selected-count">{number(selectedDay.count)}</span></strong>
+                              <strong>{number(selectedDay.count)}</strong>{' '}
+                              {t('đóng góp', selectedDay.count === 1 ? 'contribution' : 'contributions')}
+                              {' · '}{selectedDay.date.split('-').reverse().join('/')}
                             </span>
                           ) : t(
                             'Chọn một ngày để xem số đóng góp.',
