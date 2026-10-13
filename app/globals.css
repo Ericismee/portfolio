@@ -5672,3 +5672,20 @@ body .icon-btn:disabled {
   color: var(--accent);
   font-weight: 650;
 }
+
+.gh-timeline-marker[data-event] {
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface);
+  color: var(--accent);
+}
+.gh-timeline-marker[data-event='WatchEvent'] { color: #a16207; }
+.gh-timeline-marker:is([data-event='PullRequestEvent'], [data-event='ForkEvent']) { color: #8250df; }
+.gh-timeline-marker:is([data-event='CreateEvent'], [data-event='ReleaseEvent']) { color: #16803d; }
+.gh-timeline-marker:is([data-event='IssuesEvent'], [data-event='DeleteEvent']) { color: #d03d38; }
+[data-theme='dark'] .gh-timeline-marker[data-event='WatchEvent'] { color: #facc15; }
+[data-theme='dark'] .gh-timeline-marker:is([data-event='PullRequestEvent'], [data-event='ForkEvent']) { color: #c4a3ff; }
+[data-theme='dark'] .gh-timeline-marker:is([data-event='CreateEvent'], [data-event='ReleaseEvent']) { color: #4ade80; }
+[data-theme='dark'] .gh-timeline-marker:is([data-event='IssuesEvent'], [data-event='DeleteEvent']) { color: #ff9994; }

@@ -588,8 +588,8 @@ export function GithubProfile({
             <ol className="gh-timeline">
               {events.map((item) => (
                 <li key={item.id}>
-                  <span className="gh-timeline-marker" aria-hidden="true">
-                    •
+                  <span className="gh-timeline-marker" data-event={item.type} aria-hidden="true">
+                    <GithubEventIcon type={item.type} />
                   </span>
                   <div>
                     <a
@@ -624,6 +624,33 @@ export function GithubProfile({
   );
 }
 
+
+function GithubEventIcon({ type }: { type: string }) {
+  const comment = 'M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-3 2 2-5V11.5A8.5 8.5 0 0 1 11.5 3H13a8 8 0 0 1 8 8.5Z M7 9h10M7 13h6';
+  const paths: Record<string, string> = {
+    PushEvent: 'M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5',
+    PullRequestEvent: 'M6 7v10M6 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm0 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm12 0V9a4 4 0 0 0-4-4h-3m3-3-3 3 3 3m4 9a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
+    IssuesEvent: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 5v5m0 3h.01',
+    CreateEvent: 'M12 4v16M4 12h16',
+    DeleteEvent: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',
+    WatchEvent: 'm12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9Z',
+    ForkEvent: 'M6 7v3a4 4 0 0 0 4 4h2m6-7v3a4 4 0 0 1-4 4h-2v3M6 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm12 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-6 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
+    ReleaseEvent: 'M20 13 11 22 2 13V3h10l8 8v2ZM7 7h.01',
+    IssueCommentEvent: comment,
+    CommitCommentEvent: comment,
+    PullRequestReviewCommentEvent: comment,
+    DiscussionEvent: comment,
+    PullRequestReviewEvent: 'M9 3H5v18h14V3h-4M9 2h6v4H9ZM8 13l3 3 5-6',
+    GollumEvent: 'M4 3h12l4 4v14H4ZM14 3v6h6M8 13h8m-8 4h6',
+    PublicEvent: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 0c-5 5-5 13 0 18 5-5 5-13 0-18ZM3 12h18',
+    MemberEvent: 'M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM2 21v-3a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v3m4-13v6m-3-3h6',
+  };
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={paths[type] || 'M3 12h4l3-8 4 16 3-8h4'} />
+    </svg>
+  );
+}
 
 function CommitIcon() {
   return (
