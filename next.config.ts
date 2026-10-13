@@ -1,5 +1,5 @@
 import type { NextConfig } from 'next';
-import { contentSecurityPolicy } from './lib/security-headers';
+import { contentSecurityPolicy } from './lib/security-headers.ts';
 const config: NextConfig = {
   output: 'standalone',
   serverExternalPackages: ['node:sqlite'],
