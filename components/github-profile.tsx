@@ -270,10 +270,15 @@ export function GithubProfile({
           )}
         </dl>
         {settings.showTechnologies && (
-          <div className="gh-stack">
-            <h2>{t('Công nghệ sử dụng', 'Technology stack')}</h2>
+          <details className="gh-stack" open>
+            <summary>
+              <span>{t('Công nghệ sử dụng', 'Technology stack')}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </summary>
             <TechnologyChips names={stats.languages.map((item) => item.name)} />
-          </div>
+          </details>
         )}
         <Link href="/" className="side-link">
           {t('← Về hồ sơ cá nhân', '← Back to profile')}

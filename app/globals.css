@@ -1193,7 +1193,8 @@
 }
 .gh-identity h1 {
   font-size: 27px;
-  margin: 18px 0 4px;
+  line-height: 1.15;
+  margin: 18px 0 0;
 }
 .gh-profile-avatar {
   width: 120px;
@@ -1202,9 +1203,13 @@
 }
 .gh-username {
   display: inline-flex;
-  min-height: 32px;
+  min-height: 20px;
   align-items: center;
-  font-size: 15px;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
   color: var(--muted);
 }
 .gh-identity > p {
@@ -1636,8 +1641,11 @@ button.gh-day:hover {
     height: 88px;
   }
   .gh-identity {
-    min-block-size: 720px;
+    min-block-size: 0;
+    padding: 16px;
     display: grid;
+    align-content: start;
+    row-gap: 2px;
     grid-template-columns: 88px minmax(0, 1fr);
     column-gap: 16px;
     align-items: start;
@@ -1649,7 +1657,7 @@ button.gh-day:hover {
     margin-top: 0;
   }
   .gh-identity > p {
-    margin: 6px 0 14px;
+    margin: 2px 0 10px;
   }
   .gh-identity > .btn,
   .gh-identity-facts,
@@ -1659,7 +1667,16 @@ button.gh-day:hover {
   }
   .gh-identity-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 8px 12px;
+    margin: 12px 0;
+  }
+  .gh-identity > .gh-stack {
+    padding-top: 6px;
+  }
+  .gh-identity > .side-link {
+    min-height: 36px;
+    padding: 6px 0;
+    margin: 0;
   }
   .gh-identity-facts > div {
     flex-direction: column;
@@ -5361,4 +5378,39 @@ body .icon-btn:disabled {
     font-size: 11px;
     white-space: nowrap;
   }
+}
+
+@media (min-width: 701px) and (max-width: 1000px) {
+  .gh-stack-toggle {
+    gap: 6px;
+    font-size: 12px;
+  }
+  .gh-stack-toggle-action {
+    gap: 3px;
+    font-size: 11px;
+  }
+}
+
+.gh-stack > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+.gh-stack > summary::-webkit-details-marker {
+  display: none;
+}
+.gh-stack > summary svg {
+  flex-shrink: 0;
+}
+.gh-stack[open] > summary svg {
+  transform: rotate(180deg);
+}
+.gh-stack[open] > .github-tech-chips {
+  margin-top: 8px;
 }
