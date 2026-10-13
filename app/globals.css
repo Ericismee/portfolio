@@ -6822,3 +6822,27 @@ body .icon-btn:disabled {
   width: 18px;
   height: 18px;
 }
+
+.author-contact-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.author-contact-compose {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 6px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  text-decoration: none;
+}
+.author-contact-compose:hover,
+.author-contact-compose:focus-visible {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

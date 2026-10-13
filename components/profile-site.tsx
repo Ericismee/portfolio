@@ -253,17 +253,18 @@ function Site({
     return (
       <>
         {author}
-        {Object.values(data.links).some(Boolean) &&
-          card(
-            t('Liên hệ', 'Contact'),
-            <>
-              <div className="author-contact-channels">{links()}</div>
-              <Link className="side-link" href="/contact">
-                {t('Gửi lời nhắn →', 'Send a message →')}
+        {Object.values(data.links).some(Boolean) && (
+          <section className="card pad author-contact-card">
+            <div className="section-heading author-contact-heading">
+              <h2>{t('Liên hệ', 'Contact')}</h2>
+              <Link className="author-contact-compose" href="/contact">
+                {t('Gửi lời nhắn', 'Send a message')}
+                <span aria-hidden="true">↗</span>
               </Link>
-            </>,
-            'author-contact-card',
-          )}
+            </div>
+            <div className="author-contact-channels">{links()}</div>
+          </section>
+        )}
       </>
     );
   }
