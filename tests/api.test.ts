@@ -922,3 +922,41 @@ test('Rejected embedded-asset imports remove only their new files after schema, 
     await f.cleanup();
   }
 });
+
+test('Every administrative mutation rejects absent sessions, missing CSRF and cross-site origins before processing input', async () => {
+  const f = await fixture();
+  const targets: [string, string][] = [
+    ['/api/admin/content', 'PUT'],
+    ['/api/admin/import', 'POST'],
+    ['/api/admin/restore', 'POST'],
+    ['/api/admin/upload', 'POST'],
+    ['/api/admin/upload-init', 'POST'],
+    ['/api/admin/upload-finish', 'POST'],
+    ['/api/admin/content-blob', 'POST'],
+    ['/api/admin/account', 'PUT'],
+    ['/api/admin/mfa', 'POST'],
+    ['/api/admin/github-connection', 'POST'],
+    ['/api/admin/github-connection', 'DELETE'],
+    ['/api/admin/messages', 'DELETE'],
+    ['/api/admin/logout', 'POST'],
+  ];
+  try {
+    for (const [url, method] of targets) {
+      assert.equal((await f.call(url, method, {})).response.status, 403, url);
+    }
+    await f.login();
+    const before = await f.database.read();
+    for (const [url, method] of targets) {
+      for (const headers of [{ 'x-csrf-token': '' }, { origin: 'https://untrusted.example' }]) {
+        const result = await f.call(url, method, {}, headers);
+        assert.equal(result.response.status, 403, url);
+        assert.deepEqual(Object.keys(result.data), ['error']);
+        assert.equal(result.response.headers.get('cache-control'), 'no-store');
+      }
+    }
+    const after = await f.database.read();
+    assert.deepEqual(after, before);
+  } finally {
+    await f.cleanup();
+  }
+});
