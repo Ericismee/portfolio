@@ -30,6 +30,7 @@ export function TrafficAdmin() {
     path: '',
     ip: '',
   });
+  const [updatedAt, setUpdatedAt] = useState('');
   const [ipDraft, setIpDraft] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [range, setRange] = useState('all');
@@ -43,6 +44,7 @@ export function TrafficAdmin() {
     const next = await request<Report>(`/api/admin/traffic?${params}`);
     if (isCurrent()) {
       setReport(next);
+      setUpdatedAt(new Date().toISOString());
       setError('');
     }
   }, !loading);
@@ -50,6 +52,7 @@ export function TrafficAdmin() {
     (key) => filters[key as keyof typeof filters],
   ).length;
   const chooseRange = (value: string) => {
+    setLoading(true);
     setRange(value);
     const today = analyticsToday();
     const from =
@@ -61,6 +64,8 @@ export function TrafficAdmin() {
   };
   const hasFilters = Boolean(query || Object.values(filters).some(Boolean));
   const updateFilter = (key: keyof typeof filters, value: string) => {
+    setLoading(true);
+    setExpanded(null);
     setFilters((previous) => ({ ...previous, [key]: value }));
     setPage(1);
     if (key === 'from' || key === 'to') setRange('custom');
@@ -88,6 +93,7 @@ export function TrafficAdmin() {
         .then((result) => {
           if (active) {
             setReport(result);
+            setUpdatedAt(new Date().toISOString());
             setError('');
           }
         })
@@ -103,6 +109,31 @@ export function TrafficAdmin() {
       clearTimeout(timer);
     };
   }, [page, query, refresh, filters]);
+  const clearFilters = () => {
+    setLoading(true);
+    setFilters({
+      from: '',
+      to: '',
+      country: '',
+      browser: '',
+      device: '',
+      os: '',
+      path: '',
+      ip: '',
+    });
+    setRange('all');
+    setQuery('');
+    setIpDraft('');
+    setExpanded(null);
+    setPage(1);
+  };
+  const pageSize = report?.pageSize || 50;
+  const pages = Math.max(1, Math.ceil((report?.total || 0) / pageSize));
+  const formatDate = (value: string) => value.split('-').reverse().join('/');
+  const appliedRange =
+    report?.filters.from || report?.filters.to
+      ? `${report.filters.from ? formatDate(report.filters.from) : t('Từ đầu', 'Beginning')} – ${report.filters.to ? formatDate(report.filters.to) : t('Hiện tại', 'Present')}`
+      : t('Toàn thời gian', 'All time');
   const format = (value: number) => value.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US');
   return (
     <section className="traffic-admin" aria-busy={loading}>
@@ -128,12 +159,19 @@ export function TrafficAdmin() {
               })
             }
             download
+            aria-disabled={loading || !!error}
+            onClick={(event) => {
+              if (loading || error) event.preventDefault();
+            }}
           >
             <Icon name="download" /> CSV
           </a>
           <button
             className="btn neutral traffic-refresh"
-            onClick={() => setRefresh((v) => v + 1)}
+            onClick={() => {
+              setLoading(true);
+              setRefresh((v) => v + 1);
+            }}
             disabled={loading}
           >
             <Icon name="clock" />
@@ -144,6 +182,8 @@ export function TrafficAdmin() {
       {error && (
         <p role="alert" className="form-error">
           {error}
+          {report &&
+            ' · ' + t('Đang giữ kết quả đã tải trước đó.', 'Showing previously loaded results.')}
         </p>
       )}
       <div className="analytics-toolbar">
@@ -167,7 +207,32 @@ export function TrafficAdmin() {
           {extraFilters > 0 && <span>{extraFilters}</span>}
         </button>
       </div>
-      <div className="traffic-stats">
+      <div className="analytics-report-context" role="status" aria-live="polite">
+        <span>
+          {t('Đang xem', 'Showing')}: <strong>{appliedRange}</strong> · UTC+07
+        </span>
+        <span>
+          {loading
+            ? t('Đang cập nhật…', 'Updating…')
+            : updatedAt
+              ? t('Cập nhật ', 'Updated ') +
+                new Date(updatedAt).toLocaleTimeString(language, {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  timeZone: 'Asia/Ho_Chi_Minh',
+                })
+              : ''}
+        </span>
+      </div>
+      <nav
+        className="analytics-jump-links"
+        aria-label={t('Đi đến phần thống kê', 'Analytics sections')}
+      >
+        <a href="#traffic-overview">{t('Tổng quan', 'Overview')}</a>
+        <a href="#traffic-charts">{t('Biểu đồ', 'Charts')}</a>
+        <a href="#traffic-visits">{t('Nhật ký', 'Visit log')}</a>
+      </nav>
+      <div className="traffic-stats" id="traffic-overview">
         {[
           {
             label: t('Lượt xem trang', 'Page views'),
@@ -206,11 +271,23 @@ export function TrafficAdmin() {
           </div>
         ))}
       </div>
-      {Object.values(filters).some(Boolean) && (
+      {hasFilters && (
         <div
           className="analytics-active-filters"
           aria-label={t('Bộ lọc đang áp dụng', 'Active filters')}
         >
+          {query && (
+            <button
+              onClick={() => {
+                setLoading(true);
+                setQuery('');
+                setPage(1);
+              }}
+              aria-label={t('Bỏ tìm kiếm', 'Remove search')}
+            >
+              {t('Tìm', 'Search')}: {query} <span aria-hidden="true">×</span>
+            </button>
+          )}
           {Object.entries(filters)
             .filter(([, value]) => value)
             .map(([key, value]) => (
@@ -231,6 +308,7 @@ export function TrafficAdmin() {
                 <span aria-hidden="true">×</span>
               </button>
             ))}
+          <button onClick={clearFilters}>{t('Xóa tất cả', 'Clear all')}</button>
         </div>
       )}
       <div className="traffic-notice">
@@ -314,31 +392,13 @@ export function TrafficAdmin() {
               'Metrics and charts follow the current filters. Leave dates empty to view the full history.',
             )}
           </p>
-          <button
-            className="btn neutral"
-            onClick={() => {
-              setFilters({
-                from: '',
-                to: '',
-                country: '',
-                browser: '',
-                device: '',
-                os: '',
-                path: '',
-                ip: '',
-              });
-              setRange('all');
-              setQuery('');
-              setIpDraft('');
-              setPage(1);
-            }}
-          >
+          <button className="btn neutral" onClick={clearFilters}>
             {t('Xóa bộ lọc', 'Clear filters')}
           </button>
         </div>
       </div>
       <TrafficCharts report={report} onFilter={updateFilter} />
-      <div className="traffic-list-heading">
+      <div className="traffic-list-heading" id="traffic-visits">
         <div>
           <h3>{t('Nhật ký truy cập', 'Visit log')}</h3>
           <p className="muted">
@@ -366,6 +426,7 @@ export function TrafficAdmin() {
           value={query}
           maxLength={100}
           onChange={(e) => {
+            setLoading(true);
             setQuery(e.target.value);
             setPage(1);
           }}
@@ -432,7 +493,9 @@ export function TrafficAdmin() {
                         ? t('Điện thoại', 'Mobile')
                         : entry.device === 'Tablet'
                           ? t('Máy tính bảng', 'Tablet')
-                          : t('Máy tính', 'Desktop')}
+                          : entry.device === 'Desktop'
+                            ? t('Máy tính', 'Desktop')
+                            : t('Không xác định', 'Unknown')}
                     </strong>
                     <span className="muted">
                       {entry.os === 'Unknown' ? t('Không xác định', 'Unknown') : entry.os}
@@ -531,8 +594,8 @@ export function TrafficAdmin() {
         <span className="muted">
           {report
             ? t(
-                `${format(report.total)} bản ghi · Trang ${page}`,
-                `${format(report.total)} records · Page ${page}`,
+                `${format(report.entries.length ? (page - 1) * pageSize + 1 : 0)}–${format(Math.min(page * pageSize, report.total))} / ${format(report.total)} bản ghi · Trang ${page}/${pages}`,
+                `${format(report.entries.length ? (page - 1) * pageSize + 1 : 0)}–${format(Math.min(page * pageSize, report.total))} of ${format(report.total)} records · Page ${page}/${pages}`,
               )
             : t('Đang tải…', 'Loading…')}
         </span>
@@ -540,14 +603,22 @@ export function TrafficAdmin() {
           <button
             className="btn neutral"
             disabled={loading || page === 1}
-            onClick={() => setPage((v) => v - 1)}
+            onClick={() => {
+              setLoading(true);
+              setExpanded(null);
+              setPage((v) => v - 1);
+            }}
           >
             {t('Trước', 'Previous')}
           </button>
           <button
             className="btn neutral"
-            disabled={loading || !report || page * 50 >= report.total}
-            onClick={() => setPage((v) => v + 1)}
+            disabled={loading || !report || page >= pages}
+            onClick={() => {
+              setLoading(true);
+              setExpanded(null);
+              setPage((v) => v + 1);
+            }}
           >
             {t('Sau', 'Next')}
           </button>
