@@ -495,15 +495,22 @@ export function GithubProfile({
           </section>
         )}
         {settings.showCommits && (tab === 'overview' || tab === 'activity') && (
-          <section className="card pad gh-history">
-            <div className="gh-section-heading">
-              <h2>{t('Commit gần đây', 'Recent commits')}</h2>
+          <details className="card pad gh-history">
+            <summary className="gh-history-summary">
+              <span className="gh-history-title">
+                <CommitIcon />
+                <h2>{t('Commit gần đây', 'Recent commits')}</h2>
+              </span>
+              <svg className="gh-history-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </summary>
+            <div className="gh-history-body">
               {tab === 'overview' && (
                 <button className="text-action" onClick={() => setTab('activity')}>
                   {t('Xem lịch sử →', 'View history →')}
                 </button>
               )}
-            </div>
             {tab === 'activity' && (
               <label className="gh-history-filter">
                 {t('Lọc kho mã', 'Filter repositories')}
@@ -535,7 +542,7 @@ export function GithubProfile({
               {commits.slice(0, tab === 'overview' ? 6 : 30).map((item) => (
                 <li key={item.repo + item.sha}>
                   <span className="gh-timeline-marker" aria-hidden="true">
-                    ⑂
+                    <CommitIcon />
                   </span>
                   <div>
                     <a
@@ -564,7 +571,8 @@ export function GithubProfile({
                     : t('Chưa lấy được lịch sử commit.', 'Commit history is unavailable.')}
               </p>
             )}
-          </section>
+            </div>
+          </details>
         )}
         {settings.showEvents && tab === 'activity' && (
           <section className="card pad">
@@ -613,6 +621,16 @@ export function GithubProfile({
         )}
       </div>
     </div>
+  );
+}
+
+
+function CommitIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+      <path d="M3 12h5m8 0h5" />
+      <circle cx="12" cy="12" r="4" />
+    </svg>
   );
 }
 

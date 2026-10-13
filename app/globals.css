@@ -5474,3 +5474,79 @@ body .icon-btn:disabled {
   font-size: 10px;
   line-height: 1.5;
 }
+
+/* A clearer contribution heatmap and a compact commit disclosure. */
+.gh-calendar-card {
+  --gh-cell: 10px;
+}
+.gh-calendar-card .gh-calendar-scroll {
+  padding: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--surface);
+  scrollbar-color: var(--border-subtle) transparent;
+}
+.gh-calendar-months {
+  margin-bottom: 7px;
+  font-weight: 500;
+}
+.gh-calendar-grid .gh-day {
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgb(27 31 35 / 5%);
+}
+.gh-calendar-card .gh-day.level-1 { background: #9be9a8; }
+.gh-calendar-card .gh-day.level-2 { background: #40c463; }
+.gh-calendar-card .gh-day.level-3 { background: #30a14e; }
+.gh-calendar-card .gh-day.level-4 { background: #216e39; }
+.gh-calendar-grid button.gh-day:is(:hover, :focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+.gh-calendar-card .gh-calendar-total strong {
+  font-size: 24px;
+  font-weight: 700;
+}
+.gh-calendar-card .gh-legend {
+  padding: 4px 0;
+}
+.gh-main > .gh-history {
+  margin: 0;
+  padding: 14px 16px;
+}
+.gh-history-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+.gh-history-summary::-webkit-details-marker { display: none; }
+.gh-history-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.gh-history-title > svg { color: var(--accent); flex-shrink: 0; }
+.gh-history-title h2 { font-size: 17px; line-height: 1.35; }
+.gh-history-chevron { flex-shrink: 0; color: var(--muted); }
+.gh-history[open] .gh-history-chevron { transform: rotate(180deg); }
+.gh-history-body { margin-top: 10px; }
+.gh-history-body > .text-action { display: inline-flex; margin-bottom: 8px; }
+.gh-history-body .gh-timeline { margin: 0; padding: 0; }
+.gh-history .gh-timeline-marker {
+  width: 30px;
+  height: 30px;
+  flex-basis: 30px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface);
+  color: var(--accent);
+}
+@media (max-width: 800px) {
+  .gh-calendar-card { --gh-cell: 8px; }
+}
+[data-theme='dark'] .gh-calendar-card .gh-day.level-1 { background: #0e4429; }
+[data-theme='dark'] .gh-calendar-card .gh-day.level-2 { background: #006d32; }
+[data-theme='dark'] .gh-calendar-card .gh-day.level-3 { background: #26a641; }
+[data-theme='dark'] .gh-calendar-card .gh-day.level-4 { background: #39d353; }
