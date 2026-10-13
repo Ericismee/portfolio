@@ -6778,10 +6778,7 @@ body .icon-btn:disabled {
 
 @media (max-width: 800px) {
   .layout > .author-sidebar {
-    display: block;
-    position: static;
-    grid-column: 1 / -1;
-    min-width: 0;
+    display: none;
   }
 }
 
