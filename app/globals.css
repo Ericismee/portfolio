@@ -6911,9 +6911,28 @@ html[data-input-mode='touch'] .social-link:hover {
 }
 
 [data-theme='dark'] .gh-calendar-card .gh-calendar-scroll {
-  background: #141d2b;
-  border-color: #526175;
+  background: #101925;
+  border-color: #354457;
+  padding-block: 15px;
+  border-radius: 12px;
+  scrollbar-color: #46566b transparent;
+}
+[data-theme='dark'] .gh-calendar-card .gh-calendar-months {
+  color: #c4d0de;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+[data-theme='dark'] .gh-calendar-card .gh-day.level-0 {
+  background: #263446;
 }
 [data-theme='dark'] .gh-calendar-card .gh-calendar-grid .gh-day:not(.future) {
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 5%);
+}
+[data-theme='dark'] .gh-calendar-card .gh-day.future {
+  background: #172230;
+  border: 0;
+  box-shadow: none;
+}
+[data-theme='dark'] .gh-calendar-card .gh-day.level-4 {
+  background: #85eaa3;
 }
