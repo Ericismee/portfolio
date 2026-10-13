@@ -6688,9 +6688,32 @@ body .icon-btn:disabled {
 .contact-layout .contact-channels .social-link > span:not([class]) {
   white-space: nowrap;
 }
-.author-location {
+.author-card-identity > div {
+  min-width: 0;
+}
+.author-card-headline {
+  display: block;
+  margin-top: 4px;
   font-size: 12px;
-  margin: 6px 0;
+  line-height: 1.5;
+}
+.author-card-summary {
+  margin: 14px 0 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.project-filters .project-search-row input {
+  height: 36px;
+  min-height: 36px;
+  padding: 7px 10px;
+  font-size: 14px;
+}
+@media (pointer: coarse) {
+  .project-filters .project-search-row input {
+    height: 44px;
+    min-height: 44px;
+    font-size: 16px;
+  }
 }
 .gh-identity.card {
   background: #faf8f2;
@@ -6712,5 +6735,43 @@ body .icon-btn:disabled {
 @media (min-width: 400px) and (max-width: 800px) {
   .contact-layout .contact-channels {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.author-contact-channels {
+  display: grid;
+  gap: 8px;
+}
+.author-contact-channels .social-link {
+  min-height: 44px;
+  margin: 0;
+  padding: 7px 10px;
+  gap: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--card);
+  text-decoration: none;
+}
+.author-contact-channels .social-link:hover,
+.author-contact-channels .social-link:focus-visible {
+  border-color: var(--ink);
+}
+.author-contact-channels .social-logo {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+}
+.author-contact-channels .social-link > span:not([class]) {
+  white-space: nowrap;
+}
+@media (min-width: 801px) {
+  .layout > .author-sidebar {
+    position: sticky;
+    top: 84px;
+    align-self: start;
+    max-height: calc(100dvh - 100px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding-bottom: 3px;
   }
 }

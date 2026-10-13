@@ -188,7 +188,13 @@ function Site({
       }
     >
       <div className="main">{main}</div>
-      <aside className="sidebar">{side}</aside>
+      <aside
+        className={
+          'sidebar' + (page === 'projects' || page === 'activity' ? ' author-sidebar' : '')
+        }
+      >
+        {side}
+      </aside>
     </div>
   );
   const links = () =>
@@ -216,16 +222,25 @@ function Site({
         </a>
       ));
   function aside() {
-    return card(
+    const author = card(
       t('Về tác giả', 'About the author'),
       <>
-        <div className="author-summary">
+        <div className="author-summary author-card-identity">
           {avatar()}
-          <strong>{profile.name}</strong>
+          <div>
+            <strong>{profile.name}</strong>
+            {profile.headline && (
+              <span className="author-card-headline muted">{profile.headline}</span>
+            )}
+          </div>
         </div>
-        <p className="muted">{profile.headline}</p>
-        {profile.location && <p className="author-location muted">{profile.location}</p>}
-        {profile.summary && <p className="sidebar-purpose">{profile.summary}</p>}
+        {profile.summary && <p className="author-card-summary">{profile.summary}</p>}
+        <p className="sidebar-purpose">
+          {t(
+            'Tìm hiểu chuyên môn, dự án và mã nguồn của tôi.',
+            'Explore my experience, projects and source code.',
+          )}
+        </p>
         <Link className="side-link" href="/">
           {t('Xem hồ sơ →', 'View profile →')}
         </Link>
@@ -233,6 +248,23 @@ function Site({
           GitHub →
         </Link>
       </>,
+    );
+    if (page !== 'projects' && page !== 'activity') return author;
+    return (
+      <>
+        {author}
+        {Object.values(data.links).some(Boolean) &&
+          card(
+            t('Liên hệ', 'Contact'),
+            <>
+              <div className="author-contact-channels">{links()}</div>
+              <Link className="side-link" href="/contact">
+                {t('Gửi lời nhắn →', 'Send a message →')}
+              </Link>
+            </>,
+            'author-contact-card',
+          )}
+      </>
     );
   }
 
