@@ -6645,3 +6645,72 @@ body .icon-btn:disabled {
     min-height: 44px;
   }
 }
+
+/* Compact project controls retain space between each independent action. */
+.project-search-row {
+  grid-template-columns: minmax(0, 1fr) 36px auto;
+  align-items: center;
+  gap: 8px;
+}
+.project-search-row .project-view-switch {
+  gap: 8px;
+}
+.project-search-row .btn {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 7px;
+  border-radius: 7px;
+  box-shadow: none;
+}
+.project-search-row .btn svg {
+  width: 18px;
+  height: 18px;
+}
+.contact-layout .contact-channels {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.contact-layout .contact-channels .social-link {
+  margin: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--card);
+  text-decoration: none;
+}
+.contact-layout .contact-channels .social-link:hover,
+.contact-layout .contact-channels .social-link:focus-visible {
+  border-color: var(--ink);
+  background: var(--surface);
+}
+.contact-layout .contact-channels .social-link > span:not([class]) {
+  white-space: nowrap;
+}
+.author-location {
+  font-size: 12px;
+  margin: 6px 0;
+}
+.gh-identity.card {
+  background: #faf8f2;
+}
+[data-theme='dark'] .gh-identity.card {
+  background: #242620;
+}
+@media (pointer: coarse) {
+  .project-search-row {
+    grid-template-columns: minmax(0, 1fr) 44px auto;
+  }
+  .project-search-row .btn {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+}
+@media (min-width: 400px) and (max-width: 800px) {
+  .contact-layout .contact-channels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

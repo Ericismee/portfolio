@@ -224,12 +224,8 @@ function Site({
           <strong>{profile.name}</strong>
         </div>
         <p className="muted">{profile.headline}</p>
-        <p className="sidebar-purpose">
-          {t(
-            'Tìm hiểu chuyên môn, dự án và mã nguồn của tôi.',
-            'Explore my experience, projects and source code.',
-          )}
-        </p>
+        {profile.location && <p className="author-location muted">{profile.location}</p>}
+        {profile.summary && <p className="sidebar-purpose">{profile.summary}</p>}
         <Link className="side-link" href="/">
           {t('Xem hồ sơ →', 'View profile →')}
         </Link>
@@ -1325,9 +1321,6 @@ function Site({
               )}
             </p>
             <div className="contact-channels">{links()}</div>
-            <Link className="side-link" href="/">
-              {t('Xem hồ sơ →', 'View profile →')}
-            </Link>
           </>,
         ),
       )
