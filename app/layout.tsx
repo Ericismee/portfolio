@@ -8,6 +8,7 @@ import { siteOrigin } from '../lib/site-origin';
 import { LanguageProvider } from '../components/language';
 import { MobileNavigation } from '../components/mobile-navigation';
 import { PublicShell } from '../components/public-shell';
+import { InteractionMode } from '../components/interaction-mode';
 import '../src/tokens.css';
 import '../src/app.css';
 import './admin.css';
@@ -63,6 +64,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className={density === 'compact' ? 'compact' : undefined}>
         <LanguageProvider>
+          <InteractionMode />
           <PublicShell content={content}>{children}</PublicShell>
           <MobileNavigation />
         </LanguageProvider>

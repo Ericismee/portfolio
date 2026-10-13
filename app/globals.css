@@ -2868,10 +2868,15 @@ button.gh-day:hover {
   opacity: 0;
 }
 
-.social-link:hover .social-link-detail,
 .social-link:focus-visible .social-link-detail {
   visibility: visible;
   opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  .social-link:hover .social-link-detail {
+    visibility: visible;
+    opacity: 1;
+  }
 }
 
 .post-body {
@@ -6885,4 +6890,20 @@ body .icon-btn:disabled {
 }
 .site-menu .site-menu-signout {
   margin-top: 4px;
+}
+
+/* Keep native touch scrolling and link activation; only reset tap decoration. */
+:is(a, button, summary, [role='button']) {
+  -webkit-tap-highlight-color: transparent;
+}
+html[data-input-mode='touch'] :is(a, button, summary, [role='button']):focus {
+  outline: none;
+}
+html[data-input-mode='touch'] .social-link .social-link-detail {
+  visibility: hidden;
+  opacity: 0;
+}
+html[data-input-mode='touch'] .social-link:hover {
+  background: var(--card);
+  border-color: var(--border-subtle);
 }
