@@ -6631,5 +6631,17 @@ body .icon-btn:disabled {
 }
 
 .gh-calendar-card .gh-section-heading select {
-  max-width: 180px;
+  width: 76px;
+  min-height: 34px;
+  max-width: 76px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+@media (pointer: coarse) {
+  .gh-calendar-card .gh-section-heading select {
+    min-height: 44px;
+  }
 }
