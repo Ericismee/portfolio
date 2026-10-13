@@ -1,89 +1,119 @@
 # Eric Profile
 
-A personal portfolio and publishing platform built with **Next.js, React and TypeScript**. Share projects, write posts and manage a professional profile through a private admin workspace.
+A personal portfolio with a publishing workspace, a GitHub activity dashboard and private website analytics. Built with Next.js App Router, React and TypeScript.
 
-[Live website](https://ericisme.cloud) · [Deployment guide](docs/VERCEL-DEPLOYMENT.md) · [Security](SECURITY.md) · [License](LICENSE)
+[Live website](https://ericisme.cloud) · [Deployment](docs/VERCEL-DEPLOYMENT.md) · [Backups](docs/BACKUPS.md) · [Security](SECURITY.md) · [MIT license](LICENSE)
 
-![Desktop profile](docs/screenshots/profile-desktop.png)
+![Profile on desktop: identity, introduction and featured projects](docs/screenshots/profile-desktop.png)
+
+## Explore the app
+
+- **Profile** — introduction, featured projects, skills, education, social links and certificates. Education appears beside the profile identity; certificates support links and image/document previews. Activity has its own page to keep the profile concise.
+- **Projects and publishing** — instant search, filters, grid/list layouts, rich text or Markdown, scheduled publication, drafts and recoverable trash. View images in a compact popup or read supported documents in the built-in preview.
+- **GitHub** — repositories, a full-year contribution calendar, keyboard/touch date selection, technology stack and recent commits. Disclosure controls keep long sections manageable; event icons distinguish pushes, pull requests, issues and other activity.
+- **Private administration** — inline editing, mobile-friendly forms, image framing, upload progress, revisions and optional authenticator-based two-factor authentication with recovery codes.
+- **Traffic statistics** — filterable metrics, trends, country/device/browser breakdowns and a paginated visit log. Mobile controls include date presets, section shortcuts, chart-period buttons, a slider and expandable visit details. CSV exports follow the selected filters.
+- **Presentation** — English/Vietnamese UI, light/dark themes, locally hosted fonts and persistent navigation. Background refresh pauses while editing or when the tab is hidden.
+
+UI translations do not translate authored project descriptions or posts. The contribution calendar reports GitHub **contributions**, which include more than commits.
+
+### GitHub dashboard
+
+![GitHub dashboard with contribution calendar, technology stack and repositories](docs/screenshots/github-desktop.png)
+
+### Mobile browsing
 
 <p align="center">
-  <img src="docs/screenshots/projects-mobile.png" alt="Mobile projects with instant search and grid/list controls" width="280" />
-  <img src="docs/screenshots/activity-mobile.png" alt="Mobile activity feed with compact post filters" width="280" />
+  <img src="docs/screenshots/projects-mobile.png" alt="Mobile project search and compact grid/list controls" width="280" />
+  <img src="docs/screenshots/activity-mobile.png" alt="Mobile activity feed with post-type filters" width="280" />
 </p>
 
-Screenshots from the live website. Public browsing is available without an account; editing and visitor details require administrator access.
+### Analytics workspace
 
-## Features
+![Private analytics overview: date range, metrics and interactive charts, using demo data](docs/screenshots/analytics-desktop.png)
 
-- **Profile and projects** — cover, avatar, introduction, skills, custom sections and project details. Instant project search, collapsible filters and grid/list views keep mobile browsing compact.
-- **Publishing** — rich text or Markdown with Edit / Preview, scheduled posts, visibility controls, duplicate checks and recoverable trash.
-- **Administration** — inline editing, mobile full-screen forms, image framing and upload progress. Attach PDF, DOCX, TXT, Markdown and images with previews; uploads support up to 20 MiB (static SVG: 1 MiB). DOCX previews show text; download for original formatting. Text files use UTF-8.
-- **GitHub integration** — public repositories, contributions and activity; authenticated imports stay private until explicitly published.
-- **Analytics** — daily trends, country/device/browser breakdowns, filters and viewing duration. Visitor details are admin-only; the public counter exposes a total.
-- **Presentation** — English by default, Vietnamese translation, light/dark themes and responsive layouts. Persistent header and mobile navigation stay in place between pages. Compact activity filters and an optional mobile CV shortcut are included; background updates pause while editing or when the tab is hidden.
+<p align="center">
+  <img src="docs/screenshots/analytics-mobile.png" alt="Mobile analytics with date presets, accessible filters, summary cards and chart-period controls; synthetic data" width="320" />
+</p>
 
-Interface translations do not automatically translate authored posts or project descriptions. Analytics exclude signed-in administrators and recognized bots and deduplicate views per page within a 30-minute session.
-
-## Stack
-
-Next.js App Router · React · strict TypeScript · Zod · Tiptap · React Markdown · Node.js 24
-
-Local development uses SQLite and disk uploads. Production on Vercel uses PostgreSQL and private Vercel Blob storage so content survives redeployment. Font files and technology icons are served locally.
+Screenshots show the local preview. **Analytics screenshots use synthetic visitor records**, including documentation-only IP addresses, rather than real visitor data. The live website may contain different content.
 
 ## Run locally
 
-Install **Node.js 24**, then:
+Use **Node.js 24** and npm:
 
 ```sh
 npm ci
 ```
 
-Copy `.env.example` to `.env`, keeping `PUBLIC_ORIGIN=http://localhost:3001`. Then create your own administrator and start the app:
+Copy `.env.example` to `.env`. Keep `PUBLIC_ORIGIN=http://localhost:3001`, then create your own administrator:
 
 ```sh
 npm run admin:create -- your-admin-name
 npm run dev
 ```
 
-Open [localhost:3001](http://localhost:3001); administration is at `/admin`. The CLI requests a password of 12–256 characters; terminal input is visible. No default administrator password is included. Re-running the command resets that account's password and invalidates its sessions.
+Open [localhost:3001](http://localhost:3001), or `/admin` for the private workspace. The CLI asks for a password of 12–256 characters; terminal input is visible. There is no default administrator account. Running the command again resets that account's password and invalidates its sessions.
 
-## Deploy
+Local development uses SQLite and disk uploads. Keep the data directory and environment files outside Git.
 
-For Vercel, configure these **server-only** environment variables:
+## Deploy and operate
+
+Vercel production uses PostgreSQL and a **private Vercel Blob store** for persistent content and uploads. Configure server-only environment variables:
 
 - `DATABASE_URL` — PostgreSQL connection with verified TLS.
-- `BLOB_READ_WRITE_TOKEN` — a private Vercel Blob store.
-- `GITHUB_CREDENTIAL_KEY` — a persistent 32-byte encryption key, encoded as 64 hexadecimal characters.
-- `PUBLIC_ORIGIN` — the exact canonical HTTPS origin, without a trailing slash.
-- `BACKUP_ENCRYPTION_KEY` and `CRON_SECRET` — independent random secrets for encrypted daily backups and the authenticated scheduler; see [backup and recovery](docs/BACKUPS.md).
+- `BLOB_READ_WRITE_TOKEN` — private Blob store credentials.
+- `GITHUB_CREDENTIAL_KEY` — persistent 32-byte encryption key encoded as 64 hexadecimal characters.
+- `PUBLIC_ORIGIN` — the canonical HTTPS origin, without a trailing slash.
+- `BACKUP_ENCRYPTION_KEY` and `CRON_SECRET` — separate secrets for encrypted backups and the authenticated scheduler.
 
-Never use a `NEXT_PUBLIC_` prefix for credentials. Keep preview and production resources separate, and back up the database, uploaded files and encryption key independently.
+Never prefix credentials with `NEXT_PUBLIC_`. Use separate resources for preview and production; back up the database, uploads and encryption keys independently. **A code deployment does not synchronize the local database with production.**
 
-Follow the [deployment and migration guide](docs/VERCEL-DEPLOYMENT.md) for existing data, domain setup and recovery. **Deploying source does not synchronize a local database with production.** Self-hosting requires persistent storage; see [Dockerfile](Dockerfile) and [compose.yaml](compose.yaml).
-
-## Development
+Follow the [deployment and migration guide](docs/VERCEL-DEPLOYMENT.md) and [backup/recovery guide](docs/BACKUPS.md). For self-hosting, use persistent storage and review [Dockerfile](Dockerfile) / [compose.yaml](compose.yaml). Start a local production build with:
 
 ```sh
-npm run check   # Lint, type checking and automated tests
-npm run build   # Production build
-npm audit      # Known dependency advisories
-npm run security:source -- --history  # Tracked files and local Git history
+npm run build
+npm run start
 ```
 
-Server tests cover authentication, CSRF, access boundaries, upload privacy, concurrent writes, recovery and analytics. Passing tests and a clean dependency audit do not guarantee the absence of vulnerabilities.
+## Understand the analytics
 
-## Security and privacy
+All report dates use **UTC+07**. Metrics, charts, the visit log and CSV export use the active filters. The dashboard displays the applied report range, update status and record/page counts. If refresh fails, it identifies previously loaded results instead of presenting them as current.
 
-Administrative reads require a server-validated session; writes also check Origin and CSRF. Session cookies are HttpOnly and Secure in production. Passwords use scrypt, while GitHub credentials and visitor IP/details are encrypted at rest.
+- **Page views** count a page once within a 30-minute session; **sessions are not unique people**.
+- Signed-in administrators and recognized bots are excluded. Blocked tracking or failed requests can differ from hosting-provider totals.
+- Viewing time estimates how long the tab was visible. Older records without this measurement display `—`.
+- IP-based location is approximate, not GPS. Some visits have no location or recognized device information.
+- Detailed records and exports require an administrator session. Only an aggregate count is public. Visitor history has no automatic retention expiry.
 
-Optional authenticator-based two-factor authentication includes single-use recovery codes. Enable it from Account & security. Login and contact requests have separate per-IP limits. Responsive WebP images retain publication checks, and SEO includes canonical URLs, a sitemap and genuine HTTP 404 responses. The original locally hosted fonts are preserved.
+See [analytics boundaries](SECURITY.md#analytics-boundaries) for privacy and collection limits.
 
-Visitor history is retained until explicitly removed through operational maintenance; there is no automatic retention expiry. IP-based locations are approximate, and browser-based tracking can be blocked or omitted. This dashboard is not a replacement for hosting access logs or firewall logs.
+## Uploads and previews
 
-Environment files, databases, keys, backups and exports must remain outside Git. Review [SECURITY.md](SECURITY.md) before publishing a fork or reporting an issue.
+Files support up to **20 MiB**, with a **1 MiB** limit for static SVG. Images, PDF, DOCX, TXT and Markdown have preview support. DOCX previews show text; download the original to retain its formatting. Text files use UTF-8. Preview capability depends on file type and URL; external document links may open in their original service.
 
-## License and attribution
+Uploaded files retain visibility checks. Draft, hidden and unpublished attachments are not public simply because their URLs are known.
 
-Original application code is licensed under [MIT](LICENSE). Dependencies, fonts and third-party artwork retain their respective licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+## Development and verification
 
-The software license does not grant rights to personal profile content, photographs, third-party trademarks or owner-supplied artwork. Replace those assets in your own deployment. Screenshots illustrate this portfolio and are not a reusable asset pack.
+```sh
+npm run check                       # Lint, TypeScript and automated tests
+npm run format:check                # Formatting
+npm run build                       # Production bundle
+npm audit                           # Known dependency advisories
+npm run security:source -- --history # Source and available Git history
+```
+
+Tests cover authentication, CSRF, upload access, publication, concurrent edits, recovery, traffic filtering and CSV formula neutralization. Browser checks should include narrow mobile widths, keyboard navigation, empty/error states and both themes. Passing checks are not a guarantee against all vulnerabilities.
+
+## Security
+
+Administrative reads require server-validated sessions; writes also validate Origin and CSRF. Session cookies are HttpOnly and Secure in production. Passwords use scrypt; GitHub credentials, IP addresses and supplemental visitor context are encrypted at rest. CSV export neutralizes spreadsheet formula prefixes.
+
+Keep environment files, databases, tokens, keys, backups and content/visitor exports outside Git. Read [SECURITY.md](SECURITY.md) for the threat boundaries, validation process and private reporting instructions.
+
+## License and content rights
+
+Original application code is [MIT licensed](LICENSE). Fonts, dependencies and third-party artwork retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Personal profile content, photographs, artwork and trademarks are not granted for reuse by the software license. Replace them when deploying your own portfolio. Screenshots illustrate this application rather than provide a reusable asset pack.
