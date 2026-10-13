@@ -6343,19 +6343,19 @@ body .icon-btn:disabled {
 }
 
 [data-theme='dark'] .gh-calendar-card .gh-day.level-1 {
-  background: #0e4429;
+  background: #238343;
 }
 
 [data-theme='dark'] .gh-calendar-card .gh-day.level-2 {
-  background: #006d32;
+  background: #2eaa55;
 }
 
 [data-theme='dark'] .gh-calendar-card .gh-day.level-3 {
-  background: #26a641;
+  background: #52cd72;
 }
 
 [data-theme='dark'] .gh-calendar-card .gh-day.level-4 {
-  background: #39d353;
+  background: #9aefaa;
 }
 
 .gh-calendar-card .gh-calendar-months {
@@ -6908,4 +6908,12 @@ html[data-input-mode='touch'] .social-link .social-link-detail {
 html[data-input-mode='touch'] .social-link:hover {
   background: var(--card);
   border-color: var(--border-subtle);
+}
+
+[data-theme='dark'] .gh-calendar-card .gh-calendar-scroll {
+  background: #141d2b;
+  border-color: #526175;
+}
+[data-theme='dark'] .gh-calendar-card .gh-calendar-grid .gh-day:not(.future) {
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
 }
