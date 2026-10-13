@@ -4,6 +4,7 @@ import type { trafficDetails } from '../lib/traffic';
 import { trafficSeries } from '../lib/traffic-series';
 import { countryName } from '../lib/countries';
 import { useLanguage } from './language';
+import { Icon } from './icon';
 
 type Report = Awaited<ReturnType<typeof trafficDetails>>;
 type Row = { name: string; views: number };
@@ -76,6 +77,7 @@ export function TrafficCharts({
             className="analytics-ranking-row"
             onClick={() => onFilter(key, row.name)}
             title={t('Bấm để lọc', 'Click to filter')}
+            aria-label={`${label(row.name)}: ${number(row.views)} ${t('lượt xem', 'views')}, ${percent(row.views)}%. ${t('Bấm để lọc', 'Click to filter')}`}
           >
             <span className="analytics-rank">{index + 1}</span>
             <span className="analytics-rank-main">
@@ -99,7 +101,7 @@ export function TrafficCharts({
       empty
     );
   return (
-    <div className="analytics-charts">
+    <div className="analytics-charts" id="traffic-charts">
       <section className="analytics-panel analytics-trend">
         <div className="analytics-panel-heading">
           <div>
@@ -126,13 +128,31 @@ export function TrafficCharts({
         </div>
         {points.length ? (
           <>
-            <div className="analytics-point-summary" aria-live="polite">
-              <span>{dateLabel(selected.date)}</span>
-              <div>
-                <strong>{number(selected.views)}</strong> {t('lượt xem', 'views')}
-                <i />
-                <strong>{number(selected.visits)}</strong> {t('phiên', 'sessions')}
+            <div className="analytics-period-controls">
+              <button
+                type="button"
+                aria-label={t('Mốc trước', 'Previous period')}
+                disabled={selectedIndex === 0}
+                onClick={() => setSelectedDate(points[selectedIndex - 1].date)}
+              >
+                <Icon name="previous" />
+              </button>
+              <div className="analytics-point-summary" aria-live="polite">
+                <span>{dateLabel(selected.date)}</span>
+                <div>
+                  <strong>{number(selected.views)}</strong> {t('lượt xem', 'views')}
+                  <i />
+                  <strong>{number(selected.visits)}</strong> {t('phiên', 'sessions')}
+                </div>
               </div>
+              <button
+                type="button"
+                aria-label={t('Mốc sau', 'Next period')}
+                disabled={selectedIndex === points.length - 1}
+                onClick={() => setSelectedDate(points[selectedIndex + 1].date)}
+              >
+                <Icon name="next" />
+              </button>
             </div>
             <svg
               className="analytics-line-chart"
@@ -334,7 +354,9 @@ export function TrafficCharts({
                 <button key={row.name} onClick={() => onFilter('device', row.name)}>
                   <i style={{ background: colors[index % colors.length] }} />
                   <span>{deviceName(row.name)}</span>
-                  <strong>{percent(row.views)}%</strong>
+                  <strong>
+                    {number(row.views)} <small>{percent(row.views)}%</small>
+                  </strong>
                 </button>
               ))}
             </div>

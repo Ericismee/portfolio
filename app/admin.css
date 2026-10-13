@@ -1963,3 +1963,288 @@
 [data-theme='dark'] .admin-brand-mark img {
   filter: brightness(0) invert(1);
 }
+
+/* Analytics: readable report scope, touch controls and a compact mobile log. */
+.traffic-admin .traffic-heading {
+  align-items: center;
+  gap: 16px;
+}
+.traffic-heading > .actions {
+  margin: 0;
+  gap: 8px;
+}
+.traffic-heading a[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.analytics-report-context {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.analytics-report-context strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.analytics-jump-links {
+  display: flex;
+  gap: 6px;
+  margin: 14px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.analytics-jump-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 6px 14px;
+  border-radius: 7px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+}
+.analytics-jump-links a:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+.traffic-admin :is(#traffic-overview, #traffic-charts, #traffic-visits) {
+  scroll-margin-top: 120px;
+}
+.traffic-admin .traffic-stat {
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: none;
+}
+.traffic-admin .traffic-stat-icon {
+  background: var(--surface);
+  color: var(--muted);
+}
+.traffic-admin .traffic-stat strong {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+.traffic-admin[aria-busy='true'] :is(.traffic-stats, .analytics-charts, .traffic-table-wrap) {
+  opacity: 0.55;
+}
+.analytics-filter-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.analytics-filter-heading h4 {
+  margin: 0;
+  font-size: 14px;
+}
+.analytics-filter-heading button,
+.analytics-period-controls > button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+}
+.analytics-period-controls {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+.analytics-period-controls > button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.analytics-period-controls .analytics-point-summary {
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  text-align: center;
+}
+.analytics-period-controls .analytics-point-summary strong {
+  font-size: 19px;
+}
+.analytics-device-legend strong {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.analytics-device-legend small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+.traffic-pagination > .row {
+  gap: 8px;
+}
+.traffic-pagination .btn {
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .traffic-admin .traffic-heading {
+    display: grid;
+    gap: 12px;
+  }
+  .traffic-heading > .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .traffic-heading > .actions .btn {
+    min-width: 0;
+    justify-content: center;
+  }
+  .traffic-admin .analytics-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .traffic-admin .analytics-range-tabs {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    gap: 4px;
+    padding: 4px;
+  }
+  .traffic-admin .analytics-range-tabs button {
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 2px;
+    font-size: 12px;
+    border: 0;
+    border-radius: 6px;
+    box-shadow: none;
+    background: transparent;
+    color: var(--muted);
+  }
+  .traffic-admin .analytics-range-tabs button[aria-pressed='true'] {
+    background: var(--accent);
+    color: var(--primary-ink);
+    box-shadow: none;
+  }
+  .traffic-admin .analytics-filter-toggle {
+    grid-column: 2;
+    min-height: 44px;
+    margin-bottom: 2px;
+  }
+  .analytics-report-context {
+    margin-top: 8px;
+    gap: 4px;
+  }
+  .analytics-jump-links {
+    margin: 10px 0;
+    gap: 4px;
+  }
+  .analytics-jump-links a {
+    flex: 1;
+    padding: 6px 4px;
+  }
+  .traffic-admin .traffic-stats {
+    gap: 8px;
+  }
+  .traffic-admin .traffic-stat {
+    padding: 12px;
+  }
+  .traffic-stat-top {
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .traffic-admin .traffic-stat strong {
+    font-size: 28px;
+    margin: 6px 0 3px;
+  }
+  .traffic-stat small {
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .analytics-filter-panel .traffic-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .analytics-filter-panel .traffic-filters > label {
+    min-width: 0;
+  }
+  .analytics-filter-panel :is(input, select) {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .analytics-filter-panel .traffic-filters > label:last-child {
+    grid-column: 1 / -1;
+  }
+  .traffic-admin .analytics-panel {
+    padding: 14px;
+    border-radius: 10px;
+  }
+  .analytics-device-legend button,
+  .analytics-ranking-row {
+    min-height: 44px;
+  }
+  .analytics-chart-data summary {
+    min-height: 44px;
+    padding: 12px 0;
+  }
+  .traffic-admin .traffic-visit-row {
+    padding: 14px;
+    gap: 10px 14px;
+  }
+  .traffic-visit-row td::before {
+    margin-bottom: 3px;
+  }
+  .traffic-list-heading {
+    gap: 12px;
+    align-items: start;
+  }
+  .traffic-record-count {
+    white-space: nowrap;
+    font-size: 11px;
+  }
+  .traffic-pagination {
+    display: grid;
+    gap: 12px;
+  }
+  .traffic-pagination > .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+}
+
+.traffic-admin .traffic-stat .traffic-stat-icon {
+  background: var(--surface);
+  color: var(--muted);
+}
+.traffic-visit-row time {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.traffic-visit-time {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 600px) {
+  .traffic-admin .analytics-filter-toggle {
+    grid-column: 1 / -1;
+    justify-content: center;
+    width: 100%;
+  }
+}

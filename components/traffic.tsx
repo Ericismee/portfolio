@@ -311,16 +311,17 @@ export function TrafficAdmin() {
           <button onClick={clearFilters}>{t('Xóa tất cả', 'Clear all')}</button>
         </div>
       )}
-      <div className="traffic-notice">
-        <Icon name="lock" />
-        <p>
-          {t(
-            'Chỉ admin xem chi tiết · IP mã hóa · Lưu lịch sử không tự hết hạn · Loại trừ admin và bot đã nhận diện.',
-            'Admin-only details · Encrypted IPs · History never expires automatically · Admins and recognized bots excluded.',
-          )}
-        </p>
-      </div>
       <div className="analytics-filter-panel" id="analytics-filters" hidden={!filtersOpen}>
+        <div className="analytics-filter-heading">
+          <h4>{t('Lọc lượt truy cập', 'Filter visits')}</h4>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(false)}
+            aria-label={t('Đóng bộ lọc', 'Close filters')}
+          >
+            <Icon name="close" />
+          </button>
+        </div>
         <div className="traffic-filters">
           <label>
             {t('Từ ngày', 'From date')}
@@ -456,9 +457,22 @@ export function TrafficAdmin() {
                 <tr className="traffic-visit-row">
                   <td data-label={t('Thời gian', 'Time')}>
                     <time dateTime={new Date(entry.at).toISOString()}>
-                      {new Date(entry.at).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-GB', {
-                        timeZone: 'Asia/Ho_Chi_Minh',
-                      })}
+                      <strong className="traffic-visit-time">
+                        {new Date(entry.at).toLocaleTimeString(language, {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false,
+                          timeZone: 'Asia/Ho_Chi_Minh',
+                        })}
+                      </strong>
+                      <span className="muted">
+                        {new Date(entry.at).toLocaleDateString(
+                          language === 'vi' ? 'vi-VN' : 'en-GB',
+                          {
+                            timeZone: 'Asia/Ho_Chi_Minh',
+                          },
+                        )}
+                      </span>
                     </time>
                   </td>
                   <td data-label={t('Trang', 'Page')}>
@@ -630,6 +644,15 @@ export function TrafficAdmin() {
           'Each page counts once per 30-minute session. Sessions are not unique people. View time estimates visible-tab time, updated every 30 seconds and on exit; older records show —.',
         )}
       </p>
+      <div className="traffic-notice">
+        <Icon name="lock" />
+        <p>
+          {t(
+            'Chỉ admin xem chi tiết · IP mã hóa · Lưu lịch sử không tự hết hạn · Loại trừ admin và bot đã nhận diện.',
+            'Admin-only details · Encrypted IPs · History never expires automatically · Admins and recognized bots excluded.',
+          )}
+        </p>
+      </div>
       <details className="traffic-field-inventory">
         <summary>
           {t('Thông tin đang thu thập và giới hạn', 'Collected information and limitations')}
