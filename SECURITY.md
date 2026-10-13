@@ -21,7 +21,7 @@ Use one canonical HTTPS origin, a private Blob store and a TLS-verified PostgreS
 
 Session checks, CSRF, validation and persistent request limits are application controls. They complement the hosting firewall; they do not replace provider-level DDoS controls, account MFA, backups or monitoring. All administrators intentionally manage the same website and inbox; this is not a multitenant authorization model.
 
-The current CSP permits inline scripts for Next.js and the synchronous theme bootstrap. It provides defense in depth but is not a strict nonce-based script policy. Markdown and rich-content validation remain essential.
+Production HTML uses a fresh cryptographic nonce for each request. Next.js and the theme bootstrap receive the nonce; arbitrary inline scripts and inline event handlers are blocked. The proxy replaces caller-supplied nonce headers. Development-only debugging allowances do not apply to production. Inline styles remain enabled for the editor and dynamic layout; Markdown, SVG and rich-content validation remain essential.
 
 ## Analytics boundaries
 
@@ -40,3 +40,9 @@ Run `npm run check`, `npm run build`, `npm audit` and `npm run security:source -
 The analytics report and CSV export are both private reads: anonymous and forged-session requests must receive `401` without visitor data. CSV responses use `private, no-store`, attachment disposition and `nosniff`; export requests are rate limited. Text fields are quoted and spreadsheet formula prefixes (`=`, `+`, `-`, `@`), including leading whitespace, are neutralized before export. Treat downloaded files as private visitor records.
 
 Review on 2026-10-13: the dependency audit reported no known advisories, and the source/history scan found no recognized credentials or private paths. Focused tests verified analytics authorization, encrypted visitor details, filter validation and CSV formula neutralization. This is a point-in-time review of these controls, not a penetration-test certification.
+
+### Resource limits and adversarial validation
+
+Public raster-image resizing accepts only the configured width presets, limits decoded images to 40 million pixels, runs at most two decoders concurrently and queues at most eight additional tasks per process. Excess work receives `503` with a short retry hint. Publication/session checks run before serving any cached image or `304` response. This is an application-level resource bound, not a substitute for an edge firewall or DDoS protection.
+
+The 2026-10-13 hardening review additionally exercised all administrative mutation routes with missing sessions, missing CSRF and hostile origins; parser-injected scripts and event handlers under the production CSP; MFA replay/recovery controls; unpublished files and cached-image revocation; malformed documents, active SVG and DOCX ZIP bombs; encrypted backup integrity; and the bounded image queue. These tests use local or synthetic inputs and do not constitute an unrestricted penetration test of the hosting provider.

@@ -10,12 +10,12 @@ A personal portfolio with a publishing workspace, a GitHub activity dashboard an
 
 - **Profile** — introduction, featured projects, skills, education, social links and certificates. Education appears beside the profile identity; certificates support links and image/document previews. Activity has its own page to keep the profile concise.
 - **Projects and publishing** — instant search, filters, grid/list layouts, rich text or Markdown, scheduled publication, drafts and recoverable trash. View images in a compact popup or read supported documents in the built-in preview.
-- **GitHub** — repositories, a full-year contribution calendar, keyboard/touch date selection, technology stack and recent commits. Disclosure controls keep long sections manageable; event icons distinguish pushes, pull requests, issues and other activity.
+- **GitHub** — repositories, a contribution calendar defaulting to the same rolling 12-month period as GitHub, optional calendar-year views, keyboard/touch date selection, technology stack and recent commits. Disclosure controls keep long sections manageable; event icons distinguish pushes, pull requests, issues and other activity.
 - **Private administration** — inline editing, mobile-friendly forms, image framing, upload progress, revisions and optional authenticator-based two-factor authentication with recovery codes.
 - **Traffic statistics** — filterable metrics, trends, country/device/browser breakdowns and a paginated visit log. Mobile controls include date presets, section shortcuts, chart-period buttons, a slider and expandable visit details. CSV exports follow the selected filters.
 - **Presentation** — English/Vietnamese UI, light/dark themes, locally hosted fonts and persistent navigation. Background refresh pauses while editing or when the tab is hidden.
 
-UI translations do not translate authored project descriptions or posts. The contribution calendar reports GitHub **contributions**, which include more than commits.
+UI translations do not translate authored project descriptions or posts. The contribution calendar reports GitHub **contributions**, which include more than commits. “Last 12 months” and a calendar year are different totals; upstream caching can also delay new contributions by a few minutes.
 
 ### GitHub dashboard
 
@@ -92,6 +92,8 @@ See [analytics boundaries](SECURITY.md#analytics-boundaries) for privacy and col
 
 Files support up to **20 MiB**, with a **1 MiB** limit for static SVG. Images, PDF, DOCX, TXT and Markdown have preview support. DOCX previews show text; download the original to retain its formatting. Text files use UTF-8. Preview capability depends on file type and URL; external document links may open in their original service.
 
+Raster images have responsive variants up to 2560px and higher-quality WebP encoding for Retina screens; originals and downloads stay unchanged and small sources are never enlarged. Processing is bounded to protect server resources.
+
 Uploaded files retain visibility checks. Draft, hidden and unpublished attachments are not public simply because their URLs are known.
 
 ## Development and verification
@@ -108,7 +110,7 @@ Tests cover authentication, CSRF, upload access, publication, concurrent edits, 
 
 ## Security
 
-Administrative reads require server-validated sessions; writes also validate Origin and CSRF. Session cookies are HttpOnly and Secure in production. Passwords use scrypt; GitHub credentials, IP addresses and supplemental visitor context are encrypted at rest. CSV export neutralizes spreadsheet formula prefixes.
+Administrative reads require server-validated sessions; writes also validate Origin and CSRF. Session cookies are HttpOnly and Secure in production. Passwords use scrypt; GitHub credentials, IP addresses and supplemental visitor context are encrypted at rest. Production pages use per-request script nonces and block inline event handlers. CSV export neutralizes spreadsheet formula prefixes.
 
 Keep environment files, databases, tokens, keys, backups and content/visitor exports outside Git. Read [SECURITY.md](SECURITY.md) for the threat boundaries, validation process and private reporting instructions.
 
