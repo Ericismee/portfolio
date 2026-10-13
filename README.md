@@ -11,11 +11,12 @@ A personal portfolio with a publishing workspace, a GitHub activity dashboard an
 - **Profile** — introduction, featured projects, skills, education, social links and certificates. Education appears beside the profile identity; certificates support links and image/document previews. Activity has its own page to keep the profile concise.
 - **Projects and publishing** — instant search, filters, grid/list layouts, rich text or Markdown, scheduled publication, drafts and recoverable trash. View images in a compact popup or read supported documents in the built-in preview.
 - **GitHub** — repositories, a contribution calendar defaulting to the current calendar year, selectable previous years, keyboard/touch date selection, technology stack and recent commits. Disclosure controls keep long sections manageable; event icons distinguish pushes, pull requests, issues and other activity.
+- **Contact and inbox** — validated contact messages are stored in the owner's private inbox. Reply and forward open a draft in the administrator's email app; the website does not send those emails automatically. Failed submissions preserve the message, and repeated taps are blocked while sending.
 - **Private administration** — inline editing, mobile-friendly forms, image framing, upload progress, revisions and optional authenticator-based two-factor authentication with recovery codes.
 - **Traffic statistics** — filterable metrics, trends, country/device/browser breakdowns and a paginated visit log. Mobile controls include date presets, section shortcuts, chart-period buttons, a slider and expandable visit details. CSV exports follow the selected filters.
 - **Presentation** — English/Vietnamese UI, light/dark themes, locally hosted fonts and persistent navigation. Background refresh pauses while editing or when the tab is hidden.
 
-UI translations do not translate authored project descriptions or posts. The contribution calendar reports GitHub **contributions**, which include more than commits. “Last 12 months” and a calendar year are different totals; upstream caching can also delay new contributions by a few minutes.
+UI translations do not translate authored project descriptions or posts. The contribution calendar reports GitHub **contributions**, which include more than commits. The calendar opens on the current year. GitHub's profile total may use the last 12 months, so compare the same date range; upstream caching can also delay new contributions by a few minutes.
 
 ### GitHub dashboard
 
