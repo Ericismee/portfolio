@@ -5338,6 +5338,13 @@ html {
   border: 0;
 }
 
+/* Section actions must escape collapsed cards and paint above adjacent cards. */
+.card:has(.section-control[open]) {
+  position: relative;
+  overflow: visible;
+  z-index: 6;
+}
+
 .page-refresh-status {
   position: fixed;
   top: calc(72px + env(safe-area-inset-top));
@@ -6636,19 +6643,14 @@ body .icon-btn:disabled {
 }
 
 .gh-calendar-card .gh-section-heading select {
-  width: 76px;
-  min-height: 34px;
-  max-width: 76px;
-  padding: 5px 8px;
+  width: 68px;
+  height: 32px;
+  min-height: 32px;
+  max-width: 68px;
+  padding: 3px 5px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 13px !important;
   line-height: 1.4;
-}
-
-@media (pointer: coarse) {
-  .gh-calendar-card .gh-section-heading select {
-    min-height: 44px;
-  }
 }
 
 /* Compact project controls retain space between each independent action. */
