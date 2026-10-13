@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { GithubSkills } from '../lib/github-skills';
-import type { GithubActivity, ContributionDay, GithubPeriod } from '../lib/github-activity';
+import type { GithubActivity, ContributionDay } from '../lib/github-activity';
 import { featuredGithubRepos } from '../lib/github-display';
 import type { Content, GithubSettings } from '../lib/schema';
 import { useLanguage } from './language';
@@ -38,7 +38,7 @@ export function GithubProfile({
   const [stats, setStats] = useState(initial),
     [activity, setActivity] = useState<GithubActivity | null>(null);
   const [tabValue, setTab] = useState<Tab>('overview'),
-    [year, setYear] = useState<GithubPeriod>('last-year');
+    [year, setYear] = useState(() => new Date().getUTCFullYear());
   const tab =
     (tabValue === 'repositories' && !settings.showRepositories) ||
     (tabValue === 'activity' && !settings.showCommits && !settings.showEvents)
@@ -151,9 +151,8 @@ export function GithubProfile({
   const popular = featuredGithubRepos(stats, settings);
   const calendar =
     activity?.calendar &&
-    (year === 'last-year'
-      ? activity.calendar.period === 'last-year'
-      : activity.calendar.year === year && activity.calendar.period !== 'last-year')
+    activity.calendar.year === year &&
+    activity.calendar.period !== 'last-year'
       ? activity.calendar
       : null;
   const profile = stats.profile;
@@ -375,19 +374,14 @@ export function GithubProfile({
                 <div className="gh-section-heading">
                   <h2>{t('Lịch đóng góp', 'Contribution calendar')}</h2>
                   <label>
-                    {t('Khoảng', 'Period')}{' '}
+                    {t('Năm', 'Year')}{' '}
                     <select
                       value={year}
                       onChange={(event) => {
                         setSelectedDay(null);
-                        setYear(
-                          event.target.value === 'last-year'
-                            ? 'last-year'
-                            : Number(event.target.value),
-                        );
+                        setYear(Number(event.target.value));
                       }}
                     >
-                      <option value="last-year">{t('12 tháng gần nhất', 'Last 12 months')}</option>
                       {Array.from(
                         { length: Math.min(6, new Date().getUTCFullYear() - 2022) },
                         (_, index) => new Date().getUTCFullYear() - index,
@@ -402,9 +396,7 @@ export function GithubProfile({
                     <>
                       <p className="gh-calendar-total">
                         <strong>{number(calendar.total)}</strong>{' '}
-                        {year === 'last-year'
-                          ? t('đóng góp trong 12 tháng gần nhất', 'contributions in the last year')
-                          : t('đóng góp trong năm ', 'contributions in ') + year}
+                        {t('đóng góp trong năm ', 'contributions in ') + year}
                       </p>
                       <ContributionCalendar
                         days={calendar.days}

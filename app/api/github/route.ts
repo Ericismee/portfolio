@@ -24,7 +24,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const raw = new URL(request.url).searchParams.get('year');
-  const year = raw === null || raw === 'last-year' ? 'last-year' : Number(raw);
+  const year =
+    raw === null ? new Date().getUTCFullYear() : raw === 'last-year' ? 'last-year' : Number(raw);
   if (
     year !== 'last-year' &&
     (!Number.isInteger(year) || year < 2008 || year > new Date().getUTCFullYear())
