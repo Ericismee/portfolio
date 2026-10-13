@@ -13,6 +13,9 @@ const calendarSchema = z.object({
   days: z.array(daySchema),
   year: z.number().int(),
   total: z.number().int().nonnegative(),
+  period: z.enum(['year', 'last-year']).default('year'),
+  from: z.string().optional(),
+  to: z.string().optional(),
 });
 const eventSchema = z.object({
   id: z.string(),
@@ -51,7 +54,12 @@ export type GithubActivity = {
 
 // Parse GitHub's public calendar, never manufacture counts from event frequency.
 // An upstream markup change fails closed rather than showing an empty fake year.
-export function parseContributions(html: string, year: number): z.infer<typeof calendarSchema> {
+export type GithubPeriod = number | 'last-year';
+export function parseContributions(
+  html: string,
+  period: GithubPeriod,
+): z.infer<typeof calendarSchema> {
+  const year = period === 'last-year' ? new Date().getUTCFullYear() : period;
   const tips = new Map<string, number>();
   for (const match of html.matchAll(/<tool-tip\b([^>]*)>([\s\S]*?)<\/tool-tip>/g)) {
     const id = /\bfor="([^"]+)"/.exec(match[1])?.[1];
@@ -68,18 +76,37 @@ export function parseContributions(html: string, year: number): z.infer<typeof c
     const date = /\bdata-date="([^"]+)"/.exec(attrs)?.[1];
     const id = /\bid="([^"]+)"/.exec(attrs)?.[1];
     const level = Number(/\bdata-level="([0-4])"/.exec(attrs)?.[1]);
-    if (!date || !date.startsWith(year + '-') || date > today) continue;
+    if (!date || (period !== 'last-year' && !date.startsWith(year + '-')) || date > today) continue;
     if (!id || !tips.has(id) || !Number.isInteger(level))
       throw Error('Incomplete contribution calendar');
     days.push(daySchema.parse({ date, count: tips.get(id), level }));
   }
-  const first = Date.UTC(year, 0, 1);
-  const end = Math.min(Date.UTC(year + 1, 0, 1), Date.parse(today + 'T00:00:00Z') + 86400000);
+  days.sort((a, b) => a.date.localeCompare(b.date));
+  const first =
+    period === 'last-year'
+      ? Date.parse((days[0]?.date || '') + 'T00:00:00Z')
+      : Date.UTC(year, 0, 1);
+  const end =
+    period === 'last-year'
+      ? Date.parse(today + 'T00:00:00Z') + 86400000
+      : Math.min(Date.UTC(year + 1, 0, 1), Date.parse(today + 'T00:00:00Z') + 86400000);
   const expectedDays = Math.round((end - first) / 86400000);
-  if (days.length !== expectedDays || new Set(days.map((day) => day.date)).size !== days.length)
+  if (
+    !Number.isFinite(expectedDays) ||
+    (period === 'last-year' && (expectedDays < 365 || expectedDays > 373)) ||
+    days.length !== expectedDays ||
+    new Set(days.map((day) => day.date)).size !== days.length
+  )
     throw Error('Incomplete contribution calendar');
   days.sort((a, b) => a.date.localeCompare(b.date));
-  return { year, days, total: days.reduce((sum, day) => sum + day.count, 0) };
+  return {
+    year,
+    days,
+    total: days.reduce((sum, day) => sum + day.count, 0),
+    period: period === 'last-year' ? 'last-year' : 'year',
+    from: period === 'last-year' ? days[0].date : `${year}-01-01`,
+    to: period === 'last-year' ? today : `${year}-12-31`,
+  };
 }
 
 type Snapshot<T> = {
@@ -146,38 +173,45 @@ async function api(route: string, etag?: string | null) {
 }
 export async function getGithubActivity(
   username: string,
-  year: number,
+  year: GithubPeriod,
   repos: GithubSkills['repos'],
 ): Promise<GithubActivity> {
   if (
     !/^[a-zA-Z0-9-]{1,39}$/.test(username) ||
-    !Number.isInteger(year) ||
-    year < 2008 ||
-    year > new Date().getUTCFullYear()
+    (year !== 'last-year' &&
+      (!Number.isInteger(year) || year < 2008 || year > new Date().getUTCFullYear()))
   )
     throw Error('Invalid GitHub request');
   const user = encodeURIComponent(username);
   const key = username.toLowerCase();
   const recent = repos.filter((repo) => !repo.fork && !repo.archived).slice(0, 6);
   const [calendar, events, commits] = await Promise.all([
-    cached('calendar-' + key + '-' + year, calendarSchema, 15 * 60 * 1000, async () => {
-      const response = await fetch(
-        'https://github.com/users/' +
-          user +
-          '/contributions?from=' +
-          year +
-          '-01-01&to=' +
-          year +
-          '-12-31',
-        {
-          headers: { 'Accept-Language': 'en', 'User-Agent': 'Eric-Profile' },
-          cache: 'no-store',
-          signal: AbortSignal.timeout(8000),
-        },
-      );
-      if (!response.ok) throw Error('Calendar unavailable');
-      return parseContributions(await response.text(), year);
-    }),
+    cached(
+      'calendar-' +
+        key +
+        '-' +
+        year +
+        (year === 'last-year' ? '-' + new Date().toISOString().slice(0, 10) : ''),
+      calendarSchema,
+      2 * 60 * 1000,
+      async () => {
+        const response = await fetch(
+          'https://github.com/users/' +
+            user +
+            (year === 'last-year'
+              ? '/contributions'
+              : '/contributions?from=' + year + '-01-01&to=' + year + '-12-31'),
+          {
+            headers: { 'Accept-Language': 'en', 'User-Agent': 'Eric-Profile' },
+            redirect: 'error',
+            cache: 'no-store',
+            signal: AbortSignal.timeout(8000),
+          },
+        );
+        if (!response.ok) throw Error('Calendar unavailable');
+        return parseContributions(await response.text(), year);
+      },
+    ),
     cached('events-' + key, eventsSchema, 60 * 1000, async (previous) => {
       if (previous && previous.notBefore > Date.now()) return previous;
       const response = await api('/users/' + user + '/events/public?per_page=100', previous?.etag);

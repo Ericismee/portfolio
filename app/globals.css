@@ -6629,3 +6629,7 @@ body .icon-btn:disabled {
 .gh-stats > .card + .card {
   border-left: 1px solid var(--border-subtle);
 }
+
+.gh-calendar-card .gh-section-heading select {
+  max-width: 180px;
+}

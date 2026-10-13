@@ -17,15 +17,18 @@ const cachedSkills = unstable_cache(
     revalidate: 3600,
   },
 );
-const cachedActivity = unstable_cache(getGithubActivity, ['github-public-activity-v1'], {
+const cachedActivity = unstable_cache(getGithubActivity, ['github-public-activity-v2'], {
   revalidate: 60,
 });
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const raw = new URL(request.url).searchParams.get('year');
-  const year = raw === null ? new Date().getUTCFullYear() : Number(raw);
-  if (!Number.isInteger(year) || year < 2008 || year > new Date().getUTCFullYear())
+  const year = raw === null || raw === 'last-year' ? 'last-year' : Number(raw);
+  if (
+    year !== 'last-year' &&
+    (!Number.isInteger(year) || year < 2008 || year > new Date().getUTCFullYear())
+  )
     return Response.json({ error: 'Invalid year' }, { status: 400 });
   const { githubUsername, github } = (await (await getDatabase()).read()).data;
   try {

@@ -30,7 +30,7 @@ const stats: GithubSkills = {
   updatedAt: '',
 };
 const activity: GithubActivity = {
-  calendar: { year: 2026, total: 4, days: [] },
+  calendar: { year: 2026, total: 4, days: [], period: 'year' },
   commits: ['owner/hidden', 'Owner/Public', 'owner/fork', 'other/hidden'].map((repo) => ({
     repo,
     sha: 'sha',

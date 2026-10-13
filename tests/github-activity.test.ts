@@ -129,3 +129,25 @@ test('Upstream failure keeps an explicitly stale contribution snapshot', async (
     await rm(folder, { recursive: true, force: true });
   }
 });
+
+test('Rolling contributions include the previous calendar year instead of only January onward', () => {
+  const today = new Date();
+  const first = new Date(
+    Date.UTC(today.getUTCFullYear() - 1, today.getUTCMonth(), today.getUTCDate()),
+  );
+  first.setUTCDate(first.getUTCDate() - first.getUTCDay());
+  const end = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  let html = '';
+  for (let at = first.getTime(), index = 0; at <= end; at += 86400000, index++) {
+    const date = new Date(at).toISOString().slice(0, 10);
+    html += `<td id="rolling-${index}" data-level="1" data-date="${date}"></td><tool-tip for="rolling-${index}">2 contributions on a date.</tool-tip>`;
+  }
+  const rolling = parseContributions(html, 'last-year');
+  assert.equal(rolling.period, 'last-year');
+  assert.ok(rolling.days.length >= 365);
+  assert.equal(rolling.total, rolling.days.length * 2);
+  assert.equal(rolling.from, first.toISOString().slice(0, 10));
+  const annual = parseContributions(html, today.getUTCFullYear());
+  assert.ok(rolling.total > annual.total);
+  assert.throws(() => parseContributions(calendarFixture(2024), 'last-year'));
+});

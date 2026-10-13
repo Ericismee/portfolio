@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { GithubSkills } from '../lib/github-skills';
-import type { GithubActivity, ContributionDay } from '../lib/github-activity';
+import type { GithubActivity, ContributionDay, GithubPeriod } from '../lib/github-activity';
 import { featuredGithubRepos } from '../lib/github-display';
 import type { Content, GithubSettings } from '../lib/schema';
 import { useLanguage } from './language';
@@ -38,7 +38,7 @@ export function GithubProfile({
   const [stats, setStats] = useState(initial),
     [activity, setActivity] = useState<GithubActivity | null>(null);
   const [tabValue, setTab] = useState<Tab>('overview'),
-    [year, setYear] = useState(new Date().getUTCFullYear());
+    [year, setYear] = useState<GithubPeriod>('last-year');
   const tab =
     (tabValue === 'repositories' && !settings.showRepositories) ||
     (tabValue === 'activity' && !settings.showCommits && !settings.showEvents)
@@ -149,7 +149,13 @@ export function GithubProfile({
   if (sort === 'stars') repos.sort((a, b) => b.stars - a.stars);
   if (sort === 'name') repos.sort((a, b) => a.name.localeCompare(b.name));
   const popular = featuredGithubRepos(stats, settings);
-  const calendar = activity?.calendar?.year === year ? activity.calendar : null;
+  const calendar =
+    activity?.calendar &&
+    (year === 'last-year'
+      ? activity.calendar.period === 'last-year'
+      : activity.calendar.year === year && activity.calendar.period !== 'last-year')
+      ? activity.calendar
+      : null;
   const profile = stats.profile;
   const loadingProfile = !stats.updatedAt && !error;
   const repoCards = (items: GithubSkills['repos']) => (
@@ -369,14 +375,19 @@ export function GithubProfile({
                 <div className="gh-section-heading">
                   <h2>{t('Lịch đóng góp', 'Contribution calendar')}</h2>
                   <label>
-                    {t('Năm', 'Year')}{' '}
+                    {t('Khoảng', 'Period')}{' '}
                     <select
                       value={year}
                       onChange={(event) => {
                         setSelectedDay(null);
-                        setYear(Number(event.target.value));
+                        setYear(
+                          event.target.value === 'last-year'
+                            ? 'last-year'
+                            : Number(event.target.value),
+                        );
                       }}
                     >
+                      <option value="last-year">{t('12 tháng gần nhất', 'Last 12 months')}</option>
                       {Array.from(
                         { length: Math.min(6, new Date().getUTCFullYear() - 2022) },
                         (_, index) => new Date().getUTCFullYear() - index,
@@ -391,12 +402,15 @@ export function GithubProfile({
                     <>
                       <p className="gh-calendar-total">
                         <strong>{number(calendar.total)}</strong>{' '}
-                        {t('đóng góp trong năm ', 'contributions in ')}
-                        {year}
+                        {year === 'last-year'
+                          ? t('đóng góp trong 12 tháng gần nhất', 'contributions in the last year')
+                          : t('đóng góp trong năm ', 'contributions in ') + year}
                       </p>
                       <ContributionCalendar
                         days={calendar.days}
-                        year={year}
+                        year={calendar.year}
+                        from={calendar.from}
+                        to={calendar.to}
                         language={language}
                         onSelect={setSelectedDay}
                       />
@@ -721,11 +735,15 @@ function CommitIcon() {
 function ContributionCalendar({
   days,
   year,
+  from,
+  to,
   language,
   onSelect,
 }: {
   days: ContributionDay[];
   year: number;
+  from?: string;
+  to?: string;
   language: string;
   onSelect: (day: ContributionDay) => void;
 }) {
@@ -755,20 +773,24 @@ function ContributionCalendar({
       window.removeEventListener('resize', hide);
     };
   }, []);
-  const first = new Date(Date.UTC(year, 0, 1));
+  const first = new Date(from ? from + 'T00:00:00Z' : Date.UTC(year, 0, 1));
+  const end = to ? Date.parse(to + 'T00:00:00Z') + 86400000 : Date.UTC(year + 1, 0, 1);
   const offset = first.getUTCDay();
-  const length = Math.round((Date.UTC(year + 1, 0, 1) - first.getTime()) / 86400000);
+  const length = Math.round((end - first.getTime()) / 86400000);
   const data = new Map(days.map((day) => [day.date, day]));
-  const months = Array.from({ length: 12 }, (_, month) => ({
-    name: new Date(Date.UTC(year, month, 1)).toLocaleDateString(language, {
-      month: 'short',
-      timeZone: 'UTC',
-    }),
-    column:
-      Math.floor(
-        (Math.round((Date.UTC(year, month, 1) - first.getTime()) / 86400000) + offset) / 7,
-      ) + 1,
-  }));
+  const months: { name: string; column: number; date: string }[] = [];
+  const month = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), 1));
+  while (month.getTime() < end) {
+    months.push({
+      name: month.toLocaleDateString(language, { month: 'short', timeZone: 'UTC' }),
+      date: month.toISOString().slice(0, 7),
+      column: Math.max(
+        1,
+        Math.floor((Math.round((month.getTime() - first.getTime()) / 86400000) + offset) / 7) + 1,
+      ),
+    });
+    month.setUTCMonth(month.getUTCMonth() + 1);
+  }
   return (
     <>
       <div
@@ -788,7 +810,7 @@ function ContributionCalendar({
       >
         <div className="gh-calendar-months">
           {months.map((month, index) => (
-            <span style={{ gridColumn: month.column }} key={index}>
+            <span style={{ gridColumn: month.column }} title={month.date} key={index}>
               {month.name}
             </span>
           ))}
