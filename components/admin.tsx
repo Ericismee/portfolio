@@ -30,6 +30,7 @@ import { matchesSearch, projectMatchesSearch } from '../lib/search';
 import { MarkdownContent } from './markdown-content';
 import { projectUsesMarkdown, markdownSummary } from '../lib/markdown';
 import { Icon } from './icon';
+import { inboxMailLink } from '../lib/inbox-mail';
 import { TrafficAdmin } from './traffic';
 import { AccountSettings } from './account-settings';
 import { AdminSkeleton } from './skeleton';
@@ -1190,39 +1191,64 @@ function AdminDashboard() {
         <>
           <p className="admin-help">
             {t(
-              'Lời nhắn được lưu trực tiếp từ biểu mẫu liên hệ. Bấm email để trả lời bằng ứng dụng thư của bạn.',
-              'Messages are stored from the contact form. Click an email to reply in your mail app.',
+              'Lời nhắn từ trang liên hệ. Trả lời hoặc chuyển tiếp sẽ mở bản nháp trong ứng dụng email của bạn.',
+              'Messages from your contact form. Reply or forward opens a draft in your email app.',
             )}
           </p>
+          <div className="inbox-summary">
+            <Icon name="contact" />
+            <strong>
+              {messages.length} {t('lời nhắn', 'messages')}
+            </strong>
+          </div>
           {messages.length ? (
             messages.map((m) => (
-              <article className="admin-row" key={m.id}>
-                <div>
+              <article className="inbox-card" key={m.id}>
+                <header className="inbox-card-heading">
                   <h3>{m.subject}</h3>
-                  <p>
-                    {m.name} · <a href={'mailto:' + m.email}>{m.email}</a> ·{' '}
+                  <time dateTime={m.created_at}>
                     {new Date(m.created_at).toLocaleString(language)}
-                  </p>
-                  <p className="inbox-message">{m.message}</p>
+                  </time>
+                </header>
+                <div className="inbox-sender">
+                  <span className="inbox-avatar" aria-hidden="true">
+                    {Array.from(m.name)[0]?.toUpperCase()}
+                  </span>
+                  <div>
+                    <strong>{m.name}</strong>
+                    <a href={'mailto:' + encodeURIComponent(m.email)}>{m.email}</a>
+                  </div>
                 </div>
-                <button
-                  className="btn neutral danger"
-                  onClick={() =>
-                    confirmAction(
-                      t('Xóa lời nhắn?', 'Delete message?'),
-                      t(
-                        'Lời nhắn sẽ bị xóa vĩnh viễn.',
-                        'This message will be permanently deleted.',
-                      ),
-                      async () => {
-                        await api('/api/admin/messages', 'DELETE', { id: m.id });
-                        setMessages((prev) => prev.filter((x) => x.id !== m.id));
-                      },
-                    )
-                  }
-                >
-                  {t('Xóa', 'Delete')}
-                </button>
+                <p className="inbox-message">{m.message}</p>
+                <footer className="inbox-actions">
+                  <a className="btn neutral" href={inboxMailLink(m, 'reply')}>
+                    <Icon name="reply" />
+                    {t('Trả lời', 'Reply')}
+                  </a>
+                  <a className="btn neutral" href={inboxMailLink(m, 'forward')}>
+                    <Icon name="forward" />
+                    {t('Chuyển tiếp', 'Forward')}
+                  </a>
+                  <button
+                    className="btn neutral danger"
+                    onClick={() =>
+                      confirmAction(
+                        t('Xóa lời nhắn?', 'Delete message?'),
+                        t(
+                          'Lời nhắn sẽ bị xóa vĩnh viễn.',
+                          'This message will be permanently deleted.',
+                        ),
+                        async () => {
+                          await api('/api/admin/messages', 'DELETE', { id: m.id });
+                          setMessages((prev) => prev.filter((x) => x.id !== m.id));
+                        },
+                      )
+                    }
+                  >
+                    <Icon name="trash" />
+                    {t('Xóa', 'Delete')}
+                  </button>
+                </footer>
               </article>
             ))
           ) : (

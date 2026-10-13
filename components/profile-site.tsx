@@ -3,7 +3,7 @@ import { uiLabel, localizedError } from '../lib/i18n';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { Content, Project, Post } from '../lib/schema';
 import { publicationStatus } from '../lib/schema';
 import { Icon } from './icon';
@@ -1385,9 +1385,12 @@ function Site({
 function ContactForm() {
   const { t, language } = useLanguage(),
     [busy, setBusy] = useState(false),
-    [result, setResult] = useState('');
+    [result, setResult] = useState(''),
+    submitting = useRef(false);
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     const form = e.currentTarget;
     setBusy(true);
     setResult('');
@@ -1408,45 +1411,49 @@ function ContactForm() {
           : t('Không thể gửi lời nhắn', 'Unable to send message'),
       );
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
   return (
-    <form className="contact-form" onSubmit={submit}>
-      <div className="form-grid">
+    <form className="contact-form" onSubmit={submit} aria-busy={busy}>
+      <fieldset disabled={busy} className="contact-fields">
+        <div className="form-grid">
+          <label>
+            {t('Họ tên', 'Name')} *
+            <input name="name" required maxLength={200} autoComplete="name" />
+          </label>
+          <label>
+            Email *<input name="email" required type="email" maxLength={254} autoComplete="email" />
+          </label>
+        </div>
         <label>
-          {t('Họ tên', 'Name')} *<input name="name" required maxLength={200} autoComplete="name" />
+          {t('Chủ đề', 'Subject')} *
+          <input
+            name="subject"
+            required
+            maxLength={200}
+            list="contact-subjects"
+            placeholder={t('Chọn hoặc nhập chủ đề…', 'Choose or enter a subject…')}
+          />
+          <datalist id="contact-subjects">
+            {[
+              t('Trao đổi', 'Discussion'),
+              t('Hợp tác', 'Collaboration'),
+              t('Cơ hội công việc', 'Job opportunity'),
+              t('Góp ý', 'Feedback'),
+              t('Hỗ trợ dự án', 'Project support'),
+              t('Khác', 'Other'),
+            ].map((subject) => (
+              <option key={subject} value={subject} />
+            ))}
+          </datalist>
         </label>
         <label>
-          Email *<input name="email" required type="email" maxLength={254} autoComplete="email" />
+          {t('Nội dung', 'Message')} *
+          <textarea name="message" required />
         </label>
-      </div>
-      <label>
-        {t('Chủ đề', 'Subject')} *
-        <input
-          name="subject"
-          required
-          maxLength={200}
-          list="contact-subjects"
-          placeholder={t('Chọn hoặc nhập chủ đề…', 'Choose or enter a subject…')}
-        />
-        <datalist id="contact-subjects">
-          {[
-            t('Trao đổi', 'Discussion'),
-            t('Hợp tác', 'Collaboration'),
-            t('Cơ hội công việc', 'Job opportunity'),
-            t('Góp ý', 'Feedback'),
-            t('Hỗ trợ dự án', 'Project support'),
-            t('Khác', 'Other'),
-          ].map((subject) => (
-            <option key={subject} value={subject} />
-          ))}
-        </datalist>
-      </label>
-      <label>
-        {t('Nội dung', 'Message')} *
-        <textarea name="message" required />
-      </label>
+      </fieldset>
       <p className="muted">
         {t(
           'Lời nhắn và email được lưu trong hộp thư riêng của chủ hồ sơ để phản hồi.',

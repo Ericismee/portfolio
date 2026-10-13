@@ -1,5 +1,7 @@
 export function Icon({ name }: { name: string }) {
   const paths: Record<string, React.ReactNode> = {
+    reply: <path d="m9 4-6 6 6 6M3 10h10a8 8 0 0 1 8 8v2" />,
+    forward: <path d="m15 4 6 6-6 6m6-6H11a8 8 0 0 0-8 8v2" />,
     logout: <path d="M9 4H4v16h5m6-12 4 4-4 4m-7-4h13" />,
     external: <path d="M7 17 17 7M7 7h10v10" />,
     filters: <path d="M4 6h16M7 12h10M10 18h4" />,
