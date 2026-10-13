@@ -1,6 +1,14 @@
 'use client';
 import { PAGE_REFRESH_EVENT, type PageRefreshRequest } from '../lib/page-refresh';
-import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 import type { GithubSkills } from '../lib/github-skills';
 import type { GithubActivity, ContributionDay } from '../lib/github-activity';
@@ -275,7 +283,15 @@ export function GithubProfile({
           <details className="gh-stack" open>
             <summary>
               <span>{t('Công nghệ sử dụng', 'Technology stack')}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
                 <path d="m6 9 6 6 6-6" />
               </svg>
             </summary>
@@ -389,12 +405,18 @@ export function GithubProfile({
                           {selectedDay ? (
                             <span className="gh-selected-day">
                               <strong>{number(selectedDay.count)}</strong>{' '}
-                              {t('đóng góp', selectedDay.count === 1 ? 'contribution' : 'contributions')}
-                              {' · '}{selectedDay.date.split('-').reverse().join('/')}
+                              {t(
+                                'đóng góp',
+                                selectedDay.count === 1 ? 'contribution' : 'contributions',
+                              )}
+                              {' · '}
+                              {selectedDay.date.split('-').reverse().join('/')}
                             </span>
-                          ) : t(
-                            'Chọn một ngày để xem số đóng góp.',
-                            'Select a day to see contributions.',
+                          ) : (
+                            t(
+                              'Chọn một ngày để xem số đóng góp.',
+                              'Select a day to see contributions.',
+                            )
                           )}
                         </span>
                         <span className="gh-legend">
@@ -502,7 +524,16 @@ export function GithubProfile({
                 <CommitIcon />
                 <h2>{t('Commit gần đây', 'Recent commits')}</h2>
               </span>
-              <svg className="gh-history-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+              <svg
+                className="gh-history-chevron"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
                 <path d="m6 9 6 6 6-6" />
               </svg>
             </summary>
@@ -512,66 +543,69 @@ export function GithubProfile({
                   {t('Xem lịch sử →', 'View history →')}
                 </button>
               )}
-            {tab === 'activity' && (
-              <label className="gh-history-filter">
-                {t('Lọc kho mã', 'Filter repositories')}
-                <select value={repoFilter} onChange={(event) => setRepoFilter(event.target.value)}>
-                  <option value="">{t('Tất cả kho mã', 'All repositories')}</option>
-                  {[
-                    ...new Set([
-                      ...(activity?.commits.map((item) => item.repo) || []),
-                      ...(activity?.events.map((item) => item.repo) || []),
-                    ]),
-                  ]
-                    .sort()
-                    .map((repo) => (
-                      <option key={repo}>{repo}</option>
-                    ))}
-                </select>
-              </label>
-            )}
-            <p className="github-skills-note">
-              {t(
-                'Những thay đổi gần đây trong các dự án tôi đang xây dựng.',
-                'Recent changes to the projects I’m working on.',
-              )}{' '}
-              {activity?.commitsStatus !== 'ready' &&
-                activity &&
-                t('Dữ liệu chưa cập nhật được.', 'Data could not be refreshed.')}
-            </p>
-            <ol className="gh-timeline">
-              {commits.slice(0, tab === 'overview' ? 6 : 30).map((item) => (
-                <li key={item.repo + item.sha}>
-                  <span className="gh-timeline-marker" aria-hidden="true">
-                    <CommitIcon />
-                  </span>
-                  <div>
-                    <a
-                      href={'https://github.com/' + item.repo + '/commit/' + item.sha}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {item.message || item.sha.slice(0, 7)} ↗
-                    </a>
-                    <small>
-                      {item.repo} · <code>{item.sha.slice(0, 7)}</code> · {date(item.date)}
-                    </small>
-                  </div>
-                </li>
-              ))}
-            </ol>
-            {!commits.length && (
-              <p className="muted">
-                {checking
-                  ? t('Đang tải commit…', 'Loading commits…')
-                  : activity?.commitsStatus === 'ready'
-                    ? t(
-                        'Không có commit phù hợp trong phạm vi đã tải.',
-                        'No matching commits in the loaded range.',
-                      )
-                    : t('Chưa lấy được lịch sử commit.', 'Commit history is unavailable.')}
+              {tab === 'activity' && (
+                <label className="gh-history-filter">
+                  {t('Lọc kho mã', 'Filter repositories')}
+                  <select
+                    value={repoFilter}
+                    onChange={(event) => setRepoFilter(event.target.value)}
+                  >
+                    <option value="">{t('Tất cả kho mã', 'All repositories')}</option>
+                    {[
+                      ...new Set([
+                        ...(activity?.commits.map((item) => item.repo) || []),
+                        ...(activity?.events.map((item) => item.repo) || []),
+                      ]),
+                    ]
+                      .sort()
+                      .map((repo) => (
+                        <option key={repo}>{repo}</option>
+                      ))}
+                  </select>
+                </label>
+              )}
+              <p className="github-skills-note">
+                {t(
+                  'Những thay đổi gần đây trong các dự án tôi đang xây dựng.',
+                  'Recent changes to the projects I’m working on.',
+                )}{' '}
+                {activity?.commitsStatus !== 'ready' &&
+                  activity &&
+                  t('Dữ liệu chưa cập nhật được.', 'Data could not be refreshed.')}
               </p>
-            )}
+              <ol className="gh-timeline">
+                {commits.slice(0, tab === 'overview' ? 6 : 30).map((item) => (
+                  <li key={item.repo + item.sha}>
+                    <span className="gh-timeline-marker" aria-hidden="true">
+                      <CommitIcon />
+                    </span>
+                    <div>
+                      <a
+                        href={'https://github.com/' + item.repo + '/commit/' + item.sha}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {item.message || item.sha.slice(0, 7)} ↗
+                      </a>
+                      <small>
+                        {item.repo} · <code>{item.sha.slice(0, 7)}</code> · {date(item.date)}
+                      </small>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              {!commits.length && (
+                <p className="muted">
+                  {checking
+                    ? t('Đang tải commit…', 'Loading commits…')
+                    : activity?.commitsStatus === 'ready'
+                      ? t(
+                          'Không có commit phù hợp trong phạm vi đã tải.',
+                          'No matching commits in the loaded range.',
+                        )
+                      : t('Chưa lấy được lịch sử commit.', 'Commit history is unavailable.')}
+                </p>
+              )}
             </div>
           </details>
         )}
@@ -625,17 +659,19 @@ export function GithubProfile({
   );
 }
 
-
 function GithubEventIcon({ type }: { type: string }) {
-  const comment = 'M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-3 2 2-5V11.5A8.5 8.5 0 0 1 11.5 3H13a8 8 0 0 1 8 8.5Z M7 9h10M7 13h6';
+  const comment =
+    'M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-3 2 2-5V11.5A8.5 8.5 0 0 1 11.5 3H13a8 8 0 0 1 8 8.5Z M7 9h10M7 13h6';
   const paths: Record<string, string> = {
     PushEvent: 'M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5',
-    PullRequestEvent: 'M6 7v10M6 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm0 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm12 0V9a4 4 0 0 0-4-4h-3m3-3-3 3 3 3m4 9a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
+    PullRequestEvent:
+      'M6 7v10M6 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm0 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm12 0V9a4 4 0 0 0-4-4h-3m3-3-3 3 3 3m4 9a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
     IssuesEvent: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 5v5m0 3h.01',
     CreateEvent: 'M12 4v16M4 12h16',
     DeleteEvent: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',
     WatchEvent: 'm12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9Z',
-    ForkEvent: 'M6 7v3a4 4 0 0 0 4 4h2m6-7v3a4 4 0 0 1-4 4h-2v3M6 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm12 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-6 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
+    ForkEvent:
+      'M6 7v3a4 4 0 0 0 4 4h2m6-7v3a4 4 0 0 1-4 4h-2v3M6 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm12 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-6 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
     ReleaseEvent: 'M20 13 11 22 2 13V3h10l8 8v2ZM7 7h.01',
     IssueCommentEvent: comment,
     CommitCommentEvent: comment,
@@ -644,10 +680,21 @@ function GithubEventIcon({ type }: { type: string }) {
     PullRequestReviewEvent: 'M9 3H5v18h14V3h-4M9 2h6v4H9ZM8 13l3 3 5-6',
     GollumEvent: 'M4 3h12l4 4v14H4ZM14 3v6h6M8 13h8m-8 4h6',
     PublicEvent: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 0c-5 5-5 13 0 18 5-5 5-13 0-18ZM3 12h18',
-    MemberEvent: 'M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM2 21v-3a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v3m4-13v6m-3-3h6',
+    MemberEvent:
+      'M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM2 21v-3a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v3m4-13v6m-3-3h6',
   };
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d={paths[type] || 'M3 12h4l3-8 4 16 3-8h4'} />
     </svg>
   );
@@ -655,7 +702,16 @@ function GithubEventIcon({ type }: { type: string }) {
 
 function CommitIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
       <path d="M3 12h5m8 0h5" />
       <circle cx="12" cy="12" r="4" />
     </svg>
@@ -675,7 +731,10 @@ function ContributionCalendar({
 }) {
   const tooltipId = useId();
   const [tooltip, setTooltip] = useState<{
-    day: ContributionDay; x: number; y: number; below: boolean;
+    day: ContributionDay;
+    x: number;
+    y: number;
+    below: boolean;
   } | null>(null);
   const showTooltip = (element: HTMLButtonElement, day: ContributionDay) => {
     const rect = element.getBoundingClientRect();
@@ -712,94 +771,101 @@ function ContributionCalendar({
   }));
   return (
     <>
-    <div
-      className="gh-calendar-scroll"
-      style={{
-        '--gh-weeks': Math.ceil((offset + length) / 7),
-        '--gh-gap-width': (Math.ceil((offset + length) / 7) - 1) * 3 + 'px',
-      } as CSSProperties}
-      tabIndex={0}
-      aria-label={
-        language === 'vi'
-          ? 'Lịch đóng góp, cuộn ngang để xem cả năm'
-          : 'Contribution calendar, scroll horizontally for the full year'
-      }
-    >
-      <div className="gh-calendar-months">
-        {months.map((month, index) => (
-          <span style={{ gridColumn: month.column }} key={index}>
-            {month.name}
-          </span>
-        ))}
-      </div>
-      <div className="gh-calendar-grid">
-        {Array.from({ length: offset }, (_, index) => (
-          <span key={'pad' + index} />
-        ))}
-        {Array.from({ length }, (_, index) => {
-          const date = new Date(first.getTime() + index * 86400000).toISOString().slice(0, 10);
-          const day = data.get(date);
-          return day ? (
-            <button
-              key={date}
-              type="button"
-              data-day={index}
-              className={'gh-day level-' + day.level}
-              tabIndex={index === days.length - 1 ? 0 : -1}
-              aria-describedby={tooltip?.day.date === date ? tooltipId : undefined}
-              onMouseEnter={(event) => showTooltip(event.currentTarget, day)}
-              onMouseLeave={() => setTooltip(null)}
-              onBlur={() => setTooltip(null)}
-              aria-label={
-                date + ': ' + day.count + (language === 'vi' ? ' đóng góp' : ' contributions')
-              }
-              onClick={(event) => {
-                onSelect(day);
-                showTooltip(event.currentTarget, day);
-              }}
-              onFocus={(event) => {
-                onSelect(day);
-                showTooltip(event.currentTarget, day);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') setTooltip(null);
-                const delta = (
-                  { ArrowRight: 7, ArrowLeft: -7, ArrowDown: 1, ArrowUp: -1 } as Record<
-                    string,
-                    number
-                  >
-                )[event.key];
-                if (delta) {
-                  event.preventDefault();
-                  const next = event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(
-                    '[data-day="' + (index + delta) + '"]',
-                  );
-                  next?.focus();
-                }
-              }}
-            />
-          ) : (
-            <span key={date} className="gh-day future" aria-hidden="true" />
-          );
-        })}
-      </div>
-    </div>
-    {tooltip && createPortal(
       <div
-        id={tooltipId}
-        role="tooltip"
-        className="gh-day-tooltip"
-        style={{
-          left: tooltip.x,
-          top: tooltip.y,
-          transform: tooltip.below ? 'translateX(-50%)' : 'translate(-50%, -100%)',
-        }}
+        className="gh-calendar-scroll"
+        style={
+          {
+            '--gh-weeks': Math.ceil((offset + length) / 7),
+            '--gh-gap-width': (Math.ceil((offset + length) / 7) - 1) * 3 + 'px',
+          } as CSSProperties
+        }
+        tabIndex={0}
+        aria-label={
+          language === 'vi'
+            ? 'Lịch đóng góp, cuộn ngang để xem cả năm'
+            : 'Contribution calendar, scroll horizontally for the full year'
+        }
       >
-        <span>{tooltip.day.date.split('-').reverse().join('/')}</span>
-        <strong>{language === 'vi' ? 'Đóng góp' : 'Contributions'}: {tooltip.day.count.toLocaleString(language)}</strong>
-      </div>,
-      document.body,
-    )}
+        <div className="gh-calendar-months">
+          {months.map((month, index) => (
+            <span style={{ gridColumn: month.column }} key={index}>
+              {month.name}
+            </span>
+          ))}
+        </div>
+        <div className="gh-calendar-grid">
+          {Array.from({ length: offset }, (_, index) => (
+            <span key={'pad' + index} />
+          ))}
+          {Array.from({ length }, (_, index) => {
+            const date = new Date(first.getTime() + index * 86400000).toISOString().slice(0, 10);
+            const day = data.get(date);
+            return day ? (
+              <button
+                key={date}
+                type="button"
+                data-day={index}
+                className={'gh-day level-' + day.level}
+                tabIndex={index === days.length - 1 ? 0 : -1}
+                aria-describedby={tooltip?.day.date === date ? tooltipId : undefined}
+                onMouseEnter={(event) => showTooltip(event.currentTarget, day)}
+                onMouseLeave={() => setTooltip(null)}
+                onBlur={() => setTooltip(null)}
+                aria-label={
+                  date + ': ' + day.count + (language === 'vi' ? ' đóng góp' : ' contributions')
+                }
+                onClick={(event) => {
+                  onSelect(day);
+                  showTooltip(event.currentTarget, day);
+                }}
+                onFocus={(event) => {
+                  onSelect(day);
+                  showTooltip(event.currentTarget, day);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') setTooltip(null);
+                  const delta = (
+                    { ArrowRight: 7, ArrowLeft: -7, ArrowDown: 1, ArrowUp: -1 } as Record<
+                      string,
+                      number
+                    >
+                  )[event.key];
+                  if (delta) {
+                    event.preventDefault();
+                    const next =
+                      event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(
+                        '[data-day="' + (index + delta) + '"]',
+                      );
+                    next?.focus();
+                  }
+                }}
+              />
+            ) : (
+              <span key={date} className="gh-day future" aria-hidden="true" />
+            );
+          })}
+        </div>
+      </div>
+      {tooltip &&
+        createPortal(
+          <div
+            id={tooltipId}
+            role="tooltip"
+            className="gh-day-tooltip"
+            style={{
+              left: tooltip.x,
+              top: tooltip.y,
+              transform: tooltip.below ? 'translateX(-50%)' : 'translate(-50%, -100%)',
+            }}
+          >
+            <span>{tooltip.day.date.split('-').reverse().join('/')}</span>
+            <strong>
+              {language === 'vi' ? 'Đóng góp' : 'Contributions'}:{' '}
+              {tooltip.day.count.toLocaleString(language)}
+            </strong>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
