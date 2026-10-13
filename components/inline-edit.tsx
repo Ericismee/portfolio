@@ -103,8 +103,9 @@ export function useInlineEdit(publicData: Content) {
     };
   }, []);
   function open(next: Editor) {
+    const section = document.activeElement?.closest('.section-control')?.closest('section[id]');
     setEditorKey((key) => key + 1);
-    setEditor(next);
+    setEditor({ ...next, returnFocusSection: section?.id });
     setNotice('');
   }
   async function save(change: (data: Content) => void, current = state) {

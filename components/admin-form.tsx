@@ -40,6 +40,7 @@ export type Field = {
 };
 export type Values = Record<string, string | boolean>;
 export type Editor = {
+  returnFocusSection?: string;
   githubUsername?: string;
   knownRepositories?: string[];
   title: string;
@@ -470,10 +471,16 @@ export function EditorDialog({
       window.removeEventListener('resize', resize);
       document.body.style.overflow = previousOverflow;
       dialog?.removeEventListener('cancel', preventNativeClose);
-      if (lastFocus.current?.isConnected) lastFocus.current.focus();
+      const sectionTrigger = editor.returnFocusSection
+        ? document
+            .getElementById(editor.returnFocusSection)
+            ?.querySelector<HTMLElement>('.section-control > summary')
+        : null;
+      if (sectionTrigger) sectionTrigger.focus({ preventScroll: true });
+      else if (lastFocus.current?.isConnected) lastFocus.current.focus();
       else document.querySelector<HTMLButtonElement>('[aria-controls="site-menu"]')?.focus();
     };
-  }, []);
+  }, [editor.returnFocusSection]);
   useEffect(() => {
     if (discarding) ref.current?.querySelector<HTMLButtonElement>('[role=alert] button')?.focus();
   }, [discarding]);

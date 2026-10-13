@@ -158,10 +158,10 @@ function Site({
       )}
     </div>
   );
-  const card = (heading: string, body: ReactNode, className = '') => (
+  const card = (heading: string, body: ReactNode, className = '', pageHeading = false) => (
     <section className={'card pad ' + className}>
       <div className="section-heading">
-        <h2>{heading}</h2>
+        {pageHeading ? <h1 className="page-title">{heading}</h1> : <h2>{heading}</h2>}
         {heading === t('Liên kết', 'Links') &&
           editing.button(t('Sửa liên kết', 'Edit links'), () => editing.profile('links'))}
         {heading === t('Hoạt động', 'Activity') &&
@@ -811,8 +811,12 @@ function Site({
                 <div
                   className="section-control-menu"
                   onClick={(event) => {
-                    if ((event.target as HTMLElement).closest('button'))
-                      event.currentTarget.parentElement?.removeAttribute('open');
+                    if ((event.target as HTMLElement).closest('button')) {
+                      const details = event.currentTarget.closest('details');
+                      details?.removeAttribute('open');
+                      // Preserve a visible return target before the editor captures focus.
+                      details?.querySelector('summary')?.focus({ preventScroll: true });
+                    }
                   }}
                 >
                   {editing.button(t('Chỉnh sửa', 'Edit'), () => editing.section(s.name), true)}
@@ -1265,6 +1269,8 @@ function Site({
         ) : (
           empty(t('Nhập từ khóa để bắt đầu', 'Enter a search term to begin'))
         ),
+        '',
+        true,
       ),
     );
   }
@@ -1336,6 +1342,8 @@ function Site({
             </p>
             <ContactForm />
           </>,
+          '',
+          true,
         ),
         card(
           t('Kết nối trực tiếp', 'Connect directly'),

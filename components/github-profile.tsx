@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -740,6 +741,7 @@ function ContributionCalendar({
   onSelect: (day: ContributionDay) => void;
 }) {
   const tooltipId = useId();
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<{
     day: ContributionDay;
     x: number;
@@ -751,11 +753,20 @@ function ContributionCalendar({
     const below = rect.top < 90;
     setTooltip({
       day,
-      x: Math.max(112, Math.min(window.innerWidth - 112, rect.left + rect.width / 2)),
-      y: below ? rect.bottom + 8 : rect.top - 8,
+      x: rect.left + rect.width / 2,
+      y: below ? rect.bottom + 6 : rect.top - 6,
       below,
     });
   };
+  useLayoutEffect(() => {
+    const element = tooltipRef.current;
+    if (!tooltip || !element) return;
+    const { width, height } = element.getBoundingClientRect();
+    const edge = width / 2 + 8;
+    element.style.left = `${Math.max(edge, Math.min(window.innerWidth - edge, tooltip.x))}px`;
+    if (tooltip.below)
+      element.style.top = `${Math.min(tooltip.y, window.innerHeight - height - 8)}px`;
+  }, [tooltip]);
   useEffect(() => {
     const hide = () => setTooltip(null);
     window.addEventListener('scroll', hide, true);
@@ -865,6 +876,7 @@ function ContributionCalendar({
           <div
             id={tooltipId}
             role="tooltip"
+            ref={tooltipRef}
             className="gh-day-tooltip"
             style={{
               left: tooltip.x,
@@ -873,10 +885,11 @@ function ContributionCalendar({
             }}
           >
             <span>{tooltip.day.date.split('-').reverse().join('/')}</span>
-            <strong>
-              {language === 'vi' ? 'Đóng góp' : 'Contributions'}:{' '}
-              {tooltip.day.count.toLocaleString(language)}
-            </strong>
+            <span aria-hidden="true">·</span>
+            <span className="gh-day-tooltip-count">
+              <strong>{tooltip.day.count.toLocaleString(language)}</strong>{' '}
+              {language === 'vi' ? 'đóng góp' : 'contributions'}
+            </span>
           </div>,
           document.body,
         )}
