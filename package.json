@@ -39,7 +39,7 @@
     "@vercel/blob": "^2.8.1",
     "@xmldom/xmldom": "^0.9.12",
     "fflate": "^0.8.3",
-    "next": "^16.4.0",
+    "next": "^16.4.6",
     "pdfjs-dist": "^6.4.299",
     "postgres": "^3.4.9",
     "react": "^19.3.0",

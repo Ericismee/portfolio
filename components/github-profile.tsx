@@ -157,6 +157,7 @@ export function GithubProfile({
       ? activity.calendar
       : null;
   const profile = stats.profile;
+  const companyIsEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile?.company || '');
   const loadingProfile = !stats.updatedAt && !error;
   const repoCards = (items: GithubSkills['repos']) => (
     <div className="gh-repo-grid">
@@ -264,7 +265,7 @@ export function GithubProfile({
           )}
           {profile?.company && (
             <div>
-              <dt>{t('Tổ chức', 'Company')}</dt>
+              <dt>{companyIsEmail ? 'Email' : t('Đơn vị', 'Company')}</dt>
               <dd>{profile.company}</dd>
             </div>
           )}
@@ -285,6 +286,35 @@ export function GithubProfile({
             </>
           )}
         </dl>
+        {stats.organizations.length > 0 && (
+          <section className="gh-organizations" aria-label={t('Tổ chức', 'Organizations')}>
+            <h2>{t('Tổ chức', 'Organizations')}</h2>
+            <ul className="gh-organization-list">
+              {stats.organizations.map((organization) => (
+                <li key={organization.login}>
+                  <a
+                    className="gh-organization-link"
+                    href={'https://github.com/' + encodeURIComponent(organization.login)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={
+                      organization.description
+                        ? `${organization.name} · ${organization.description}`
+                        : organization.name
+                    }
+                    aria-label={organization.name}
+                  >
+                    {organization.avatarUrl ? (
+                      <img src={organization.avatarUrl} alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      <span aria-hidden="true">{organization.name.slice(0, 1).toUpperCase()}</span>
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         {settings.showTechnologies && (
           <details className="gh-stack" open>
             <summary>

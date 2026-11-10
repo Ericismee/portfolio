@@ -1452,6 +1452,72 @@
   text-align: right;
 }
 
+.gh-organizations {
+  padding: 14px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.gh-organizations h2 {
+  margin: 0 0 9px;
+  font-size: 13px;
+}
+
+.gh-organization-list,
+.github-organization-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gh-organization-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gh-organization-link,
+.github-organization-links a {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  overflow: hidden;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.gh-organization-link:hover,
+.github-organization-links a:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.gh-organization-link:focus-visible,
+.github-organization-links a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.gh-organization-link img,
+.github-organization-links img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gh-organization-link span,
+.github-organization-links a span {
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .gh-stack {
   padding-top: 18px;
   border-top: 1px solid var(--border-subtle);
@@ -1941,6 +2007,7 @@ button.gh-day:hover {
   }
   .gh-identity > .btn,
   .gh-identity-facts,
+  .gh-organizations,
   .gh-stack,
   .gh-identity > .side-link {
     grid-column: 1 / -1;
@@ -2036,6 +2103,15 @@ button.gh-day:hover {
   font-size: 13px;
   line-height: 1.6;
   overflow-wrap: anywhere;
+}
+
+.github-organizations {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .gh-page-heading > div:first-child {
@@ -2603,10 +2679,17 @@ button.gh-day:hover {
   margin-bottom: 18px;
 }
 
-.github-import-heading > div,
+.github-import-heading > div:first-child,
 .github-import-select > label {
   flex: 1;
   min-width: 0;
+}
+
+.github-import-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .github-import-heading h3 {

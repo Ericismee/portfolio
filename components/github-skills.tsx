@@ -36,6 +36,7 @@ export function GithubSkillsCard({
   const number = (value: number) => value.toLocaleString(language);
   const date = (value: string) =>
     Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleDateString(language) : '—';
+  const companyIsEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(stats.profile?.company || '');
   return (
     <section
       className={
@@ -93,6 +94,35 @@ export function GithubSkillsCard({
               </span>
             </Link>
             {stats.profile?.bio && <p className="github-account-bio">{stats.profile.bio}</p>}
+            {stats.organizations.length > 0 && (
+              <div className="github-organizations">
+                <span>{t('Tổ chức', 'Organizations')}</span>
+                <div className="github-organization-links">
+                  {stats.organizations.map((organization) => (
+                    <a
+                      key={organization.login}
+                      href={'https://github.com/' + encodeURIComponent(organization.login)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={
+                        organization.description
+                          ? `${organization.name} · ${organization.description}`
+                          : organization.name
+                      }
+                      aria-label={organization.name}
+                    >
+                      {organization.avatarUrl ? (
+                        <img src={organization.avatarUrl} alt="" loading="lazy" decoding="async" />
+                      ) : (
+                        <span aria-hidden="true">
+                          {organization.name.slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
             {stats.status === 'ready' ? (
               <>
                 {settings.showStatistics && (
@@ -151,7 +181,7 @@ export function GithubSkillsCard({
                         )}
                         {stats.profile?.company && (
                           <div>
-                            <dt>{t('Tổ chức', 'Company')}</dt>
+                            <dt>{companyIsEmail ? 'Email' : t('Đơn vị', 'Company')}</dt>
                             <dd>{stats.profile.company}</dd>
                           </div>
                         )}

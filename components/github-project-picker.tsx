@@ -50,7 +50,7 @@ export function GithubProjectPicker({
     details: t('Trích README', 'README excerpt'),
     role: t('Vai trò', 'Role'),
   };
-  async function load(detail = false) {
+  async function load(detail = false, source = username) {
     setBusy(true);
     setError('');
     setNotice('');
@@ -73,7 +73,10 @@ export function GithubProjectPicker({
       } else {
         setSelected('');
         setPreview(null);
-        const connection = await request<{ connected: boolean }>('/api/admin/github-connection');
+        const connection =
+          source === username
+            ? await request<{ connected: boolean }>('/api/admin/github-connection')
+            : { connected: false };
         if (connection.connected) {
           const result = await request<{
             repos: (GithubSkills['repos'][number] & { fullName: string; private: boolean })[];
@@ -92,13 +95,19 @@ export function GithubProjectPicker({
           return;
         }
         const result = await request<GithubSkills>(
-          '/api/admin/github?username=' + encodeURIComponent(username),
+          '/api/admin/github?username=' + encodeURIComponent(source),
         );
         if (result.status === 'unavailable')
           throw Error(
             t('Chưa tải được GitHub. Hãy thử lại.', 'GitHub is unavailable. Please retry.'),
           );
-        setRepos(result.repos);
+        setRepos(
+          result.repos.map((repo) => ({
+            ...repo,
+            fullName: source + '/' + repo.name,
+            private: false,
+          })),
+        );
         if (!result.repos.length)
           setNotice(t('Tài khoản chưa có kho mã công khai.', 'No public repositories found.'));
         else if (result.partial)
@@ -137,14 +146,24 @@ export function GithubProjectPicker({
             )}
           </p>
         </div>
-        <button
-          type="button"
-          className="btn neutral"
-          disabled={disabled || busy}
-          onClick={() => void load()}
-        >
-          {busy ? t('Đang đọc…', 'Loading…') : t('Tải kho mã', 'Load repositories')}
-        </button>
+        <div className="github-import-actions">
+          <button
+            type="button"
+            className="btn neutral"
+            disabled={disabled || busy}
+            onClick={() => void load()}
+          >
+            {busy ? t('Đang đọc…', 'Loading…') : t('Kho mã của tôi', 'My repositories')}
+          </button>
+          <button
+            type="button"
+            className="btn neutral"
+            disabled={disabled || busy}
+            onClick={() => void load(false, 'DubiLabs')}
+          >
+            {t('Kho mã DubiLabs', 'DubiLabs repositories')}
+          </button>
+        </div>
       </div>
       <GithubConnection
         onChange={() => {

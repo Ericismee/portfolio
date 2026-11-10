@@ -26,8 +26,15 @@ const profileSchema = z.object({
   publicRepos: z.number().nonnegative(),
   createdAt: z.string(),
 });
+const organizationSchema = z.object({
+  login: z.string().regex(/^[a-zA-Z0-9-]{1,39}$/),
+  name: z.string().max(200),
+  description: z.string().max(300).nullable(),
+  avatarUrl: z.string(),
+});
 export type GithubSkills = {
   profile: z.infer<typeof profileSchema> | null;
+  organizations: z.infer<typeof organizationSchema>[];
   repos: z.infer<typeof repoSchema>[];
   username: string;
   status: 'ready' | 'unavailable' | 'empty';
@@ -71,6 +78,7 @@ export function githubSkillsSnapshot(username: string): GithubSkills {
   return {
     username,
     profile: null,
+    organizations: [],
     repos: [],
     status: 'empty',
     languages: [],
@@ -80,8 +88,9 @@ export function githubSkillsSnapshot(username: string): GithubSkills {
   };
 }
 const cachedSkills = z.object({
-  format: z.literal(2),
+  format: z.literal(4),
   profile: profileSchema.nullable(),
+  organizations: z.array(organizationSchema).max(100),
   repos: z.array(repoSchema),
   username: z.string(),
   status: z.enum(['ready', 'unavailable', 'empty']),
@@ -141,7 +150,7 @@ async function loadCachedSkills(username: string, token: string): Promise<Github
   const result = await loadSkills(username, token);
   try {
     await mkdir(folder, { recursive: true });
-    await writeFile(filename, JSON.stringify({ ...result, format: 2 }));
+    await writeFile(filename, JSON.stringify({ ...result, format: 4 }));
   } catch {
     /* Read-only deployments still work with the in-memory cache. */
   }
@@ -152,6 +161,7 @@ async function loadSkills(username: string, token: string): Promise<GithubSkills
   const result: GithubSkills = {
     username,
     profile: null,
+    organizations: [],
     repos: [],
     status: 'empty',
     languages: [],
@@ -200,6 +210,46 @@ async function loadSkills(username: string, token: string): Promise<GithubSkills
     } catch {
       result.partial = true;
     }
+  })();
+  const organizationTask = (async () => {
+    if (username.toLowerCase() !== 'ericismee') return;
+    const organizations = new Map<string, z.infer<typeof organizationSchema>>();
+    const add = (input: unknown) => {
+      if (!input || typeof input !== 'object' || Array.isArray(input)) return;
+      const organization = input as Record<string, unknown>;
+      const parsed = organizationSchema.safeParse({
+        login: organization.login,
+        name: typeof organization.name === 'string' ? organization.name : organization.login,
+        description: typeof organization.description === 'string' ? organization.description : null,
+        avatarUrl:
+          typeof organization.avatar_url === 'string' &&
+          /^https:\/\/avatars\.githubusercontent\.com\//.test(organization.avatar_url)
+            ? organization.avatar_url
+            : '',
+      });
+      if (parsed.success) organizations.set(parsed.data.login.toLowerCase(), parsed.data);
+    };
+    await Promise.allSettled([
+      read(userPath + '/orgs?per_page=100').then((input) => {
+        if (Array.isArray(input)) input.slice(0, 100).forEach(add);
+      }),
+      read('/orgs/DubiLabs').then((input) => {
+        if (
+          input &&
+          typeof input === 'object' &&
+          !Array.isArray(input) &&
+          String((input as Record<string, unknown>).login).toLowerCase() === 'dubilabs'
+        )
+          add(input);
+      }),
+    ]);
+    const selected = organizations.get('dubilabs');
+    result.organizations = [
+      ...(selected ? [selected] : []),
+      ...[...organizations.values()]
+        .filter((organization) => organization.login.toLowerCase() !== 'dubilabs')
+        .sort((a, b) => a.login.localeCompare(b.login)),
+    ];
   })();
   try {
     const all: Repository[] = [];
@@ -279,5 +329,6 @@ async function loadSkills(username: string, token: string): Promise<GithubSkills
     result.status = 'unavailable';
   }
   await profileTask;
+  await organizationTask;
   return result;
 }

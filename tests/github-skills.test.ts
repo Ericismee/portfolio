@@ -19,6 +19,70 @@ test('GitHub language ranking aggregates bytes, retains all languages and uses a
   assert(Math.abs(languages.reduce((sum, language) => sum + language.percent, 0) - 100) < 1e-8);
   assert.deepEqual(rankLanguages([]), []);
 });
+
+test('Selected and public organizations are listed compactly and their repositories remain importable', async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'github-organization-test-'));
+  const originalFetch = globalThis.fetch;
+  const originalDirectory = process.env.DATA_DIR;
+  const paths: string[] = [];
+  process.env.DATA_DIR = directory;
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    paths.push(url);
+    if (url.endsWith('/orgs/DubiLabs'))
+      return Response.json({
+        login: 'DubiLabs',
+        name: 'DubiLabs',
+        description: 'AI and software products',
+        avatar_url: 'https://avatars.githubusercontent.com/u/123?v=4',
+        public_repos: 2,
+      });
+    if (url.endsWith('/users/Ericismee/orgs?per_page=100'))
+      return Response.json([
+        {
+          login: 'OtherOrg',
+          name: 'Other Org',
+          description: 'Another public organization',
+          avatar_url: 'https://avatars.githubusercontent.com/u/456?v=4',
+        },
+      ]);
+    if (url.includes('/repos?'))
+      return Response.json(
+        url.includes('/users/DubiLabs/')
+          ? [{ name: 'dubisub-releases', private: false, fork: false, size: 0 }]
+          : [],
+      );
+    return Response.json({
+      name: 'Eric',
+      bio: null,
+      location: null,
+      company: null,
+      followers: 1,
+      following: 0,
+      public_repos: 1,
+      created_at: '2020-01-01T00:00:00Z',
+    });
+  };
+  try {
+    const personal = await getGithubSkills('Ericismee');
+    assert.deepEqual(
+      personal.organizations.map((item) => item.login),
+      ['DubiLabs', 'OtherOrg'],
+    );
+    const organization = await getGithubSkills('DubiLabs');
+    assert.deepEqual(
+      organization.repos.map((repo) => repo.name),
+      ['dubisub-releases'],
+    );
+    assert.deepEqual(organization.organizations, []);
+    assert.equal(paths.filter((url) => url.endsWith('/orgs/DubiLabs')).length, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalDirectory === undefined) delete process.env.DATA_DIR;
+    else process.env.DATA_DIR = originalDirectory;
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 test('Unavailable GitHub stays an explicit empty state and retries use the cache', async () => {
   const directory = await mkdtemp(path.join(tmpdir(), 'github-skills-test-'));
   const originalFetch = globalThis.fetch;

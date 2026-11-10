@@ -23,6 +23,7 @@ const stats: GithubSkills = {
   username: 'owner',
   status: 'ready',
   profile: null,
+  organizations: [],
   repos: [repo('Hidden'), repo('Public'), repo('fork', true)],
   languages: [{ name: 'TypeScript', bytes: 100, percent: 100 }],
   repositories: 2,
