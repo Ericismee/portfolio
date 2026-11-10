@@ -12,7 +12,7 @@ const cachedSkills = unstable_cache(
     if (stats.status === 'unavailable') throw Error('GitHub unavailable');
     return stats;
   },
-  ['github-public-skills-v1'],
+  ['github-public-skills-v2'],
   {
     revalidate: 3600,
   },

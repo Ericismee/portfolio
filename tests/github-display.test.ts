@@ -87,6 +87,12 @@ test('GitHub curation filters hidden repositories and own history case-insensiti
   assert.deepEqual(publicGithubSettings(settings).hiddenRepos, []);
   assert(!publicGithubSettings(settings).featuredRepos.includes('Hidden'));
 });
+test('Public GitHub stats tolerate a cached payload from before organizations existed', () => {
+  const legacy = { ...stats } as GithubSkills;
+  delete (legacy as Partial<GithubSkills>).organizations;
+  const visible = visibleGithubStats(legacy, githubSettingsSchema.parse({}));
+  assert.deepEqual(visible.organizations, []);
+});
 test('GitHub manual featured order, empty selection and disabled history remain deliberate choices', () => {
   const settings = githubSettingsSchema.parse({
     featuredMode: 'selected',

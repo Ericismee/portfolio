@@ -8,6 +8,8 @@ export function visibleGithubStats(stats: GithubSkills, settings: GithubSettings
   const hidden = new Set(settings.hiddenRepos.map((name) => name.toLowerCase()));
   return {
     ...stats,
+    // Older persistent cache entries can outlive a deployment that adds this field.
+    organizations: Array.isArray(stats.organizations) ? stats.organizations : [],
     profile: stats.profile
       ? {
           ...stats.profile,
